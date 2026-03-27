@@ -1,4 +1,5 @@
-import { Link } from 'react-router-dom';
+
+            </div>import { Link } from 'react-router-dom';
 import { Shield, TrendingDown, MapPin, ChevronDown } from 'lucide-react';
 import { Button } from '@/app/components/ui/button';
 import { useState } from 'react';
@@ -16,14 +17,22 @@ export function LandingPage() {
       </div>
 
       {/* Header */}
-      <header className="border-b border-zinc-800 bg-zinc-950/50 backdrop-blur-sm">
+      <header className="border-b border-zinc-800 bg-zinc-950/50 backdrop-blur-sm relative z-20">
         <div className="container mx-auto px-6 py-4">
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <img src={logoImage} alt="FalilaX" className="w-24 h-24" />
+            <div className="flex items-center gap-3">
+              <img
+                src={logoImage}
+                alt="FalilaX"
+                className="h-12 w-auto md:h-14 object-contain"
+              />
             </div>
+
             <Link to="/select-context">
-              <Button variant="outline" className="border-zinc-700 bg-zinc-900 hover:bg-zinc-800 text-zinc-100">
+              <Button
+                variant="outline"
+                className="border-zinc-700 bg-zinc-900 hover:bg-zinc-800 text-zinc-100"
+              >
                 Access Dashboard
               </Button>
             </Link>
@@ -32,27 +41,35 @@ export function LandingPage() {
       </header>
 
       {/* Hero Section */}
-      <section className="container mx-auto px-6 py-24 relative">
-        {/* Watermark Background */}
-        <div className="absolute inset-0 flex items-center justify-center pointer-events-none overflow-hidden">
+      <section className="relative w-full h-[600px] md:h-[700px] flex items-center justify-center overflow-hidden">
+        {/* Background Hero Image */}
+        <div className="absolute inset-0 pointer-events-none overflow-hidden">
           <img
             src={watermarkImage}
             alt=""
-            className="w-full max-w-4xl opacity-20 object-contain"
+            className="w-full h-full object-cover opacity-30"
           />
+          <div className="absolute inset-0 bg-black/60" />
         </div>
 
-        <div className="max-w-4xl mx-auto text-center relative z-10">
-          <h1 className="mb-8 text-5xl font-light leading-tight">
+        {/* Hero Content */}
+        <div className="max-w-4xl mx-auto text-center relative z-10 px-6">
+          <h1 className="mb-8 text-5xl md:text-6xl font-light leading-tight">
             Water Risk Intelligence
             <br />
             <span className="text-amber-400">Made Clear</span>
           </h1>
-          <p className="mb-12 text-xl text-zinc-400 max-w-2xl mx-auto leading-relaxed">
-            FalilaX helps anyone, anywhere understand what's happening with their tap water—at home, at work, and across communities.
+
+          <p className="mb-12 text-xl text-zinc-300 max-w-2xl mx-auto leading-relaxed">
+            FalilaX helps anyone, anywhere understand what&apos;s happening with their tap
+            water—at home, at work, and across communities.
           </p>
+
           <Link to="/select-context">
-            <Button size="lg" className="bg-amber-500 hover:bg-amber-600 text-zinc-950 font-medium px-8">
+            <Button
+              size="lg"
+              className="bg-amber-500 hover:bg-amber-600 text-zinc-950 font-medium px-8"
+            >
               Get Started
             </Button>
           </Link>
@@ -66,7 +83,8 @@ export function LandingPage() {
             <Shield className="w-12 h-12 text-amber-400 mb-4" />
             <h3 className="text-xl font-medium mb-2">Source Attribution</h3>
             <p className="text-zinc-400">
-              Pinpoint whether issues originate from building infrastructure, distribution lines, or the central system.
+              Pinpoint whether issues originate from building infrastructure,
+              distribution lines, or the central system.
             </p>
           </div>
 
@@ -74,7 +92,8 @@ export function LandingPage() {
             <TrendingDown className="w-12 h-12 text-amber-400 mb-4" />
             <h3 className="text-xl font-medium mb-2">Risk Assessment</h3>
             <p className="text-zinc-400">
-              Clear risk levels and recommended actions based on existing water quality data and standards.
+              Clear risk levels and recommended actions based on existing water
+              quality data and standards.
             </p>
           </div>
 
@@ -82,7 +101,8 @@ export function LandingPage() {
             <MapPin className="w-12 h-12 text-amber-400 mb-4" />
             <h3 className="text-xl font-medium mb-2">Community Insights</h3>
             <p className="text-zinc-400">
-              Visualize affected areas and understand broader patterns across your community.
+              Visualize affected areas and understand broader patterns across your
+              community.
             </p>
           </div>
         </div>
@@ -115,7 +135,9 @@ export function LandingPage() {
                     <span className="text-lg">1</span>
                   </div>
                   <h3 className="text-sm font-medium text-zinc-300 mb-1">Water Sensing</h3>
-                  <p className="text-xs text-zinc-500">Continuous monitoring of quality parameters</p>
+                  <p className="text-xs text-zinc-500">
+                    Continuous monitoring of quality parameters
+                  </p>
                 </div>
 
                 <div className="hidden md:block text-zinc-700">→</div>
@@ -124,8 +146,12 @@ export function LandingPage() {
                   <div className="inline-flex items-center justify-center w-10 h-10 rounded-full bg-amber-500/10 border border-amber-500/20 mb-2">
                     <span className="text-lg">2</span>
                   </div>
-                  <h3 className="text-sm font-medium text-zinc-300 mb-1">Continuous Analysis</h3>
-                  <p className="text-xs text-zinc-500">Real-time assessment against standards</p>
+                  <h3 className="text-sm font-medium text-zinc-300 mb-1">
+                    Continuous Analysis
+                  </h3>
+                  <p className="text-xs text-zinc-500">
+                    Real-time assessment against standards
+                  </p>
                 </div>
 
                 <div className="hidden md:block text-zinc-700">→</div>
@@ -134,8 +160,12 @@ export function LandingPage() {
                   <div className="inline-flex items-center justify-center w-10 h-10 rounded-full bg-amber-500/10 border border-amber-500/20 mb-2">
                     <span className="text-lg">3</span>
                   </div>
-                  <h3 className="text-sm font-medium text-zinc-300 mb-1">Source Attribution</h3>
-                  <p className="text-xs text-zinc-500">Identify origin of any issues detected</p>
+                  <h3 className="text-sm font-medium text-zinc-300 mb-1">
+                    Source Attribution
+                  </h3>
+                  <p className="text-xs text-zinc-500">
+                    Identify origin of any issues detected
+                  </p>
                 </div>
 
                 <div className="hidden md:block text-zinc-700">→</div>
@@ -144,8 +174,12 @@ export function LandingPage() {
                   <div className="inline-flex items-center justify-center w-10 h-10 rounded-full bg-amber-500/10 border border-amber-500/20 mb-2">
                     <span className="text-lg">4</span>
                   </div>
-                  <h3 className="text-sm font-medium text-zinc-300 mb-1">Instant Alerts</h3>
-                  <p className="text-xs text-zinc-500">Alert to everyone in affected distribution line or central system</p>
+                  <h3 className="text-sm font-medium text-zinc-300 mb-1">
+                    Instant Alerts
+                  </h3>
+                  <p className="text-xs text-zinc-500">
+                    Alert to everyone in affected distribution line or central system
+                  </p>
                 </div>
               </div>
             </div>
@@ -156,7 +190,9 @@ export function LandingPage() {
       {/* Trust Section */}
       <section className="container mx-auto px-6 py-16 mb-16">
         <div className="max-w-3xl mx-auto text-center">
-          <p className="text-sm text-zinc-500 uppercase tracking-wider mb-4">Designed For</p>
+          <p className="text-sm text-zinc-500 uppercase tracking-wider mb-4">
+            Designed For
+          </p>
           <div className="flex flex-wrap justify-center gap-6 text-zinc-400">
             <span>Individuals/Homes</span>
             <span className="text-zinc-700">•</span>
@@ -177,17 +213,23 @@ export function LandingPage() {
           <div className="grid md:grid-cols-2 gap-6 text-xs text-zinc-500 mb-6">
             <div>
               <p className="mb-2">
-                <span className="font-medium text-zinc-400">Responsibility Statement:</span>{' '}
-                FalilaX provides interpretive risk intelligence and does not replace regulatory testing or official advisories.
+                <span className="font-medium text-zinc-400">
+                  Responsibility Statement:
+                </span>{' '}
+                FalilaX provides interpretive risk intelligence and does not replace
+                regulatory testing or official advisories.
               </p>
             </div>
             <div>
               <p>
-                <span className="font-medium text-zinc-400">Data Sources (simulated):</span>{' '}
+                <span className="font-medium text-zinc-400">
+                  Data Sources (simulated):
+                </span>{' '}
                 Public utility reports, EPA datasets, and laboratory inputs.
               </p>
             </div>
           </div>
+
           <div className="flex items-center justify-between text-sm text-zinc-500 border-t border-zinc-800 pt-6">
             <p>© 2026 FalilaX™ by AfriDrug-Net. Water risk intelligence platform.</p>
             <p>Professional use only</p>
