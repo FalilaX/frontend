@@ -1,8 +1,8 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { LandingPage } from '@/app/components/landing-page';
 import { ContextSelection } from '@/app/components/context-selection';
-import { Dashboard } from '@/app/components/dashboard';
-import { CommunityMap } from '@/app/components/community-map';
+import Dashboard from '@/app/components/dashboard';
+import CommunityMap from '@/app/components/community-map';
 import { SourceAttribution } from '@/app/components/source-attribution';
 
 export default function App() {

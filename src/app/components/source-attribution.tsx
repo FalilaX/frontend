@@ -1,4 +1,5 @@
-import { Link, useSearchParams } from 'react-router-dom';
+import { useEffect, useMemo, useState } from 'react';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import {
   ArrowLeft,
   Building2,
@@ -15,7 +16,6 @@ import {
 import { Button } from '@/app/components/ui/button';
 import { Progress } from '@/app/components/ui/progress';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/app/components/ui/tooltip';
-import { useEffect, useMemo, useState } from 'react';
 import { API_BASE_URL } from '@/app/config/api';
 import logoImage from '@/assets/falilax-logo.png';
 
@@ -134,6 +134,7 @@ export function SourceAttribution() {
   const [attributionData, setAttributionData] = useState<AttributionResponse>(fallbackAttributionData);
 
   const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
   const siteId = searchParams.get('siteId') || '1';
 
   useEffect(() => {
@@ -149,7 +150,6 @@ export function SourceAttribution() {
         }
 
         const result = await response.json();
-        console.log('FalilaX source attribution:', result);
 
         setAttributionData({
           primary: {
@@ -233,9 +233,18 @@ export function SourceAttribution() {
         <div className="container mx-auto px-6 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-8">
-              <Link to="/" className="flex items-center gap-2">
-                <img src={logoImage} alt="FalilaX" className="w-24 h-24" />
-              </Link>
+              <div
+                onClick={() => navigate('/')}
+                className="flex items-center gap-3 cursor-pointer"
+              >
+                <img
+                  src={logoImage}
+                  alt="FalilaX"
+                  className="h-20 w-auto object-contain"
+                />
+                <span className="text-xl font-semibold tracking-wide">FalilaX</span>
+              </div>
+
               <nav className="flex gap-6 text-sm">
                 <Link to="/dashboard" className="text-zinc-400 hover:text-zinc-100 transition-colors">
                   Dashboard
@@ -248,16 +257,21 @@ export function SourceAttribution() {
                 </Link>
               </nav>
             </div>
+
             <div className="flex items-center gap-4">
               <div className="px-2 py-1 rounded text-xs text-zinc-500 bg-zinc-900 border border-zinc-800">
                 Demo Mode · Simulated Data
               </div>
-              <Link to="/dashboard">
-                <Button variant="ghost" size="sm" className="text-zinc-400 hover:text-zinc-100">
-                  <ArrowLeft className="w-4 h-4 mr-2" />
-                  Back to Dashboard
-                </Button>
-              </Link>
+
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => navigate('/dashboard')}
+                className="text-zinc-400 hover:text-zinc-100"
+              >
+                <ArrowLeft className="w-4 h-4 mr-2" />
+                Back to Dashboard
+              </Button>
             </div>
           </div>
         </div>
@@ -273,6 +287,7 @@ export function SourceAttribution() {
             <span className="inline-block px-2 py-0.5 rounded text-xs bg-blue-500/10 text-blue-400 border border-blue-500/20">
               Assessment Type: Inferred
             </span>
+
             <Tooltip>
               <TooltipTrigger>
                 <Info className="w-3.5 h-3.5 text-zinc-500 hover:text-zinc-400 transition-colors cursor-help" />
@@ -315,11 +330,15 @@ export function SourceAttribution() {
             <div className="p-3 rounded-full bg-amber-500/20">
               {sourceIcon(attributionData.primary?.source)}
             </div>
+
             <div className="flex-1">
               <h2 className="text-2xl font-light mb-2">
                 {normalizeSourceLabel(attributionData.primary?.source)} Issue Likely
               </h2>
-              <p className="text-zinc-300 mb-4">{attributionData.primary?.indicator ?? 'No indicator available'}</p>
+
+              <p className="text-zinc-300 mb-4">
+                {attributionData.primary?.indicator ?? 'No indicator available'}
+              </p>
 
               <div className="mb-4">
                 <p className="text-xs font-medium text-zinc-500 mb-2">Why:</p>
@@ -343,6 +362,7 @@ export function SourceAttribution() {
                   </div>
                   <Progress value={primaryConfidence} className="h-2" />
                 </div>
+
                 <div className="px-4 py-2 rounded-full bg-amber-500/10 border border-amber-500/30">
                   <span className="text-sm font-medium text-amber-400">{confidenceLabel}</span>
                 </div>
@@ -373,6 +393,7 @@ export function SourceAttribution() {
                           <div className={`p-2 rounded ${isTop ? 'bg-amber-500/20' : 'bg-zinc-700/40'}`}>
                             {sourceIcon(item.source)}
                           </div>
+
                           <div className="flex-1">
                             <h3 className={`font-medium mb-1 ${isTop ? 'text-amber-400' : 'text-zinc-100'}`}>
                               {normalizeSourceLabel(item.source)}
@@ -381,6 +402,7 @@ export function SourceAttribution() {
                               {index === 0 ? 'Most likely contributing segment' : 'Secondary contributing segment'}
                             </p>
                           </div>
+
                           <div className="text-right">
                             <p className={`text-2xl font-light ${normalizeSourceProbabilityColor(probability)}`}>
                               {probability}%
@@ -423,6 +445,7 @@ export function SourceAttribution() {
                 <TrendingUp className="w-4 h-4" />
                 Immediate Actions
               </h3>
+
               <div className="space-y-3">
                 {immediateActions.map((action, index) => (
                   <div key={index} className="p-3 rounded bg-zinc-800/50 border border-zinc-700">
@@ -458,6 +481,7 @@ export function SourceAttribution() {
                   <FileText className="w-5 h-5 text-amber-400" />
                   Why this conclusion?
                 </h2>
+
                 {showDetails ? (
                   <ChevronUp className="w-5 h-5 text-zinc-400 group-hover:text-zinc-100 transition-colors" />
                 ) : (
@@ -470,6 +494,7 @@ export function SourceAttribution() {
                   <p className="text-zinc-400 mb-3">
                     This attribution is based on analyzing water quality at different points in your supply chain:
                   </p>
+
                   <div className="space-y-2">
                     {breakdownItems.flatMap((item, index) =>
                       toStringArray(item.factors, [])
@@ -484,6 +509,7 @@ export function SourceAttribution() {
                         )),
                     )}
                   </div>
+
                   <p className="text-zinc-400 mt-4 pt-3 border-t border-zinc-800">
                     These factors together point to{' '}
                     {normalizeSourceLabel(attributionData.primary?.source).toLowerCase()} as the primary source,
@@ -497,6 +523,7 @@ export function SourceAttribution() {
               <h2 className="text-xl font-light mb-4 text-zinc-300">
                 Data Sources <span className="text-xs text-zinc-500">(Simulated for Demo)</span>
               </h2>
+
               <div className="space-y-3 text-sm">
                 <div className="flex gap-3">
                   <div className="w-1.5 h-1.5 rounded-full bg-zinc-600 mt-1.5 flex-shrink-0"></div>
@@ -505,6 +532,7 @@ export function SourceAttribution() {
                     <p className="text-zinc-500 text-xs">Municipal system monitoring data</p>
                   </div>
                 </div>
+
                 <div className="flex gap-3">
                   <div className="w-1.5 h-1.5 rounded-full bg-zinc-600 mt-1.5 flex-shrink-0"></div>
                   <div>
@@ -512,6 +540,7 @@ export function SourceAttribution() {
                     <p className="text-zinc-500 text-xs">Federal water quality standards and trends</p>
                   </div>
                 </div>
+
                 <div className="flex gap-3">
                   <div className="w-1.5 h-1.5 rounded-full bg-zinc-600 mt-1.5 flex-shrink-0"></div>
                   <div>
@@ -519,6 +548,7 @@ export function SourceAttribution() {
                     <p className="text-zinc-500 text-xs">On-site sampling and laboratory analysis</p>
                   </div>
                 </div>
+
                 <div className="flex gap-3">
                   <div className="w-1.5 h-1.5 rounded-full bg-zinc-600 mt-1.5 flex-shrink-0"></div>
                   <div>
