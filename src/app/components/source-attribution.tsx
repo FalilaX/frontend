@@ -12,6 +12,7 @@ import {
   FileText,
   Info,
   Clock,
+  MapPin,
 } from 'lucide-react';
 import { Button } from '@/app/components/ui/button';
 import { Progress } from '@/app/components/ui/progress';
@@ -41,41 +42,51 @@ type AttributionResponse = {
   breakdown?: AttributionBreakdownItem[];
   recommendations?: AttributionRecommendations;
   updated_at?: string;
+  site_name?: string;
+  site_type?: string;
+  county?: string;
+  state?: string;
+};
+
+const siteLabels: Record<string, { name: string; type: string }> = {
+  '2': { name: 'Line A School', type: 'School' },
+  '3': { name: 'Line A Clinic', type: 'Clinic' },
+  '4': { name: 'Line B Household', type: 'Household' },
 };
 
 const fallbackAttributionData: AttributionResponse = {
   primary: {
-    source: 'building',
-    confidence: 68,
-    indicator: 'Lead levels elevated at tap, decreasing upstream',
+    source: 'distribution',
+    confidence: 74,
+    indicator: 'Critical water quality signal detected across Montgomery pilot infrastructure.',
   },
   breakdown: [
     {
-      source: 'Building Plumbing',
-      probability: 68,
-      factors: ['Pipe age (32 years)', 'Recent pressure changes', 'Inconsistent filtration'],
+      source: 'Distribution System',
+      probability: 74,
+      factors: ['County-level alert cluster detected', 'Multiple downstream sites affected', 'Shared infrastructure risk pattern'],
     },
     {
-      source: 'Distribution System',
-      probability: 22,
-      factors: ['Shared line maintenance', 'Minor corrosion detected'],
+      source: 'Building Plumbing',
+      probability: 18,
+      factors: ['Endpoint-specific plumbing may contribute', 'Site-level confirmation recommended'],
     },
     {
       source: 'Central Water System',
-      probability: 10,
-      factors: ['Source water tested safe', 'Treatment effective'],
+      probability: 8,
+      factors: ['Upstream contribution cannot be excluded without source sampling'],
     },
   ],
   recommendations: {
     immediate: [
-      'Test all building taps independently',
-      'Inspect internal plumbing system',
-      'Check filtration equipment operation',
+      'Inspect affected site and nearby connected points',
+      'Repeat confirmatory water quality testing',
+      'Notify responsible water safety personnel',
     ],
     followUp: [
-      'Schedule pipe replacement assessment',
-      'Review water treatment logs',
-      'Monitor distribution line pressure',
+      'Compare upstream and downstream measurements',
+      'Review distribution-line maintenance records',
+      'Continue monitoring until readings normalize',
     ],
   },
 };
@@ -91,7 +102,7 @@ function toStringArray(value: unknown, fallback: string[] = []): string[] {
 }
 
 function formatRefreshTime(value?: string): string {
-  if (!value) return '12 minutes ago';
+  if (!value) return 'Recently updated';
   const d = new Date(value);
   if (Number.isNaN(d.getTime())) return String(value);
   return d.toLocaleString();
@@ -106,6 +117,7 @@ function normalizeSourceLabel(value?: string): string {
   if (v.includes('source')) return 'Central Water System';
   if (v.includes('treatment')) return 'Central Water System';
   if (v.includes('service')) return 'Service Line';
+
   return value || 'Unknown Source';
 }
 
@@ -135,7 +147,12 @@ export function SourceAttribution() {
 
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
+
   const siteId = searchParams.get('siteId') || '1';
+  const siteMeta = siteLabels[siteId] ?? {
+    name: `Pilot Site ${siteId}`,
+    type: 'Monitored Site',
+  };
 
   useEffect(() => {
     const loadAttribution = async () => {
@@ -152,11 +169,15 @@ export function SourceAttribution() {
         const result = await response.json();
 
         setAttributionData({
+          site_name: result?.site_name ?? siteMeta.name,
+          site_type: result?.site_type ?? siteMeta.type,
+          county: result?.county ?? 'Montgomery',
+          state: result?.state ?? 'AL',
           primary: {
             source: result?.primary?.source ?? fallbackAttributionData.primary?.source,
             confidence: toFiniteNumber(
               result?.primary?.confidence ?? fallbackAttributionData.primary?.confidence,
-              68,
+              74,
             ),
             indicator: result?.primary?.indicator ?? fallbackAttributionData.primary?.indicator,
           },
@@ -181,16 +202,23 @@ export function SourceAttribution() {
           updated_at: result?.updated_at,
         });
       } catch (error) {
-        console.warn('Source attribution unavailable, using fallback demo:', error);
+        console.warn('Source attribution unavailable, using site-aware fallback:', error);
         setApiError(error instanceof Error ? error.message : 'Unknown error');
-        setAttributionData(fallbackAttributionData);
+
+        setAttributionData({
+          ...fallbackAttributionData,
+          site_name: siteMeta.name,
+          site_type: siteMeta.type,
+          county: 'Montgomery',
+          state: 'AL',
+        });
       } finally {
         setApiLoading(false);
       }
     };
 
     loadAttribution();
-  }, [siteId]);
+  }, [siteId, siteMeta.name, siteMeta.type]);
 
   const primaryConfidence = toFiniteNumber(attributionData.primary?.confidence, 0);
 
@@ -204,12 +232,12 @@ export function SourceAttribution() {
     const source = String(attributionData.primary?.source ?? '').toLowerCase();
 
     if (source.includes('building')) {
-      return ['Upstream stable', 'Neighbors stable', 'Premise vulnerability signals'];
+      return ['Endpoint issue likely', 'Site-level risk signal', 'Premise plumbing review needed'];
     }
     if (source.includes('distribution')) {
-      return ['Shared line anomaly', 'Cross-site signal pattern', 'Line-level disturbance likely'];
+      return ['Shared-line pattern', 'County-level alert signal', 'Multiple site pathway risk'];
     }
-    return ['Upstream evidence stronger', 'Treatment-linked indicators', 'System-wide pattern'];
+    return ['Upstream contribution possible', 'System-level context needed', 'Confirm with source sampling'];
   }, [attributionData.primary?.source]);
 
   const breakdownItems =
@@ -259,18 +287,18 @@ export function SourceAttribution() {
             </div>
 
             <div className="flex items-center gap-4">
-              <div className="px-2 py-1 rounded text-xs text-zinc-500 bg-zinc-900 border border-zinc-800">
-                Demo Mode · Simulated Data
+              <div className="px-2 py-1 rounded text-xs text-emerald-400 bg-emerald-500/10 border border-emerald-500/20">
+                Site-Aware Attribution
               </div>
 
               <Button
                 variant="ghost"
                 size="sm"
-                onClick={() => navigate('/dashboard')}
+                onClick={() => navigate('/map')}
                 className="text-zinc-400 hover:text-zinc-100"
               >
                 <ArrowLeft className="w-4 h-4 mr-2" />
-                Back to Dashboard
+                Back to Map
               </Button>
             </div>
           </div>
@@ -280,7 +308,29 @@ export function SourceAttribution() {
       <main className="container mx-auto px-6 py-8">
         <div className="mb-8">
           <h1 className="text-3xl font-light mb-2">Source Attribution Analysis</h1>
-          <p className="text-zinc-400 mb-4">Identifying the most likely origin of water quality issues</p>
+          <p className="text-zinc-400 mb-4">
+            Identifying the most likely origin of water quality issues for the selected site
+          </p>
+
+          <div className="grid md:grid-cols-3 gap-4 mb-4">
+            <div className="rounded-lg border border-zinc-800 bg-zinc-900/60 p-4">
+              <p className="text-xs text-zinc-500 mb-1">Selected Site</p>
+              <p className="text-lg font-semibold">{attributionData.site_name ?? siteMeta.name}</p>
+            </div>
+
+            <div className="rounded-lg border border-zinc-800 bg-zinc-900/60 p-4">
+              <p className="text-xs text-zinc-500 mb-1">Site Type</p>
+              <p className="text-lg font-semibold">{attributionData.site_type ?? siteMeta.type}</p>
+            </div>
+
+            <div className="rounded-lg border border-zinc-800 bg-zinc-900/60 p-4">
+              <p className="text-xs text-zinc-500 mb-1">Location</p>
+              <p className="text-lg font-semibold">
+                {attributionData.county ?? 'Montgomery'}, {attributionData.state ?? 'AL'}
+              </p>
+            </div>
+          </div>
+
           <p className="text-sm text-zinc-500 mb-2">Selected Site ID: {siteId}</p>
 
           <div className="flex items-center gap-2 mb-2">
@@ -294,7 +344,7 @@ export function SourceAttribution() {
               </TooltipTrigger>
               <TooltipContent className="max-w-xs bg-zinc-800 text-zinc-200 border border-zinc-700">
                 <p className="text-xs leading-relaxed">
-                  Attribution based on comparing patterns across supply chain, not direct measurement at every segment.
+                  Attribution is inferred from alert patterns, site position, and upstream/downstream risk context.
                 </p>
               </TooltipContent>
             </Tooltip>
@@ -303,7 +353,6 @@ export function SourceAttribution() {
           <div className="flex items-center gap-1.5 text-xs text-zinc-500">
             <Clock className="w-3 h-3" />
             <span>Analysis refreshed: {formatRefreshTime(attributionData.updated_at)}</span>
-            <span className="text-zinc-600 ml-2">Next update: ~48 minutes</span>
           </div>
 
           {apiLoading && (
@@ -314,7 +363,7 @@ export function SourceAttribution() {
 
           {!apiLoading && apiError && (
             <div className="mt-4 rounded-lg border border-amber-500/20 bg-amber-500/5 p-3 text-sm text-amber-400">
-              Using fallback attribution view · {apiError}
+              Using site-aware fallback attribution · {apiError}
             </div>
           )}
 
@@ -431,8 +480,8 @@ export function SourceAttribution() {
                 <div className="text-sm text-zinc-300">
                   <p className="font-medium mb-1">Analysis Method</p>
                   <p className="text-zinc-400">
-                    Attribution determined by comparing water quality measurements at multiple points
-                    along the supply chain, combined with infrastructure age and maintenance records.
+                    FalilaX compares the selected site against upstream, distribution-line, and nearby site patterns
+                    to infer the most likely source of the water quality issue.
                   </p>
                 </div>
               </div>
@@ -492,7 +541,7 @@ export function SourceAttribution() {
               {showDetails && (
                 <div className="mt-4 pt-4 border-t border-zinc-800 space-y-3 text-sm text-zinc-300">
                   <p className="text-zinc-400 mb-3">
-                    This attribution is based on analyzing water quality at different points in your supply chain:
+                    This attribution is based on site-level alert signals and supply-chain context:
                   </p>
 
                   <div className="space-y-2">
@@ -511,7 +560,7 @@ export function SourceAttribution() {
                   </div>
 
                   <p className="text-zinc-400 mt-4 pt-3 border-t border-zinc-800">
-                    These factors together point to{' '}
+                    These factors point to{' '}
                     {normalizeSourceLabel(attributionData.primary?.source).toLowerCase()} as the primary source,
                     with {confidenceLabel.toLowerCase()} based on available data quality and sampling coverage.
                   </p>
@@ -520,40 +569,30 @@ export function SourceAttribution() {
             </div>
 
             <div className="p-6 rounded-lg bg-zinc-900/50 border border-zinc-800">
-              <h2 className="text-xl font-light mb-4 text-zinc-300">
-                Data Sources <span className="text-xs text-zinc-500">(Simulated for Demo)</span>
-              </h2>
+              <h2 className="text-xl font-light mb-4 text-zinc-300">Selected Site Context</h2>
 
               <div className="space-y-3 text-sm">
                 <div className="flex gap-3">
-                  <div className="w-1.5 h-1.5 rounded-full bg-zinc-600 mt-1.5 flex-shrink-0"></div>
+                  <MapPin className="w-4 h-4 text-amber-400 mt-0.5 flex-shrink-0" />
                   <div>
-                    <p className="text-zinc-300">Public utility water quality reports</p>
-                    <p className="text-zinc-500 text-xs">Municipal system monitoring data</p>
+                    <p className="text-zinc-300">{attributionData.site_name ?? siteMeta.name}</p>
+                    <p className="text-zinc-500 text-xs">Active monitored location</p>
                   </div>
                 </div>
 
                 <div className="flex gap-3">
-                  <div className="w-1.5 h-1.5 rounded-full bg-zinc-600 mt-1.5 flex-shrink-0"></div>
+                  <Network className="w-4 h-4 text-amber-400 mt-0.5 flex-shrink-0" />
                   <div>
-                    <p className="text-zinc-300">EPA historical datasets</p>
-                    <p className="text-zinc-500 text-xs">Federal water quality standards and trends</p>
+                    <p className="text-zinc-300">Montgomery County Distribution Context</p>
+                    <p className="text-zinc-500 text-xs">County-level alert cluster and site pathway analysis</p>
                   </div>
                 </div>
 
                 <div className="flex gap-3">
-                  <div className="w-1.5 h-1.5 rounded-full bg-zinc-600 mt-1.5 flex-shrink-0"></div>
+                  <AlertCircle className="w-4 h-4 text-amber-400 mt-0.5 flex-shrink-0" />
                   <div>
-                    <p className="text-zinc-300">Building-level test records</p>
-                    <p className="text-zinc-500 text-xs">On-site sampling and laboratory analysis</p>
-                  </div>
-                </div>
-
-                <div className="flex gap-3">
-                  <div className="w-1.5 h-1.5 rounded-full bg-zinc-600 mt-1.5 flex-shrink-0"></div>
-                  <div>
-                    <p className="text-zinc-300">Third-party laboratory inputs</p>
-                    <p className="text-zinc-500 text-xs">Independent certification and validation</p>
+                    <p className="text-zinc-300">Critical water quality signal</p>
+                    <p className="text-zinc-500 text-xs">Requires confirmatory testing and operational follow-up</p>
                   </div>
                 </div>
               </div>
@@ -567,7 +606,7 @@ export function SourceAttribution() {
           <div className="text-xs text-zinc-500">
             <p>
               <span className="font-medium text-zinc-400">Responsibility Statement:</span>{' '}
-              FalilaX provides interpretive risk intelligence and does not replace regulatory testing or official advisories.
+              FalilaX provides interpretive risk intelligence and does not replace regulatory testing, emergency response, or official advisories.
             </p>
           </div>
         </div>

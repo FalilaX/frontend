@@ -4,6 +4,7 @@ import { ContextSelection } from '@/app/components/context-selection';
 import Dashboard from '@/app/components/dashboard';
 import CommunityMap from '@/app/components/community-map';
 import { SourceAttribution } from '@/app/components/source-attribution';
+import FalilaXIncidentMap from '@/app/FalilaXIncidentMap';
 
 import PrivacyPolicy from '@/app/docs/PrivacyPolicy';
 import TermsOfService from '@/app/docs/TermsOfService';
@@ -17,6 +18,7 @@ export default function App() {
         <Route path="/select-context" element={<ContextSelection />} />
         <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/map" element={<CommunityMap />} />
+        <Route path="/incident-map" element={<FalilaXIncidentMap />} />
         <Route path="/attribution" element={<SourceAttribution />} />
 
         <Route path="/privacy" element={<PrivacyPolicy />} />
