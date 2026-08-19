@@ -1,16 +1,16 @@
 /**
  * FalilaX API Client Utilities
- * 
- * Provides standardized API call functions with error handling,
- * loading states, and retry logic.
  */
 
-import { API_CONFIG } from '@/app/config/api';
-import type { APIError, APIState } from '@/app/types/api';
+import {
+  API_CONFIG,
+  API_ENDPOINTS,
+  buildApiUrl,
+  buildApiUrlWithQuery,
+} from "@/app/config/api";
 
-/**
- * Generic API fetch wrapper with error handling
- */
+import type { APIError, APIState } from "@/app/types/api";
+
 export async function fetchAPI<T>(
   url: string,
   options?: RequestInit
@@ -23,7 +23,7 @@ export async function fetchAPI<T>(
       ...options,
       signal: controller.signal,
       headers: {
-        'Content-Type': 'application/json',
+        "Content-Type": "application/json",
         ...options?.headers,
       },
     });
@@ -32,7 +32,7 @@ export async function fetchAPI<T>(
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({
-        error: 'API Error',
+        error: "API Error",
         message: response.statusText,
         status_code: response.status,
         timestamp: new Date().toISOString(),
@@ -49,17 +49,17 @@ export async function fetchAPI<T>(
     clearTimeout(timeoutId);
 
     if (error instanceof Error) {
-      if (error.name === 'AbortError') {
+      if (error.name === "AbortError") {
         throw {
-          error: 'Request Timeout',
-          message: 'The request took too long to complete',
+          error: "Request Timeout",
+          message: "The request took too long to complete",
           status_code: 408,
           timestamp: new Date().toISOString(),
         } as APIError;
       }
 
       throw {
-        error: 'Network Error',
+        error: "Network Error",
         message: error.message,
         status_code: 0,
         timestamp: new Date().toISOString(),
@@ -70,9 +70,6 @@ export async function fetchAPI<T>(
   }
 }
 
-/**
- * API fetch with automatic retry logic
- */
 export async function fetchAPIWithRetry<T>(
   url: string,
   options?: RequestInit,
@@ -86,14 +83,12 @@ export async function fetchAPIWithRetry<T>(
     } catch (error) {
       lastError = error as APIError;
 
-      // Don't retry on client errors (4xx)
       if (lastError.status_code >= 400 && lastError.status_code < 500) {
         throw lastError;
       }
 
-      // Wait before retrying (exponential backoff)
       if (attempt < maxRetries) {
-        await new Promise(resolve => 
+        await new Promise((resolve) =>
           setTimeout(resolve, API_CONFIG.RETRY_DELAY * Math.pow(2, attempt))
         );
       }
@@ -103,12 +98,61 @@ export async function fetchAPIWithRetry<T>(
   throw lastError;
 }
 
-/**
- * Mock API response for demo mode
- * 
- * This function simulates API responses when backend is not available.
- * Remove or disable this in production.
- */
+export async function simulateDigitalTwinMeasurement(params: {
+  node_id: number;
+  chlorine_mg_l?: number;
+  pressure_psi?: number;
+  flow_m3_day?: number;
+}) {
+  const url = buildApiUrlWithQuery(
+    API_ENDPOINTS.DIGITAL_TWIN_SIMULATE,
+    undefined,
+    params
+  );
+
+  return fetchAPI<any>(url, {
+    method: "POST",
+  });
+}
+
+export async function simulateAndSaveIncident(params: {
+  node_id: number;
+  chlorine_mg_l?: number;
+  pressure_psi?: number;
+  turbidity_ntu?: number;
+  ph?: number;
+  temperature_c?: number;
+  flow_m3_day?: number;
+}) {
+  const url = buildApiUrlWithQuery(
+    API_ENDPOINTS.INCIDENT_SIMULATE,
+    undefined,
+    params
+  );
+
+  return fetchAPI<any>(url, {
+    method: "POST",
+  });
+}
+
+export async function fetchIncidents() {
+  const url = buildApiUrl(API_ENDPOINTS.INCIDENTS);
+  return fetchAPI<any[]>(url);
+}
+
+export async function fetchIncidentDetail(incident_id: string) {
+  const url = buildApiUrl(API_ENDPOINTS.INCIDENT_DETAIL, { incident_id });
+  return fetchAPI<any>(url);
+}
+
+export async function closeIncident(incident_id: string) {
+  const url = buildApiUrl(API_ENDPOINTS.INCIDENT_CLOSE, { incident_id });
+
+  return fetchAPI<any>(url, {
+    method: "PATCH",
+  });
+}
+
 export async function fetchAPIMock<T>(
   mockData: T,
   delay: number = 800
@@ -118,63 +162,53 @@ export async function fetchAPIMock<T>(
   });
 }
 
-/**
- * Check if we're in demo mode (no backend available)
- */
 export function isDemoMode(): boolean {
-  // In demo mode, we use mock data instead of real API calls
-  // Set REACT_APP_DEMO_MODE=true in .env to enable demo mode
-  return process.env.REACT_APP_DEMO_MODE === 'true' || true; // Default to true for now
+  return import.meta.env.VITE_DEMO_MODE === "true";
 }
 
-/**
- * API State Management Helper
- * 
- * Creates an APIState object from a promise
- */
-export function createAPIState<T>(status: APIState<T>['status'], data?: T, error?: APIError): APIState<T> {
+export function createAPIState<T>(
+  status: APIState<T>["status"],
+  data?: T,
+  error?: APIError
+): APIState<T> {
   switch (status) {
-    case 'idle':
-      return { status: 'idle' };
-    case 'loading':
-      return { status: 'loading' };
-    case 'success':
-      return { status: 'success', data: data as T };
-    case 'error':
-      return { status: 'error', error: error as APIError };
+    case "idle":
+      return { status: "idle" };
+    case "loading":
+      return { status: "loading" };
+    case "success":
+      return { status: "success", data: data as T };
+    case "error":
+      return { status: "error", error: error as APIError };
   }
 }
 
-/**
- * Format timestamp from API to human-readable format
- */
 export function formatTimestamp(timestamp: string): string {
   const date = new Date(timestamp);
   const now = new Date();
+
   const diffMs = now.getTime() - date.getTime();
   const diffMins = Math.floor(diffMs / 60000);
   const diffHours = Math.floor(diffMs / 3600000);
   const diffDays = Math.floor(diffMs / 86400000);
 
-  if (diffMins < 1) return 'just now';
-  if (diffMins < 60) return `${diffMins} minute${diffMins > 1 ? 's' : ''} ago`;
-  if (diffHours < 24) return `${diffHours} hour${diffHours > 1 ? 's' : ''} ago`;
-  if (diffDays < 7) return `${diffDays} day${diffDays > 1 ? 's' : ''} ago`;
-  
+  if (diffMins < 1) return "just now";
+  if (diffMins < 60) return `${diffMins} minute${diffMins > 1 ? "s" : ""} ago`;
+  if (diffHours < 24) return `${diffHours} hour${diffHours > 1 ? "s" : ""} ago`;
+  if (diffDays < 7) return `${diffDays} day${diffDays > 1 ? "s" : ""} ago`;
+
   return date.toLocaleDateString();
 }
 
-/**
- * Format relative time for "next update in X minutes"
- */
 export function formatRelativeTime(timestamp: string): string {
   const date = new Date(timestamp);
   const now = new Date();
+
   const diffMs = date.getTime() - now.getTime();
   const diffMins = Math.floor(diffMs / 60000);
   const diffHours = Math.floor(diffMs / 3600000);
 
-  if (diffMins < 1) return 'updating now';
-  if (diffMins < 60) return `~${diffMins} minute${diffMins > 1 ? 's' : ''}`;
-  return `~${diffHours} hour${diffHours > 1 ? 's' : ''}`;
+  if (diffMins < 1) return "updating now";
+  if (diffMins < 60) return `~${diffMins} minute${diffMins > 1 ? "s" : ""}`;
+  return `~${diffHours} hour${diffHours > 1 ? "s" : ""}`;
 }

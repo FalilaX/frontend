@@ -1,72 +1,62 @@
-/**
- * FalilaX Backend API Configuration
- *
- * Central configuration for all backend API endpoints.
- * Update API_BASE_URL to point to your FastAPI backend.
- */
-
-// API Base URL for Vite frontend
 export const API_BASE_URL =
-  import.meta.env.VITE_API_BASE_URL || "http://127.0.0.1:8001";
+  import.meta.env.VITE_API_BASE_URL || "http://127.0.0.1:8000";
 
-/**
- * API Endpoints
- *
- * All backend endpoints for the FalilaX water risk intelligence system.
- * These align with the FastAPI backend architecture.
- */
 export const API_ENDPOINTS = {
-  // Dashboard & Overview
   DASHBOARD_OVERVIEW: "/api/v1/dashboard/overview",
 
-  // Measurements & Parameters
+  DIGITAL_TWIN_SIMULATE: "/api/v1/digital-twin/simulate",
+
+  INCIDENTS: "/api/v1/incidents",
+  INCIDENT_SIMULATE: "/api/v1/incidents/simulate",
+  INCIDENT_DETAIL: "/api/v1/incidents/{incident_id}",
+  INCIDENT_ACKNOWLEDGE: "/api/v1/incidents/{incident_id}/acknowledge",
+  INCIDENT_ASSIGN: "/api/v1/incidents/{incident_id}/assign",
+  INCIDENT_INVESTIGATE: "/api/v1/incidents/{incident_id}/investigate",
+  INCIDENT_NOTES: "/api/v1/incidents/{incident_id}/notes",
+  INCIDENT_VERIFY: "/api/v1/incidents/{incident_id}/verify",
+  INCIDENT_RESOLVE: "/api/v1/incidents/{incident_id}/resolve",
+  INCIDENT_CLOSE: "/api/v1/incidents/{incident_id}/close",
+  INCIDENT_REOPEN: "/api/v1/incidents/{incident_id}/reopen",
+  INCIDENT_CANCEL: "/api/v1/incidents/{incident_id}/cancel",
+
+  INCIDENT_ACTIONS: "/api/v1/incidents/{incident_id}/actions",
+  INCIDENT_ACTION_PLAN: "/api/v1/incidents/{incident_id}/actions/plan",
+  INCIDENT_ACTION_APPROVE: "/api/v1/incidents/{incident_id}/actions/approve",
+  INCIDENT_ACTION_START_EXECUTION:
+    "/api/v1/incidents/{incident_id}/actions/start-execution",
+
   MEASUREMENTS_LATEST: "/api/v1/measurements/latest",
   MEASUREMENTS_HISTORY: "/api/v1/measurements/history",
 
-  // Alerts System
   ALERTS: "/api/v1/alerts",
   ALERTS_TIMELINE: "/api/v1/alerts/timeline",
   ALERTS_MAP: "/api/v1/alerts/map",
   ALERT_ACKNOWLEDGE: "/api/v1/alerts/{alert_id}/acknowledge",
 
-  // Source Attribution
   SOURCE_ATTRIBUTION: "/api/v1/source-attribution/{site_id}",
 
-  // Water Use Guidance
   WATER_USE_GUIDANCE: "/api/v1/guidance/water-use",
 
-  // System Monitoring
   SYSTEM_STATUS: "/api/v1/system/status",
   SYSTEM_HEALTH: "/api/v1/system/health",
 
-  // Context & Location
   LOCATIONS: "/api/v1/locations",
   LOCATION_DETAIL: "/api/v1/locations/{location_id}",
 } as const;
 
-/**
- * API Request Configuration
- */
 export const API_CONFIG = {
-  // Request timeout in milliseconds
   TIMEOUT: 30000,
-
-  // Retry configuration
   MAX_RETRIES: 3,
   RETRY_DELAY: 1000,
 
-  // Polling intervals for real-time data (in milliseconds)
   POLLING: {
-    DASHBOARD: 60000,      // 1 minute
-    MEASUREMENTS: 120000,  // 2 minutes
-    ALERTS: 30000,         // 30 seconds
-    SYSTEM_STATUS: 300000, // 5 minutes
+    DASHBOARD: 60000,
+    MEASUREMENTS: 120000,
+    ALERTS: 30000,
+    SYSTEM_STATUS: 300000,
   },
 };
 
-/**
- * Helper function to build API URL with path parameters
- */
 export function buildApiUrl(
   endpoint: string,
   params?: Record<string, string | number>
@@ -82,13 +72,10 @@ export function buildApiUrl(
   return url;
 }
 
-/**
- * Helper function to build API URL with query parameters
- */
 export function buildApiUrlWithQuery(
   endpoint: string,
   pathParams?: Record<string, string | number>,
-  queryParams?: Record<string, string | number | boolean>
+  queryParams?: Record<string, string | number | boolean | undefined | null>
 ): string {
   let url = buildApiUrl(endpoint, pathParams);
 
@@ -96,10 +83,16 @@ export function buildApiUrlWithQuery(
     const searchParams = new URLSearchParams();
 
     Object.entries(queryParams).forEach(([key, value]) => {
-      searchParams.append(key, String(value));
+      if (value !== undefined && value !== null) {
+        searchParams.append(key, String(value));
+      }
     });
 
-    url += `?${searchParams.toString()}`;
+    const queryString = searchParams.toString();
+
+    if (queryString) {
+      url += `?${queryString}`;
+    }
   }
 
   return url;

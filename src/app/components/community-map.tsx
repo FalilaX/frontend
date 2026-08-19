@@ -15,12 +15,20 @@ import {
   Hospital,
   Home,
   MapPin,
+  Users,
+  Truck,
+  FlaskConical,
+  Wrench,
+  Layers,
+  Timer,
 } from "lucide-react";
 
 import { Button } from "@/app/components/ui/button";
 import logoImage from "@/assets/falilax-logo.png";
 
 type RiskStatus = "safe" | "moderate" | "critical" | "action";
+type ResourceType = "field_team" | "flush_crew" | "mobile_lab";
+type ResourceStatus = "deployed" | "en_route" | "standby";
 
 type SiteSummary = {
   id: string;
@@ -59,7 +67,125 @@ type StateSummary = {
   top_parameters: string[];
 };
 
+type ResourceDeployment = {
+  id: string;
+  label: string;
+  type: ResourceType;
+  status: ResourceStatus;
+  x: number;
+  y: number;
+  assigned_zone: string;
+  eta: string;
+  task: string;
+};
+
+type ForecastStep = {
+  hour: number;
+  label: string;
+  radius: number;
+  population: number;
+  facilities: number;
+  schools: number;
+  hospitals: number;
+  estimatedCost: string;
+  severity: RiskStatus;
+};
+
 const API_BASE = "http://127.0.0.1:8001/api/v1";
+
+const forecastSteps: ForecastStep[] = [
+  {
+    hour: 0,
+    label: "0h",
+    radius: 42,
+    population: 180,
+    facilities: 2,
+    schools: 0,
+    hospitals: 0,
+    estimatedCost: "$4,000",
+    severity: "moderate",
+  },
+  {
+    hour: 6,
+    label: "6h",
+    radius: 74,
+    population: 480,
+    facilities: 5,
+    schools: 1,
+    hospitals: 0,
+    estimatedCost: "$8,000",
+    severity: "moderate",
+  },
+  {
+    hour: 12,
+    label: "12h",
+    radius: 112,
+    population: 1250,
+    facilities: 9,
+    schools: 2,
+    hospitals: 1,
+    estimatedCost: "$24,000",
+    severity: "action",
+  },
+  {
+    hour: 24,
+    label: "24h",
+    radius: 158,
+    population: 3480,
+    facilities: 18,
+    schools: 4,
+    hospitals: 2,
+    estimatedCost: "$48,000",
+    severity: "action",
+  },
+  {
+    hour: 48,
+    label: "48h",
+    radius: 218,
+    population: 6120,
+    facilities: 31,
+    schools: 11,
+    hospitals: 5,
+    estimatedCost: "$92,000",
+    severity: "critical",
+  },
+];
+
+const resourceDeployments: ResourceDeployment[] = [
+  {
+    id: "ft-01",
+    label: "Field Team 1",
+    type: "field_team",
+    status: "deployed",
+    x: 61,
+    y: 53,
+    assigned_zone: "Montgomery Central",
+    eta: "On site",
+    task: "Confirm field conditions and collect samples",
+  },
+  {
+    id: "fc-01",
+    label: "Flush Crew A",
+    type: "flush_crew",
+    status: "en_route",
+    x: 55,
+    y: 61,
+    assigned_zone: "Distribution Line B",
+    eta: "18 min",
+    task: "Prepare line flushing and valve inspection",
+  },
+  {
+    id: "ml-01",
+    label: "Mobile Lab Unit",
+    type: "mobile_lab",
+    status: "standby",
+    x: 69,
+    y: 56,
+    assigned_zone: "Hospital / School Corridor",
+    eta: "32 min",
+    task: "Rapid confirmation testing and sample triage",
+  },
+];
 
 const statePositions: Record<string, { x: number; y: number; name: string }> = {
   AL: { x: 67, y: 62, name: "Alabama" },
@@ -126,7 +252,7 @@ const allStates: StateSummary[] = Object.entries(statePositions).map(
     affected_cities_count: 0,
     last_sample_at: new Date().toISOString(),
     top_parameters: ["Normal"],
-  })
+  }),
 );
 
 function normalizeStatus(status: string | undefined): RiskStatus {
@@ -158,7 +284,26 @@ export default function CommunityMap() {
   const [loading, setLoading] = useState(true);
   const [selectedStateCode, setSelectedStateCode] = useState("AL");
   const [selectedCountyCode, setSelectedCountyCode] = useState("montgomery");
+  const [selectedResource, setSelectedResource] =
+    useState<ResourceDeployment | null>(null);
+  const [forecastHour, setForecastHour] = useState(24);
+
+  const [layers, setLayers] = useState({
+    states: true,
+    counties: true,
+    sites: true,
+    resources: true,
+    predictiveSpread: true,
+  });
+
   const navigate = useNavigate();
+
+  const toggleLayer = (layer: keyof typeof layers) => {
+    setLayers((prev) => ({
+      ...prev,
+      [layer]: !prev[layer],
+    }));
+  };
 
   useEffect(() => {
     const loadStates = async () => {
@@ -194,7 +339,7 @@ export default function CommunityMap() {
 
         const mergedStates = allStates.map((baseState) => {
           const liveState = liveMapped.find(
-            (item) => item.state_code === baseState.state_code
+            (item) => item.state_code === baseState.state_code,
           );
           return liveState ?? baseState;
         });
@@ -239,7 +384,7 @@ export default function CommunityMap() {
 
       try {
         const res = await fetch(
-          `${API_BASE}/map/sites?state=${selectedStateCode}&county=${selectedCountyCode}`
+          `${API_BASE}/map/sites?state=${selectedStateCode}&county=${selectedCountyCode}`,
         );
 
         if (!res.ok) throw new Error(`Sites API error: ${res.status}`);
@@ -263,13 +408,17 @@ export default function CommunityMap() {
 
   const selectedSite = sites[0];
 
+  const currentForecast =
+    forecastSteps.find((step) => step.hour === forecastHour) ?? forecastSteps[0];
+
   const summary = useMemo(() => {
     return {
       totalStates: states.length,
       activeStates: states.filter((s) => s.alert_count > 0).length,
       highRiskStates: states.filter(
-        (s) => s.status === "critical" || s.status === "action"
+        (s) => s.status === "critical" || s.status === "action",
       ).length,
+      resourceUnits: resourceDeployments.length,
     };
   }, [states]);
 
@@ -325,10 +474,41 @@ export default function CommunityMap() {
     }
   };
 
+  const forecastRingClass = (severity: RiskStatus) => {
+    if (severity === "critical") return "border-red-500 bg-red-500/10";
+    if (severity === "action") return "border-orange-500 bg-orange-500/10";
+    if (severity === "moderate") return "border-amber-400 bg-amber-400/10";
+    return "border-emerald-500 bg-emerald-500/10";
+  };
+
   const formatTime = (value?: string | null) => {
     if (!value) return "Unavailable";
     const d = new Date(value);
     return Number.isNaN(d.getTime()) ? value : d.toLocaleString();
+  };
+
+  const resourceIcon = (type: ResourceType) => {
+    if (type === "field_team") return <Users className="h-4 w-4" />;
+    if (type === "flush_crew") return <Wrench className="h-4 w-4" />;
+    return <FlaskConical className="h-4 w-4" />;
+  };
+
+  const resourceColor = (status: ResourceStatus) => {
+    if (status === "deployed") return "bg-emerald-500 ring-emerald-500/30";
+    if (status === "en_route") return "bg-amber-500 ring-amber-500/30";
+    return "bg-sky-500 ring-sky-500/30";
+  };
+
+  const resourceTypeLabel = (type: ResourceType) => {
+    if (type === "field_team") return "Field Team";
+    if (type === "flush_crew") return "Flush Crew";
+    return "Mobile Lab";
+  };
+
+  const resourceStatusText = (status: ResourceStatus) => {
+    if (status === "deployed") return "Deployed";
+    if (status === "en_route") return "En Route";
+    return "Standby";
   };
 
   const SiteIcon = ({ type }: { type: string }) => {
@@ -347,7 +527,10 @@ export default function CommunityMap() {
       <header className="border-b border-zinc-800 bg-zinc-950/50 backdrop-blur-sm sticky top-0 z-10">
         <div className="container mx-auto px-6 py-4">
           <div className="flex items-center justify-between">
-            <div onClick={() => navigate("/")} className="flex items-center gap-3 cursor-pointer">
+            <div
+              onClick={() => navigate("/")}
+              className="flex items-center gap-3 cursor-pointer"
+            >
               <img src={logoImage} alt="FalilaX" className="h-20 w-auto object-contain" />
               <span className="text-xl font-semibold tracking-wide">FalilaX Map</span>
             </div>
@@ -367,11 +550,12 @@ export default function CommunityMap() {
             Community Risk Map
           </h1>
           <p className="text-zinc-400">
-            Live regional intelligence view for water quality alerts across monitored states, counties, and sites.
+            Live regional intelligence view for water quality alerts, monitored facilities,
+            deployed response resources, and predictive spread simulation.
           </p>
         </div>
 
-        <div className="grid md:grid-cols-3 gap-4 mb-8">
+        <div className="grid md:grid-cols-4 gap-4 mb-8">
           <div className="rounded-xl border border-zinc-800 bg-zinc-900/60 p-5">
             <div className="flex items-center gap-2 text-zinc-400 text-sm mb-2">
               <Building2 className="w-4 h-4 text-amber-400" />
@@ -383,17 +567,27 @@ export default function CommunityMap() {
           <div className="rounded-xl border border-zinc-800 bg-zinc-900/60 p-5">
             <div className="flex items-center gap-2 text-zinc-400 text-sm mb-2">
               <Activity className="w-4 h-4 text-amber-400" />
-              States With Alerts
+              Forecast Population
             </div>
-            <div className="text-2xl font-semibold">{summary.activeStates}</div>
+            <div className="text-2xl font-semibold">
+              {currentForecast.population.toLocaleString()}
+            </div>
           </div>
 
           <div className="rounded-xl border border-zinc-800 bg-zinc-900/60 p-5">
             <div className="flex items-center gap-2 text-zinc-400 text-sm mb-2">
               <ShieldAlert className="w-4 h-4 text-amber-400" />
-              Site Pins
+              Forecast Facilities
             </div>
-            <div className="text-2xl font-semibold">{sites.length}</div>
+            <div className="text-2xl font-semibold">{currentForecast.facilities}</div>
+          </div>
+
+          <div className="rounded-xl border border-zinc-800 bg-zinc-900/60 p-5">
+            <div className="flex items-center gap-2 text-zinc-400 text-sm mb-2">
+              <Truck className="w-4 h-4 text-amber-400" />
+              Resource Units
+            </div>
+            <div className="text-2xl font-semibold">{summary.resourceUnits}</div>
           </div>
         </div>
 
@@ -403,7 +597,7 @@ export default function CommunityMap() {
               <div>
                 <h2 className="text-lg font-medium">Regional Monitoring Surface</h2>
                 <p className="text-sm text-zinc-400 mt-1">
-                  USA → Alabama → Montgomery County → monitored sites
+                  USA → Alabama → Montgomery County → monitored sites, response resources, and forecast spread
                 </p>
               </div>
               <div className="text-xs text-zinc-500">Live Backend View</div>
@@ -420,12 +614,74 @@ export default function CommunityMap() {
                 <span>Live backend data active</span>
               </div>
 
-              {selectedCounty ? (
-                <div className="inline-flex items-center gap-2 rounded-full border border-red-500/20 bg-red-500/5 px-3 py-1.5 text-xs text-red-300">
-                  <MapPin className="h-3.5 w-3.5" />
-                  <span>{selectedCounty.county_name} County · {sites.length} sites</span>
+              <div className="inline-flex items-center gap-2 rounded-full border border-sky-500/20 bg-sky-500/5 px-3 py-1.5 text-xs text-sky-300">
+                <Truck className="h-3.5 w-3.5" />
+                <span>{resourceDeployments.length} resource units deployed</span>
+              </div>
+            </div>
+
+            <div className="px-6 py-3 border-b border-zinc-800 flex flex-wrap items-center gap-3">
+              <div className="inline-flex items-center gap-2 text-xs uppercase tracking-wide text-zinc-500">
+                <Layers className="h-3.5 w-3.5" />
+                <span>GIS Layers</span>
+              </div>
+
+              {[
+                ["states", "States"],
+                ["counties", "Counties"],
+                ["sites", "Sites"],
+                ["resources", "Resources"],
+                ["predictiveSpread", "Predictive Spread"],
+              ].map(([key, label]) => {
+                const layerKey = key as keyof typeof layers;
+                const isActive = layers[layerKey];
+
+                return (
+                  <button
+                    key={key}
+                    type="button"
+                    onClick={() => toggleLayer(layerKey)}
+                    className={`rounded-full border px-3 py-1.5 text-xs transition ${
+                      isActive
+                        ? "border-amber-500/40 bg-amber-500/10 text-amber-300"
+                        : "border-zinc-800 bg-zinc-950 text-zinc-500"
+                    }`}
+                  >
+                    {isActive ? "✓" : "○"} {label}
+                  </button>
+                );
+              })}
+            </div>
+
+            <div className="px-6 py-4 border-b border-zinc-800">
+              <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+                <div>
+                  <div className="flex items-center gap-2 text-sm text-zinc-300 mb-1">
+                    <Timer className="h-4 w-4 text-amber-400" />
+                    Predictive Spread Timeline
+                  </div>
+                  <p className="text-xs text-zinc-500">
+                    Current forecast: {currentForecast.label} · {currentForecast.population.toLocaleString()} people at risk · {currentForecast.estimatedCost} estimated cost
+                  </p>
                 </div>
-              ) : null}
+
+                <div className="flex flex-wrap gap-2">
+                  {forecastSteps.map((step) => (
+                    <button
+                      key={step.hour}
+                      type="button"
+                      onClick={() => setForecastHour(step.hour)}
+                      className={`rounded-full border px-3 py-1.5 text-xs transition ${
+                        forecastHour === step.hour
+                          ? "border-sky-400 bg-sky-500/15 text-sky-200"
+                          : "border-zinc-800 bg-zinc-950 text-zinc-500 hover:text-zinc-300"
+                      }`}
+                    >
+                      {step.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
             </div>
 
             <div className="relative min-h-[560px] bg-[radial-gradient(circle_at_center,_rgba(29,78,216,0.12),_rgba(9,9,11,0.88))]">
@@ -433,79 +689,140 @@ export default function CommunityMap() {
                 <div className="h-full w-full bg-[linear-gradient(to_right,rgba(255,255,255,0.06)_1px,transparent_1px),linear-gradient(to_bottom,rgba(255,255,255,0.06)_1px,transparent_1px)] bg-[size:48px_48px]" />
               </div>
 
+              {layers.predictiveSpread && (
+                <div
+                  className={`absolute rounded-full border-2 ${forecastRingClass(currentForecast.severity)} transition-all duration-500 pointer-events-none`}
+                  style={{
+                    width: `${currentForecast.radius}px`,
+                    height: `${currentForecast.radius}px`,
+                    left: "67%",
+                    top: "62%",
+                    transform: "translate(-50%, -50%)",
+                  }}
+                />
+              )}
+
               {loading ? (
                 <div className="absolute inset-0 flex items-center justify-center text-zinc-400 animate-pulse">
                   Loading monitoring surface...
                 </div>
               ) : (
                 <>
-                  {states.map((state) => (
-                    <button
-                      key={state.state_code}
-                      type="button"
-                      onClick={() => setSelectedStateCode(state.state_code)}
-                      className="absolute group outline-none"
-                      style={{
-                        left: `${state.x}%`,
-                        top: `${state.y}%`,
-                        transform: "translate(-50%, -50%)",
-                      }}
-                      title={`${state.state_name} • ${statusText(state.status)} • ${state.alert_count} alerts`}
-                    >
-                      <div
-                        className={`rounded-full ${statusColor(state.status)} transition-all ${
-                          selectedState?.state_code === state.state_code
-                            ? "h-5 w-5 scale-125 ring-8 ring-red-500/30 shadow-[0_0_24px_rgba(220,38,38,0.35)]"
-                            : "h-4 w-4 ring-8 ring-emerald-400/20 shadow-lg group-hover:scale-110"
-                        }`}
-                      />
-                      <div className="mt-3 text-[11px] text-zinc-300">
-                        {state.state_code}
-                      </div>
-                    </button>
-                  ))}
+                  {layers.states &&
+                    states.map((state) => (
+                      <button
+                        key={state.state_code}
+                        type="button"
+                        onClick={() => setSelectedStateCode(state.state_code)}
+                        className="absolute group outline-none"
+                        style={{
+                          left: `${state.x}%`,
+                          top: `${state.y}%`,
+                          transform: "translate(-50%, -50%)",
+                        }}
+                        title={`${state.state_name} • ${statusText(state.status)} • ${state.alert_count} alerts`}
+                      >
+                        <div
+                          className={`rounded-full ${statusColor(state.status)} transition-all ${
+                            selectedState?.state_code === state.state_code
+                              ? "h-5 w-5 scale-125 ring-8 ring-red-500/30 shadow-[0_0_24px_rgba(220,38,38,0.35)]"
+                              : "h-4 w-4 ring-8 ring-emerald-400/20 shadow-lg group-hover:scale-110"
+                          }`}
+                        />
+                        <div className="mt-3 text-[11px] text-zinc-300">
+                          {state.state_code}
+                        </div>
+                      </button>
+                    ))}
 
-                  {counties.map((county) => (
-                    <button
-                      key={county.county_code}
-                      type="button"
-                      onClick={() => setSelectedCountyCode(county.county_code)}
-                      className="absolute group outline-none"
-                      style={{
-                        left: `${county.x}%`,
-                        top: `${county.y}%`,
-                        transform: "translate(-50%, -50%)",
-                      }}
-                      title={`${county.county_name} County`}
-                    >
-                      <div className={`h-6 w-6 rounded-full ${statusColor(county.status)} ring-8 ring-red-500/20 shadow-[0_0_22px_rgba(220,38,38,0.35)]`} />
-                      <div className="mt-3 text-[11px] text-white font-semibold">
-                        {county.county_name}
-                      </div>
-                    </button>
-                  ))}
+                  {layers.counties &&
+                    counties.map((county) => (
+                      <button
+                        key={county.county_code}
+                        type="button"
+                        onClick={() => setSelectedCountyCode(county.county_code)}
+                        className="absolute group outline-none"
+                        style={{
+                          left: `${county.x}%`,
+                          top: `${county.y}%`,
+                          transform: "translate(-50%, -50%)",
+                        }}
+                        title={`${county.county_name} County`}
+                      >
+                        <div
+                          className={`h-6 w-6 rounded-full ${statusColor(county.status)} ring-8 ring-red-500/20 shadow-[0_0_22px_rgba(220,38,38,0.35)]`}
+                        />
+                        <div className="mt-3 text-[11px] text-white font-semibold">
+                          {county.county_name}
+                        </div>
+                      </button>
+                    ))}
 
-                  {sites.map((site) => (
-                    <button
-                      key={site.id}
-                      type="button"
-                      onClick={() => navigate(`/attribution?siteId=${site.location_id ?? 1}`)}
-                      className="absolute group outline-none"
-                      style={{
-                        left: `${site.x}%`,
-                        top: `${site.y}%`,
-                        transform: "translate(-50%, -50%)",
-                      }}
-                      title={`${site.label} • ${statusText(site.status)} • Open attribution`}
-                    >
-                      <div className={`flex h-9 w-9 items-center justify-center rounded-full ${statusColor(site.status)} text-white ring-8 ring-red-500/20 shadow-[0_0_24px_rgba(220,38,38,0.4)]`}>
-                        <SiteIcon type={site.type} />
-                      </div>
-                      <div className="mt-3 max-w-[100px] text-[11px] text-white font-semibold leading-tight">
-                        {site.label}
-                      </div>
-                    </button>
-                  ))}
+                  {layers.sites &&
+                    sites.map((site) => (
+                      <button
+                        key={site.id}
+                        type="button"
+                        onClick={() =>
+                          navigate(`/attribution?siteId=${site.location_id ?? 1}`)
+                        }
+                        className="absolute group outline-none"
+                        style={{
+                          left: `${site.x}%`,
+                          top: `${site.y}%`,
+                          transform: "translate(-50%, -50%)",
+                        }}
+                        title={`${site.label} • ${statusText(site.status)} • Open attribution`}
+                      >
+                        <div
+                          className={`flex h-9 w-9 items-center justify-center rounded-full ${statusColor(site.status)} text-white ring-8 ring-red-500/20 shadow-[0_0_24px_rgba(220,38,38,0.4)]`}
+                        >
+                          <SiteIcon type={site.type} />
+                        </div>
+                        <div className="mt-3 max-w-[100px] text-[11px] text-white font-semibold leading-tight">
+                          {site.label}
+                        </div>
+                      </button>
+                    ))}
+
+                  {layers.resources &&
+                    resourceDeployments.map((resource) => {
+                      const isSelected = selectedResource?.id === resource.id;
+
+                      return (
+                        <button
+                          key={resource.id}
+                          type="button"
+                          onClick={() => setSelectedResource(resource)}
+                          className="absolute group outline-none z-20"
+                          style={{
+                            left: `${resource.x}%`,
+                            top: `${resource.y}%`,
+                            transform: "translate(-50%, -50%)",
+                          }}
+                          title={`${resource.label} • ${resourceTypeLabel(resource.type)} • ${resourceStatusText(resource.status)}`}
+                        >
+                          <div
+                            className={`flex h-10 w-10 items-center justify-center rounded-full text-white ring-8 shadow-[0_0_24px_rgba(14,165,233,0.35)] transition-all group-hover:scale-110 ${
+                              isSelected ? "scale-125 ring-sky-300/50" : ""
+                            } ${resourceColor(resource.status)}`}
+                          >
+                            {resourceIcon(resource.type)}
+                          </div>
+
+                          <div
+                            className={`absolute left-1/2 top-12 -translate-x-1/2 whitespace-nowrap rounded-lg border border-sky-500/30 bg-zinc-950/95 px-3 py-2 text-xs text-sky-100 shadow-xl transition ${
+                              isSelected ? "opacity-100" : "opacity-0 group-hover:opacity-100"
+                            }`}
+                          >
+                            <p className="font-semibold">{resource.label}</p>
+                            <p className="text-zinc-400">
+                              {resourceTypeLabel(resource.type)} · {resourceStatusText(resource.status)}
+                            </p>
+                          </div>
+                        </button>
+                      );
+                    })}
                 </>
               )}
             </div>
@@ -527,6 +844,10 @@ export default function CommunityMap() {
                 <div className="w-3 h-3 bg-red-600 rounded-full" />
                 <span>Critical</span>
               </div>
+              <div className="flex items-center gap-2">
+                <Truck className="w-4 h-4 text-sky-400" />
+                <span>Resource Units</span>
+              </div>
             </div>
           </section>
 
@@ -534,17 +855,98 @@ export default function CommunityMap() {
             <div className="px-6 py-4 border-b border-zinc-800">
               <h2 className="text-lg font-medium">Selected Region</h2>
               <p className="text-sm text-zinc-400 mt-1">
-                State, county, and site-level risk summary
+                State, county, site, forecast, and resource-level risk summary
               </p>
             </div>
 
             <div className="p-6 space-y-6">
+              <div className="rounded-xl border border-orange-500/20 bg-orange-500/5 p-4">
+                <div className="flex items-center gap-2 text-orange-300 text-sm mb-3">
+                  <Timer className="w-4 h-4" />
+                  Forecast Intelligence
+                </div>
+
+                <h3 className="text-xl font-semibold">{currentForecast.label} Forecast</h3>
+                <p className={`text-sm mt-1 ${statusTextColor(currentForecast.severity)}`}>
+                  {statusText(currentForecast.severity)} projected spread
+                </p>
+
+                <div className="grid grid-cols-2 gap-3 mt-4 text-sm">
+                  <div className="rounded-lg border border-zinc-800 bg-zinc-950/50 p-3">
+                    <p className="text-zinc-500">Population</p>
+                    <p className="text-lg font-semibold">
+                      {currentForecast.population.toLocaleString()}
+                    </p>
+                  </div>
+
+                  <div className="rounded-lg border border-zinc-800 bg-zinc-950/50 p-3">
+                    <p className="text-zinc-500">Facilities</p>
+                    <p className="text-lg font-semibold">{currentForecast.facilities}</p>
+                  </div>
+
+                  <div className="rounded-lg border border-zinc-800 bg-zinc-950/50 p-3">
+                    <p className="text-zinc-500">Schools</p>
+                    <p className="text-lg font-semibold">{currentForecast.schools}</p>
+                  </div>
+
+                  <div className="rounded-lg border border-zinc-800 bg-zinc-950/50 p-3">
+                    <p className="text-zinc-500">Hospitals</p>
+                    <p className="text-lg font-semibold">{currentForecast.hospitals}</p>
+                  </div>
+                </div>
+
+                <p className="text-sm text-zinc-300 mt-4">
+                  Estimated cost: {currentForecast.estimatedCost}
+                </p>
+              </div>
+
+              {selectedResource ? (
+                <div className="rounded-xl border border-sky-500/20 bg-sky-500/5 p-4">
+                  <div className="flex items-center gap-2 text-sky-300 text-sm mb-3">
+                    <Truck className="w-4 h-4" />
+                    Selected Resource
+                  </div>
+
+                  <h3 className="text-xl font-semibold">{selectedResource.label}</h3>
+                  <p className="text-sm text-zinc-400 mt-1">
+                    {resourceTypeLabel(selectedResource.type)} ·{" "}
+                    {resourceStatusText(selectedResource.status)}
+                  </p>
+
+                  <div className="mt-4 space-y-2 text-sm text-zinc-300">
+                    <p>
+                      <span className="text-zinc-500">Assigned Zone:</span>{" "}
+                      {selectedResource.assigned_zone}
+                    </p>
+                    <p>
+                      <span className="text-zinc-500">ETA:</span>{" "}
+                      {selectedResource.eta}
+                    </p>
+                    <p>
+                      <span className="text-zinc-500">Task:</span>{" "}
+                      {selectedResource.task}
+                    </p>
+                  </div>
+
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setSelectedResource(null)}
+                    className="mt-4 w-full border-zinc-700"
+                  >
+                    Clear Resource Selection
+                  </Button>
+                </div>
+              ) : null}
+
               {selectedState ? (
                 <>
                   <div>
                     <p className="text-sm text-zinc-400 mb-1">State</p>
                     <h3 className="text-2xl font-semibold">{selectedState.state_name}</h3>
-                    <p className="text-sm text-zinc-500 mt-1">{selectedState.state_code}</p>
+                    <p className="text-sm text-zinc-500 mt-1">
+                      {selectedState.state_code}
+                    </p>
                   </div>
 
                   <div className="rounded-xl border border-zinc-800 bg-zinc-950/50 p-4">
@@ -557,101 +959,18 @@ export default function CommunityMap() {
                   <div className="grid grid-cols-2 gap-4">
                     <div className="rounded-xl border border-zinc-800 bg-zinc-950/50 p-4">
                       <p className="text-sm text-zinc-400 mb-2">Alert Count</p>
-                      <p className="text-2xl font-semibold">{selectedState.alert_count}</p>
+                      <p className="text-2xl font-semibold">
+                        {selectedState.alert_count}
+                      </p>
                     </div>
 
                     <div className="rounded-xl border border-zinc-800 bg-zinc-950/50 p-4">
-                      <p className="text-sm text-zinc-400 mb-2">Site Pins</p>
-                      <p className="text-2xl font-semibold">{sites.length}</p>
-                    </div>
-                  </div>
-
-                  {selectedCounty ? (
-                    <div className="rounded-xl border border-red-500/20 bg-red-500/5 p-4">
-                      <div className="flex items-center gap-2 text-red-300 text-sm mb-2">
-                        <MapPin className="w-4 h-4" />
-                        County Drilldown
-                      </div>
-                      <p className="font-semibold">{selectedCounty.county_name} County</p>
-                      <p className="text-sm text-zinc-400 mt-1">
-                        {selectedCounty.alert_count} active alerts · {statusText(selectedCounty.status)}
+                      <p className="text-sm text-zinc-400 mb-2">Resource Units</p>
+                      <p className="text-2xl font-semibold">
+                        {resourceDeployments.length}
                       </p>
                     </div>
-                  ) : null}
-
-                  <div className="rounded-xl border border-amber-500/20 bg-amber-500/5 p-4">
-                    <div className="inline-flex items-center gap-2 rounded-full border border-amber-500/20 bg-amber-500/10 px-2.5 py-1 text-[11px] text-amber-300 mb-3">
-                      <Sparkles className="h-3 w-3 text-amber-400" />
-                      <span>Site Drilldown Active</span>
-                    </div>
-
-                    <h4 className="text-lg font-medium mb-3">Monitored Sites</h4>
-
-                    <div className="space-y-3">
-                      {sites.length > 0 ? (
-                        sites.map((site) => (
-                          <div key={site.id} className="rounded-lg border border-zinc-800 bg-zinc-900/70 p-3">
-                            <div className="flex items-start justify-between gap-3">
-                              <div>
-                                <div className="flex items-center gap-2">
-                                  <SiteIcon type={site.type} />
-                                  <p className="font-medium">{site.label}</p>
-                                </div>
-                                <p className={`text-sm ${statusTextColor(site.status)}`}>
-                                  {statusText(site.status)}
-                                </p>
-                              </div>
-
-                              <span className="text-xs text-zinc-400 uppercase">
-                                {site.type}
-                              </span>
-                            </div>
-
-                            <p className="mt-3 text-xs text-zinc-400">{site.detail}</p>
-
-                            {site.signals?.length ? (
-                              <div className="mt-3 space-y-1">
-                                {site.signals.slice(0, 3).map((signal, index) => (
-                                  <div key={`${site.id}-${signal.label}-${index}`} className="text-xs text-zinc-300">
-                                    <span className="text-amber-400">{signal.label}</span>: {signal.value}
-                                  </div>
-                                ))}
-                              </div>
-                            ) : null}
-
-                            <div className="mt-3 text-xs text-zinc-500">
-                              Last sample: {formatTime(site.last_sample_at)}
-                            </div>
-
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => navigate(`/attribution?siteId=${site.location_id ?? 1}`)}
-                              className="mt-3 w-full border-zinc-700"
-                            >
-                              Open Source Attribution
-                              <ChevronRight className="ml-2 h-4 w-4" />
-                            </Button>
-                          </div>
-                        ))
-                      ) : (
-                        <p className="text-sm text-zinc-500">
-                          No site records found for this county.
-                        </p>
-                      )}
-                    </div>
                   </div>
-
-                  {selectedSite ? (
-                    <Button
-                      variant="outline"
-                      onClick={() => navigate(`/attribution?siteId=${selectedSite.location_id ?? 1}`)}
-                      className="w-full border-zinc-700"
-                    >
-                      View Source Attribution
-                      <ChevronRight className="ml-2 h-4 w-4" />
-                    </Button>
-                  ) : null}
                 </>
               ) : (
                 <p className="text-zinc-500">No state selected</p>
@@ -667,7 +986,9 @@ export default function CommunityMap() {
                 <Table2 className="h-4 w-4 text-amber-400" />
                 <h2 className="text-lg font-medium">State Risk Table</h2>
               </div>
-              <div className="text-xs text-zinc-500">Visible confirmation of monitored states</div>
+              <div className="text-xs text-zinc-500">
+                Visible confirmation of monitored states
+              </div>
             </div>
 
             <div className="overflow-x-auto">
@@ -717,38 +1038,13 @@ export default function CommunityMap() {
 
           <aside className="space-y-6">
             <div className="rounded-2xl border border-zinc-800 bg-zinc-900/60 p-6">
-              <h3 className="mb-4 text-sm font-medium text-zinc-400">
-                States Requiring Attention
+              <h3 className="mb-3 text-sm font-medium text-zinc-400">
+                Predictive Spread Simulation
               </h3>
-
-              <div className="space-y-3 max-h-[360px] overflow-y-auto pr-1">
-                {attentionStates.length > 0 ? (
-                  attentionStates.map((item) => (
-                    <button
-                      key={item.state_code}
-                      type="button"
-                      onClick={() => setSelectedStateCode(item.state_code)}
-                      className="w-full rounded border p-3 text-left border-red-500/20 bg-red-500/5"
-                    >
-                      <div className="mb-1 flex items-start justify-between">
-                        <h4 className="text-sm font-medium">{item.state_name}</h4>
-                        <AlertTriangle className="h-4 w-4 text-red-400" />
-                      </div>
-                      <p className="text-xs text-zinc-400">
-                        {item.alert_count} active alerts · risk {item.risk_score}
-                      </p>
-                    </button>
-                  ))
-                ) : (
-                  <p className="text-sm text-zinc-500">No states currently require attention.</p>
-                )}
-              </div>
-            </div>
-
-            <div className="rounded-2xl border border-zinc-800 bg-zinc-900/60 p-6">
-              <h3 className="mb-3 text-sm font-medium text-zinc-400">Hierarchy Status</h3>
               <p className="text-sm leading-relaxed text-zinc-400">
-                FalilaX is now reading live backend data across state, county, and site levels.
+                The predictive spread slider simulates how incident impact may evolve
+                over 0, 6, 12, 24, and 48 hours. The ring on the map expands as projected
+                risk increases.
               </p>
             </div>
           </aside>
@@ -757,8 +1053,8 @@ export default function CommunityMap() {
         <div className="mt-8 text-xs text-zinc-500 flex items-start gap-2">
           <ShieldAlert className="w-4 h-4 mt-0.5" />
           <p>
-            FalilaX provides interpretive risk intelligence and does not replace official regulatory testing,
-            emergency response, or public health advisories.
+            FalilaX provides interpretive risk intelligence and does not replace official
+            regulatory testing, emergency response, or public health advisories.
           </p>
         </div>
       </main>

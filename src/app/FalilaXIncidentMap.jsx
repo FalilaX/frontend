@@ -6,43 +6,16 @@ import {
   Marker,
   Popup,
   Polyline,
-  Circle
+  Circle,
 } from "react-leaflet";
-
 import "leaflet/dist/leaflet.css";
 
-const hospitalIcon = new L.Icon({
-  iconUrl:
-    "https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-red.png",
-  shadowUrl:
-    "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png",
-  iconSize: [25, 41],
-  iconAnchor: [12, 41],
-  popupAnchor: [1, -34],
-  shadowSize: [41, 41]
-});
-
-const schoolIcon = new L.Icon({
-  iconUrl:
-    "https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-orange.png",
-  shadowUrl:
-    "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png",
-  iconSize: [25, 41],
-  iconAnchor: [12, 41],
-  popupAnchor: [1, -34],
-  shadowSize: [41, 41]
-});
-
-const householdIcon = new L.Icon({
-  iconUrl:
-    "https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-green.png",
-  shadowUrl:
-    "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png",
-  iconSize: [25, 41],
-  iconAnchor: [12, 41],
-  popupAnchor: [1, -34],
-  shadowSize: [41, 41]
-});
+import {
+  closeIncident,
+  fetchIncidentDetail,
+  fetchIncidents,
+  simulateAndSaveIncident,
+} from "@/app/utils/api-client";
 
 const defaultIcon = new L.Icon({
   iconUrl:
@@ -52,893 +25,626 @@ const defaultIcon = new L.Icon({
   iconSize: [25, 41],
   iconAnchor: [12, 41],
   popupAnchor: [1, -34],
-  shadowSize: [41, 41]
+  shadowSize: [41, 41],
 });
 
-export default function FalilaXIncidentMap() {
-  const [data, setData] = useState(null);
-  const [lines, setLines] = useState([]);
-  const [responsePlan, setResponsePlan] = useState(null);
-  const [impactDashboard, setImpactDashboard] = useState(null);
-  const [routingPlan, setRoutingPlan] = useState(null);
-  const [sourceAttribution, setSourceAttribution] = useState(null);
-  const [notificationStatus, setNotificationStatus] = useState(null);
-  const [timeline, setTimeline] = useState([]);
-  const [communityAlerts, setCommunityAlerts] = useState(null);
+const riskColor = (risk) => {
+  if (risk === "HIGH") return "red";
+  if (risk === "MODERATE") return "orange";
+  return "green";
+};
 
-  const [resourceDeployment, setResourceDeployment] = useState(null);
-  const [escalationIntel, setEscalationIntel] = useState(null);
-  const [financialImpact, setFinancialImpact] = useState(null);
-  const [predictiveSpread, setPredictiveSpread] = useState(null);
+const nodeCoordinates = {
+  1: [32.378, -86.3077],
+  2: [32.373, -86.301],
+  3: [32.369, -86.296],
+  4: [32.365, -86.289],
+  5: [32.363, -86.303],
+  6: [32.358, -86.284],
+  7: [32.356, -86.308],
+  8: [32.351, -86.281],
+  9: [32.349, -86.312],
+};
+
+const assetNameToNodeId = {
+  "North Reservoir": 1,
+  "Treatment Plant A": 2,
+  "Main Pump Station": 3,
+  "Pressure Zone A": 4,
+  "Pressure Zone B": 5,
+  "DMA A": 6,
+  "DMA B": 7,
+  "Customer Area A": 8,
+  "Customer Area B": 9,
+};
+
+const networkLines = [
+  [nodeCoordinates[1], nodeCoordinates[2]],
+  [nodeCoordinates[2], nodeCoordinates[3]],
+  [nodeCoordinates[3], nodeCoordinates[4]],
+  [nodeCoordinates[3], nodeCoordinates[5]],
+  [nodeCoordinates[4], nodeCoordinates[6]],
+  [nodeCoordinates[5], nodeCoordinates[7]],
+  [nodeCoordinates[6], nodeCoordinates[8]],
+  [nodeCoordinates[7], nodeCoordinates[9]],
+];
+
+export default function FalilaXIncidentMap() {
+  const [digitalTwinResult, setDigitalTwinResult] = useState(null);
+  const [digitalTwinLoading, setDigitalTwinLoading] = useState(false);
+  const [digitalTwinError, setDigitalTwinError] = useState(null);
+  const [savedIncidentId, setSavedIncidentId] = useState(null);
+
+  const [incidents, setIncidents] = useState([]);
+  const [incidentHistoryLoading, setIncidentHistoryLoading] = useState(false);
+  const [incidentHistoryError, setIncidentHistoryError] = useState(null);
+
+  const loadIncidents = async () => {
+    setIncidentHistoryLoading(true);
+    setIncidentHistoryError(null);
+
+    try {
+      const data = await fetchIncidents();
+      setIncidents(Array.isArray(data) ? data : []);
+    } catch (error) {
+      setIncidentHistoryError(error?.message || "Failed to load incidents");
+    } finally {
+      setIncidentHistoryLoading(false);
+    }
+  };
 
   useEffect(() => {
-    fetch("http://127.0.0.1:8001/api/v1/gis-risk-map/1")
-      .then((res) => res.json())
-      .then((json) => setData(json));
-
-    fetch("http://127.0.0.1:8001/api/v1/distribution-line-map")
-      .then((res) => res.json())
-      .then((json) => setLines(json.distribution_lines || []));
-
-    fetch("http://127.0.0.1:8001/api/v1/response-intelligence/1")
-      .then((res) => res.json())
-      .then((json) => setResponsePlan(json));
-
-    fetch("http://127.0.0.1:8001/api/v1/impact-dashboard/1")
-      .then((res) => res.json())
-      .then((json) => setImpactDashboard(json));
-
-    fetch("http://127.0.0.1:8001/api/v1/alert-routing/1")
-      .then((res) => res.json())
-      .then((json) => setRoutingPlan(json));
-
-    fetch("http://127.0.0.1:8001/api/v1/source-attribution-intelligence/1")
-      .then((res) => res.json())
-      .then((json) => setSourceAttribution(json));
-
-    fetch("http://127.0.0.1:8001/api/v1/notification-status-dashboard/1")
-      .then((res) => res.json())
-      .then((json) => setNotificationStatus(json));
-
-    fetch("http://127.0.0.1:8001/api/v1/incident-timeline-intelligence/1")
-      .then((res) => res.json())
-      .then((json) => setTimeline(json.timeline || []));
-
-    fetch("http://127.0.0.1:8001/api/v1/community-alert-intelligence/1")
-      .then((res) => res.json())
-      .then((json) => setCommunityAlerts(json));
-
-    fetch("http://127.0.0.1:8001/api/v1/resource-deployment-intelligence/1")
-      .then((res) => res.json())
-      .then((json) => setResourceDeployment(json));
-
-    fetch("http://127.0.0.1:8001/api/v1/escalation-intelligence/1")
-      .then((res) => res.json())
-      .then((json) => setEscalationIntel(json));
-
-    fetch("http://127.0.0.1:8001/api/v1/financial-impact-intelligence/1")
-      .then((res) => res.json())
-      .then((json) => setFinancialImpact(json));
-
-    fetch("http://127.0.0.1:8001/api/v1/predictive-spread-intelligence/1")
-      .then((res) => res.json())
-      .then((json) => setPredictiveSpread(json));
+    loadIncidents();
   }, []);
 
-  if (!data) {
-    return <div>Loading FalilaX GIS Map...</div>;
-  }
+  const runDigitalTwinSimulation = async () => {
+    setDigitalTwinLoading(true);
+    setDigitalTwinError(null);
+    setSavedIncidentId(null);
 
-  const incidentCenter = [32.3780, -86.3077];
+    try {
+      const result = await simulateAndSaveIncident({
+        node_id: 1,
+        chlorine_mg_l: 0.1,
+        pressure_psi: 55,
+      });
 
-  const getIcon = (type) => {
-    if (type === "hospital") return hospitalIcon;
-    if (type === "school") return schoolIcon;
-    if (type === "home" || type === "household") return householdIcon;
-    return defaultIcon;
-  };
-
-  const riskColor = (point) => {
-    const score = Number(point.criticality_score || 0);
-
-    if (score >= 90) return "red";
-    if (score >= 70) return "orange";
-    if (score >= 50) return "gold";
-    return "green";
-  };
-
-  const lineColor = (line) => {
-    if (line.id === 1) return "red";
-    return "green";
-  };
-
-  const timelineColor = (severity) => {
-    if (severity === "critical") return "red";
-    if (severity === "success") return "green";
-    return "#2196f3";
-  };
-
-  const statusColor = (status) => {
-    if (status === "completed") return "#d4edda";
-    if (status === "active") return "#fff3cd";
-    if (status === "pending") return "#f8d7da";
-    return "#f1f1f1";
-  };
-
-  const recommendedActions = responsePlan?.recommended_actions || [];
-  const summary = impactDashboard?.impact_summary;
-  const incident = impactDashboard?.incident || data.incident;
-  const facilityGroups = impactDashboard?.affected_facility_groups || [];
-  const routing = routingPlan?.routing_plan || [];
-  const notifications = notificationStatus?.notifications || [];
-  const communityAlertRows = communityAlerts?.community_alerts || [];
-  const deploymentResources = resourceDeployment?.resources || [];
-  const escalationChain = escalationIntel?.escalation_chain || [];
-  const costs = financialImpact?.estimated_costs || {};
-  const forecast = predictiveSpread?.forecast || [];
-  const projected48hRisk =
-    forecast.find((item) => item.hours === 48)?.population_at_risk ?? "Loading";
-
-  const renderRecommendedActions = (limit = recommendedActions.length) => {
-    const actionsToShow = recommendedActions.slice(0, limit);
-
-    if (actionsToShow.length === 0) {
-      return <p>Loading response plan...</p>;
+      setDigitalTwinResult(result.report);
+      setSavedIncidentId(result.incident_id);
+      await loadIncidents();
+    } catch (error) {
+      setDigitalTwinError(error?.message || "Digital Twin simulation failed");
+    } finally {
+      setDigitalTwinLoading(false);
     }
-
-    return (
-      <div>
-        {actionsToShow.map((action) => (
-          <div
-            key={action.priority}
-            style={{
-              background: action.priority <= 2 ? "#ffcccc" : "#fff3cd",
-              padding: "6px",
-              marginBottom: "5px",
-              borderRadius: "4px",
-              border: "1px solid #ddd"
-            }}
-          >
-            <strong>Priority {action.priority}</strong>
-            <br />
-            {action.action}
-          </div>
-        ))}
-      </div>
-    );
   };
+
+  const openIncident = async (incidentId) => {
+    setDigitalTwinLoading(true);
+    setDigitalTwinError(null);
+
+    try {
+      const data = await fetchIncidentDetail(incidentId);
+      setDigitalTwinResult(data.report);
+      setSavedIncidentId(data.incident_id);
+    } catch (error) {
+      setDigitalTwinError(error?.message || "Failed to open incident");
+    } finally {
+      setDigitalTwinLoading(false);
+    }
+  };
+
+  const handleCloseIncident = async (incidentId) => {
+    setIncidentHistoryLoading(true);
+    setIncidentHistoryError(null);
+
+    try {
+      await closeIncident(incidentId);
+      await loadIncidents();
+    } catch (error) {
+      setIncidentHistoryError(error?.message || "Failed to close incident");
+    } finally {
+      setIncidentHistoryLoading(false);
+    }
+  };
+
+  const impact = digitalTwinResult?.impact || {};
+  const predictionTimeline = digitalTwinResult?.prediction?.timeline || [];
+  const recommendations = digitalTwinResult?.recommendations || [];
+  const isolation = impact?.recommended_isolation;
+  const rootCause = digitalTwinResult?.root_cause;
+  const incidentCenter = nodeCoordinates[1];
+
+  const affectedAssets = predictionTimeline.map((item) => ({
+    node_id: assetNameToNodeId[item.asset],
+    name: item.asset,
+    risk: item.risk,
+    arrival_time_minutes: item.eta_minutes,
+    network_distance: item.distance,
+  }));
+
+  const affectedAssetsCount =
+    impact?.affected_assets ?? impact?.affected_asset_count ?? affectedAssets.length;
 
   return (
-    <div style={{ position: "relative" }}>
+    <div style={{ position: "relative", height: "100vh", width: "100%" }}>
       <div
         style={{
           position: "absolute",
           top: "16px",
           left: "60px",
           zIndex: 1000,
-          width: "390px",
-          maxHeight: "650px",
+          width: "455px",
+          maxHeight: "85vh",
           overflowY: "auto",
           background: "white",
-          padding: "14px",
+          padding: "16px",
           borderRadius: "10px",
           boxShadow: "0 4px 14px rgba(0,0,0,0.25)",
           fontFamily: "Arial, sans-serif",
-          fontSize: "14px"
+          fontSize: "14px",
         }}
       >
-        <div
+        <h2 style={{ marginTop: 0, color: "#b00020" }}>
+          FalilaX Incident Operations Center
+        </h2>
+
+        <button
+          onClick={runDigitalTwinSimulation}
+          disabled={digitalTwinLoading}
           style={{
+            width: "100%",
+            padding: "12px",
+            border: "none",
+            borderRadius: "6px",
+            background: digitalTwinLoading ? "#999" : "#0b5ed7",
+            color: "white",
             fontWeight: "bold",
-            fontSize: "16px",
-            marginBottom: "8px",
-            color: "#b00020"
+            cursor: digitalTwinLoading ? "not-allowed" : "pointer",
           }}
         >
-          FalilaX Incident Command Summary
-        </div>
+          {digitalTwinLoading
+            ? "Running & Saving Incident..."
+            : "Run and Save Incident Simulation"}
+        </button>
 
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "1fr 1fr",
-            gap: "6px",
-            marginBottom: "10px"
-          }}
-        >
-          <div style={{ background: "#ffebee", padding: "6px", borderRadius: "6px" }}>
-            <strong>Population</strong>
-            <br />
-            {summary?.total_population_exposed ?? incident?.population_at_risk}
+        {savedIncidentId && (
+          <div
+            style={{
+              marginTop: "10px",
+              padding: "10px",
+              background: "#d1e7dd",
+              borderRadius: "6px",
+              color: "#0f5132",
+              fontWeight: "bold",
+            }}
+          >
+            Active incident: {savedIncidentId}
           </div>
+        )}
 
-          <div style={{ background: "#fff3cd", padding: "6px", borderRadius: "6px" }}>
-            <strong>Sites</strong>
-            <br />
-            {summary?.affected_site_count ?? incident?.affected_site_count}
+        {digitalTwinError && (
+          <div
+            style={{
+              marginTop: "12px",
+              color: "#842029",
+              background: "#f8d7da",
+              padding: "10px",
+              borderRadius: "6px",
+            }}
+          >
+            {digitalTwinError}
           </div>
-
-          <div style={{ background: "#e3f2fd", padding: "6px", borderRadius: "6px" }}>
-            <strong>Alerts</strong>
-            <br />
-            {communityAlerts?.alerts_sent ?? "Loading"}
-          </div>
-
-          <div style={{ background: "#f3e5f5", padding: "6px", borderRadius: "6px" }}>
-            <strong>Est. Cost</strong>
-            <br />${costs.estimated_total_incident_cost ?? "Loading"}
-          </div>
-
-          <div style={{ background: "#ede7f6", padding: "6px", borderRadius: "6px" }}>
-            <strong>48h Risk</strong>
-            <br />
-            {projected48hRisk}
-          </div>
-
-          <div style={{ background: "#e8f5e9", padding: "6px", borderRadius: "6px" }}>
-            <strong>Ack Rate</strong>
-            <br />
-            {notificationStatus?.acknowledgement_rate ?? "Loading"}%
-          </div>
-        </div>
-
-        <div>
-          <strong>{incident?.cluster_name}</strong>
-        </div>
-
-        <div style={{ marginTop: "8px" }}>
-          <strong>Status:</strong> {incident?.incident_status}
-        </div>
-
-        <div>
-          <strong>Alert Level:</strong> {incident?.alert_level}
-        </div>
-
-        <div>
-          <strong>Population at Risk:</strong>{" "}
-          {summary?.total_population_exposed ??
-            incident?.population_at_risk ??
-            "Loading"}
-        </div>
-
-        <div>
-          <strong>Affected Sites:</strong>{" "}
-          {summary?.affected_site_count ??
-            incident?.affected_site_count ??
-            "Loading"}
-        </div>
-
-        <div>
-          <strong>Highest Criticality:</strong>{" "}
-          {summary?.highest_criticality_score ?? "Loading"}
-        </div>
-
-        <div>
-          <strong>Response Time:</strong>{" "}
-          {summary?.estimated_response_time ?? "Loading"}
-        </div>
-
-        <div style={{ marginTop: "8px" }}>
-          <strong>Operational Priority:</strong>
-          <br />
-          <span style={{ color: "#b00020", fontWeight: "bold" }}>
-            {summary?.operational_priority ?? "Loading"}
-          </span>
-        </div>
+        )}
 
         <hr />
 
-        <div>
-          <strong>Resource Deployment Intelligence</strong>
-        </div>
+        <h3>Saved Incident History</h3>
 
-        {resourceDeployment ? (
+        <button
+          onClick={loadIncidents}
+          disabled={incidentHistoryLoading}
+          style={{
+            width: "100%",
+            padding: "9px",
+            border: "1px solid #ddd",
+            borderRadius: "6px",
+            background: "#f8f9fa",
+            fontWeight: "bold",
+            cursor: incidentHistoryLoading ? "not-allowed" : "pointer",
+          }}
+        >
+          {incidentHistoryLoading ? "Loading incidents..." : "Refresh Saved Incidents"}
+        </button>
+
+        {incidentHistoryError && (
           <div
             style={{
-              marginTop: "8px",
-              padding: "8px",
-              border: "1px solid #ddd",
+              marginTop: "10px",
+              color: "#842029",
+              background: "#f8d7da",
+              padding: "10px",
               borderRadius: "6px",
-              background: "#f1f8e9"
             }}
           >
-            <div>
-              <strong>Priority:</strong>{" "}
-              {resourceDeployment.deployment_priority}
-            </div>
+            {incidentHistoryError}
+          </div>
+        )}
 
-            <div>
-              <strong>Crews Required:</strong>{" "}
-              {resourceDeployment.estimated_crews_required}
-            </div>
+        <div style={{ marginTop: "10px" }}>
+          {incidents.length === 0 && (
+            <div style={{ color: "#6b7280" }}>No saved incidents yet.</div>
+          )}
 
+          {incidents.slice(0, 8).map((incident) => (
+            <div
+              key={incident.incident_id}
+              style={{
+                marginTop: "8px",
+                padding: "10px",
+                borderRadius: "8px",
+                background:
+                  incident.status === "CLOSED" ? "#e8f5e9" : "#fff3cd",
+                border: "1px solid #ddd",
+              }}
+            >
+              <strong>{incident.incident_id}</strong>
+              <br />
+              Event: {incident.event_type}
+              <br />
+              Severity: {incident.severity}
+              <br />
+              Status: {incident.status}
+              <br />
+              Cause: {incident.most_likely_cause || "N/A"}
+              <br />
+              <small>
+                Created:{" "}
+                {incident.created_at
+                  ? new Date(incident.created_at).toLocaleString()
+                  : "N/A"}
+              </small>
+
+              <div style={{ display: "flex", gap: "8px", marginTop: "8px" }}>
+                <button
+                  onClick={() => openIncident(incident.incident_id)}
+                  style={{
+                    flex: 1,
+                    padding: "7px",
+                    border: "none",
+                    borderRadius: "6px",
+                    background: "#0b5ed7",
+                    color: "white",
+                    fontWeight: "bold",
+                    cursor: "pointer",
+                  }}
+                >
+                  Open
+                </button>
+
+                {incident.status !== "CLOSED" && (
+                  <button
+                    onClick={() => handleCloseIncident(incident.incident_id)}
+                    style={{
+                      flex: 1,
+                      padding: "7px",
+                      border: "none",
+                      borderRadius: "6px",
+                      background: "#198754",
+                      color: "white",
+                      fontWeight: "bold",
+                      cursor: "pointer",
+                    }}
+                  >
+                    Close
+                  </button>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {!digitalTwinResult && (
+          <p style={{ marginTop: "14px" }}>
+            Click the button to simulate low chlorine at Node 1, run the full
+            incident intelligence engine, and save the incident to the database.
+          </p>
+        )}
+
+        {digitalTwinResult && (
+          <>
+            <hr />
+
+            <h3>Incident Summary</h3>
             <div>
-              <strong>Response Time:</strong>{" "}
-              {resourceDeployment.estimated_response_time}
+              <strong>Event:</strong> {digitalTwinResult.summary?.event}
+            </div>
+            <div>
+              <strong>Severity:</strong> {digitalTwinResult.summary?.severity}
+            </div>
+            <div>
+              <strong>Status:</strong> {digitalTwinResult.summary?.status}
+            </div>
+            <div>
+              <strong>Node:</strong> {digitalTwinResult.summary?.node_id}
             </div>
 
             <hr />
 
-            {deploymentResources.map((resource, idx) => (
+            <h3>Measurements</h3>
+            <div>
+              <strong>Chlorine:</strong>{" "}
+              {digitalTwinResult.measurements?.chlorine_mg_l} mg/L
+            </div>
+            <div>
+              <strong>Pressure:</strong>{" "}
+              {digitalTwinResult.measurements?.pressure_psi} psi
+            </div>
+
+            <hr />
+
+            <h3>Root Cause Intelligence</h3>
+            <div>
+              <strong>Most Likely Cause:</strong>{" "}
+              {rootCause?.most_likely_cause}
+            </div>
+            <div>
+              <strong>Confidence:</strong>{" "}
+              {rootCause?.confidence
+                ? `${Math.round(rootCause.confidence * 100)}%`
+                : "N/A"}
+            </div>
+            <p>{rootCause?.explanation}</p>
+
+            {rootCause?.hypotheses?.map((hypothesis, idx) => (
               <div
                 key={idx}
                 style={{
-                  marginTop: "6px",
-                  padding: "6px",
-                  borderRadius: "4px",
-                  background: "#ffffff",
-                  border: "1px solid #ddd"
+                  marginTop: "8px",
+                  padding: "8px",
+                  borderRadius: "6px",
+                  background: "#eef2ff",
+                  border: "1px solid #ddd",
+                }}
+              >
+                <strong>{hypothesis.cause}</strong>
+                <br />
+                Probability: {Math.round(hypothesis.probability * 100)}%
+                <ul style={{ marginTop: "6px" }}>
+                  {hypothesis.evidence?.map((item, i) => (
+                    <li key={i}>{item}</li>
+                  ))}
+                </ul>
+              </div>
+            ))}
+
+            <hr />
+
+            <h3>Impact</h3>
+            <div>
+              <strong>Affected Assets:</strong> {affectedAssetsCount}
+            </div>
+
+            {isolation && (
+              <div
+                style={{
+                  marginTop: "10px",
+                  background: "#fff3cd",
+                  padding: "10px",
+                  borderRadius: "6px",
+                }}
+              >
+                <strong>Recommended Isolation</strong>
+                <br />
+                Close pipe: {String(isolation.closed_edge)}
+                <br />
+                From: {isolation.from_node}
+                <br />
+                To: {isolation.to_node}
+                <br />
+                Critical Protected: {isolation.critical_protected_count}
+                <br />
+                Service Disruption: {isolation.service_disruption_count}
+              </div>
+            )}
+
+            <hr />
+
+            <h3>AI Recommendations</h3>
+            {recommendations.map((rec, idx) => (
+              <div
+                key={idx}
+                style={{
+                  marginTop: "8px",
+                  padding: "8px",
+                  borderRadius: "6px",
+                  background:
+                    rec.priority === "HIGH" ? "#ffcccc" : "#fff3cd",
+                  border: "1px solid #ddd",
+                }}
+              >
+                <strong>{rec.priority}</strong>
+                <br />
+                {rec.action}
+                <br />
+                <small>{rec.reason}</small>
+                <br />
+                {rec.confidence && (
+                  <small>
+                    Confidence: {Math.round(rec.confidence * 100)}%
+                  </small>
+                )}
+                {rec.expected_outcome && (
+                  <>
+                    <br />
+                    <small>Expected outcome: {rec.expected_outcome}</small>
+                  </>
+                )}
+              </div>
+            ))}
+
+            <hr />
+
+            <h3>Prediction Timeline</h3>
+            {predictionTimeline.map((item) => (
+              <div
+                key={`${item.rank}-${item.asset}`}
+                style={{
+                  marginTop: "8px",
+                  padding: "8px",
+                  borderRadius: "6px",
+                  background:
+                    item.risk === "HIGH"
+                      ? "#ffcccc"
+                      : item.risk === "MODERATE"
+                      ? "#fff3cd"
+                      : "#e8f5e9",
+                  border: "1px solid #ddd",
                 }}
               >
                 <strong>
-                  {resource.resource_type} x{resource.quantity}
+                  #{item.rank} {item.asset}
                 </strong>
                 <br />
-                Destination: {resource.destination}
+                Risk: {item.risk}
                 <br />
-                Purpose: {resource.purpose}
+                ETA: {item.eta_minutes} min
+                <br />
+                Action: {item.recommended_action}
               </div>
             ))}
-          </div>
-        ) : (
-          <div>Loading resource deployment...</div>
-        )}
-
-        <hr />
-
-        <div>
-          <strong>Escalation Intelligence</strong>
-        </div>
-
-        {escalationIntel ? (
-          <div
-            style={{
-              marginTop: "8px",
-              padding: "8px",
-              border: "1px solid #ddd",
-              borderRadius: "6px",
-              background: "#f8f9fa"
-            }}
-          >
-            <div>
-              <strong>Status:</strong>{" "}
-              {escalationIntel.current_escalation_status}
-            </div>
 
             <hr />
 
-            {escalationChain.map((level) => (
+            <h3>Affected Assets</h3>
+            {affectedAssets.map((asset) => (
               <div
-                key={level.level}
+                key={asset.node_id}
                 style={{
-                  marginTop: "6px",
-                  padding: "6px",
-                  borderRadius: "4px",
-                  background: statusColor(level.status)
+                  marginTop: "8px",
+                  padding: "8px",
+                  borderRadius: "6px",
+                  background:
+                    asset.risk === "HIGH"
+                      ? "#ffcccc"
+                      : asset.risk === "MODERATE"
+                      ? "#fff3cd"
+                      : "#e8f5e9",
+                  border: "1px solid #ddd",
                 }}
               >
-                <strong>Level {level.level}</strong>
+                <strong>{asset.name}</strong>
                 <br />
-                {level.authority}
+                Risk: {asset.risk}
                 <br />
-                Status: {level.status}
+                ETA: {asset.arrival_time_minutes} min
+                <br />
+                Distance: {asset.network_distance}
               </div>
             ))}
-          </div>
-        ) : (
-          <div>Loading escalation intelligence...</div>
+          </>
         )}
-
-        <hr />
-
-        <div>
-          <strong>Financial Impact Intelligence</strong>
-        </div>
-
-        {financialImpact ? (
-          <div
-            style={{
-              marginTop: "8px",
-              padding: "8px",
-              border: "1px solid #ddd",
-              borderRadius: "6px",
-              background: "#fff8e1"
-            }}
-          >
-            <div>
-              <strong>Population Impacted:</strong>{" "}
-              {financialImpact.population_impacted}
-            </div>
-
-            <div>Testing Cost: ${costs.testing_cost}</div>
-            <div>Flushing Cost: ${costs.flushing_cost}</div>
-            <div>Notification Cost: ${costs.notification_cost}</div>
-            <div>Emergency Staffing: ${costs.emergency_staffing_cost}</div>
-
-            <div
-              style={{
-                marginTop: "8px",
-                padding: "8px",
-                borderRadius: "4px",
-                background: "#ffcccc",
-                fontWeight: "bold"
-              }}
-            >
-              Estimated Total: ${costs.estimated_total_incident_cost}
-            </div>
-          </div>
-        ) : (
-          <div>Loading financial impact...</div>
-        )}
-
-        <hr />
-
-        <div>
-          <strong>Predictive Spread Intelligence</strong>
-        </div>
-
-        {predictiveSpread ? (
-          <div
-            style={{
-              marginTop: "8px",
-              padding: "8px",
-              border: "1px solid #ddd",
-              borderRadius: "6px",
-              background: "#f3e5f5"
-            }}
-          >
-            <div>
-              <strong>Model:</strong> {predictiveSpread.model_type}
-            </div>
-
-            <div>
-              <strong>Current Population:</strong>{" "}
-              {predictiveSpread.current_population_at_risk}
-            </div>
-
-            <hr />
-
-            {forecast.map((item) => (
-              <div
-                key={item.hours}
-                style={{
-                  marginTop: "6px",
-                  padding: "6px",
-                  borderRadius: "4px",
-                  background: "#ffffff",
-                  border: "1px solid #ddd"
-                }}
-              >
-                <strong>{item.hours} Hours</strong>
-                <br />
-                Population at Risk: {item.population_at_risk}
-                <br />
-                Radius: {item.risk_zone_radius_m} m
-                <br />
-                Severity: {item.severity}
-              </div>
-            ))}
-
-            <div style={{ marginTop: "8px" }}>
-              {predictiveSpread.interpretation}
-            </div>
-          </div>
-        ) : (
-          <div>Loading predictive spread...</div>
-        )}
-
-        <hr />
-
-        <div>
-          <strong>Source Attribution Intelligence</strong>
-        </div>
-
-        {sourceAttribution ? (
-          <div
-            style={{
-              marginTop: "8px",
-              padding: "8px",
-              border: "1px solid #ddd",
-              borderRadius: "6px",
-              background: "#fff7e6"
-            }}
-          >
-            <div>
-              <strong>Likely Source:</strong>
-              <br />
-              {sourceAttribution.most_likely_source}
-            </div>
-
-            <div style={{ marginTop: "6px" }}>
-              <strong>Confidence:</strong>{" "}
-              {sourceAttribution.confidence_score}%
-            </div>
-
-            <div style={{ marginTop: "6px" }}>
-              <strong>Evidence</strong>
-              <ul style={{ paddingLeft: "18px", marginTop: "4px" }}>
-                {sourceAttribution.supporting_evidence?.map((item, idx) => (
-                  <li key={idx}>{item}</li>
-                ))}
-              </ul>
-            </div>
-
-            <div style={{ marginTop: "6px" }}>
-              <strong>Interpretation:</strong>
-              <br />
-              {sourceAttribution.interpretation}
-            </div>
-          </div>
-        ) : (
-          <div>Loading source attribution...</div>
-        )}
-
-        <hr />
-
-        <div>
-          <strong>Affected Facility Groups</strong>
-        </div>
-
-        {facilityGroups.length > 0 ? (
-          facilityGroups.map((group) => (
-            <div key={group.type}>
-              {group.type}: {group.count} site(s), population{" "}
-              {group.population_served}
-            </div>
-          ))
-        ) : (
-          <div>Loading facility groups...</div>
-        )}
-
-        <hr />
-
-        <div>
-          <strong>Alert Routing Intelligence</strong>
-        </div>
-
-        {routing.length > 0 ? (
-          routing.map((facility) => (
-            <div
-              key={facility.facility_id}
-              style={{
-                marginTop: "8px",
-                padding: "7px",
-                border: "1px solid #ddd",
-                borderRadius: "6px",
-                background: "#f8f9fa"
-              }}
-            >
-              <strong>{facility.facility_name}</strong>
-              <br />
-              <span style={{ color: "#666" }}>
-                {facility.facility_type} | Criticality{" "}
-                {facility.criticality_score}
-              </span>
-
-              <ul style={{ marginTop: "5px", paddingLeft: "18px" }}>
-                {facility.notify.map((person, idx) => (
-                  <li key={idx}>{person}</li>
-                ))}
-              </ul>
-            </div>
-          ))
-        ) : (
-          <div>Loading alert routing...</div>
-        )}
-
-        <hr />
-
-        <div>
-          <strong>Notification Status Dashboard</strong>
-        </div>
-
-        {notificationStatus ? (
-          <div
-            style={{
-              marginTop: "8px",
-              padding: "8px",
-              border: "1px solid #ddd",
-              borderRadius: "6px",
-              background: "#eef7ff"
-            }}
-          >
-            <div>
-              <strong>Total:</strong>{" "}
-              {notificationStatus.total_notifications}
-            </div>
-
-            <div>
-              <strong>Delivered:</strong> {notificationStatus.delivered}
-            </div>
-
-            <div>
-              <strong>Acknowledged:</strong>{" "}
-              {notificationStatus.acknowledged}
-            </div>
-
-            <div>
-              <strong>Pending:</strong> {notificationStatus.pending}
-            </div>
-
-            <div>
-              <strong>Acknowledgement Rate:</strong>{" "}
-              {notificationStatus.acknowledgement_rate}%
-            </div>
-
-            <hr />
-
-            {notifications.map((note, idx) => (
-              <div
-                key={idx}
-                style={{
-                  marginTop: "6px",
-                  padding: "6px",
-                  borderRadius: "4px",
-                  background: note.acknowledged ? "#d4edda" : "#fff3cd"
-                }}
-              >
-                <strong>{note.facility}</strong>
-                <br />
-                {note.recipient} via {note.method}
-                <br />
-                Status: {note.status}
-                <br />
-                {note.acknowledged ? "Acknowledged" : "Awaiting Response"}
-              </div>
-            ))}
-          </div>
-        ) : (
-          <div>Loading notification status...</div>
-        )}
-
-        <hr />
-
-        <div>
-          <strong>Community Alert Intelligence</strong>
-        </div>
-
-        {communityAlerts ? (
-          <div
-            style={{
-              marginTop: "8px",
-              padding: "8px",
-              border: "1px solid #ddd",
-              borderRadius: "6px",
-              background: "#eef8ff"
-            }}
-          >
-            <div>
-              <strong>Total Recipients:</strong>{" "}
-              {communityAlerts.total_recipients}
-            </div>
-
-            <div>
-              <strong>Alerts Sent:</strong> {communityAlerts.alerts_sent}
-            </div>
-
-            <div>
-              <strong>Email Alerts:</strong> {communityAlerts.email_alerts}
-            </div>
-
-            <div>
-              <strong>SMS Alerts:</strong> {communityAlerts.sms_alerts}
-            </div>
-
-            <div>
-              <strong>Reach Rate:</strong> {communityAlerts.reach_rate}%
-            </div>
-
-            <hr />
-
-            {communityAlertRows.map((alert) => (
-              <div
-                key={alert.id}
-                style={{
-                  marginTop: "6px",
-                  padding: "6px",
-                  borderRadius: "4px",
-                  background: "#ffffff",
-                  border: "1px solid #ddd"
-                }}
-              >
-                <strong>{alert.site_name}</strong>
-                <br />
-                {alert.recipient_name}
-                <br />
-                {alert.recipient_type}
-                <br />
-                Channel: {alert.delivery_channel}
-                <br />
-                Status: {alert.status}
-              </div>
-            ))}
-          </div>
-        ) : (
-          <div>Loading community alerts...</div>
-        )}
-
-        <hr />
-
-        <div>
-          <strong>Incident Timeline Intelligence</strong>
-        </div>
-
-        <div
-          style={{
-            marginTop: "8px",
-            padding: "8px",
-            border: "1px solid #ddd",
-            borderRadius: "6px",
-            background: "#ffffff"
-          }}
-        >
-          {timeline.length > 0 ? (
-            timeline.map((item) => (
-              <div
-                key={item.id}
-                style={{
-                  borderLeft: `5px solid ${timelineColor(item.severity)}`,
-                  paddingLeft: "10px",
-                  marginBottom: "10px"
-                }}
-              >
-                <strong>{item.activity_type}</strong>
-                <br />
-                {item.event}
-                <br />
-                <small>
-                  {item.created_by} | {item.created_at}
-                </small>
-              </div>
-            ))
-          ) : (
-            <div>Loading incident timeline...</div>
-          )}
-        </div>
       </div>
 
       <MapContainer
         center={incidentCenter}
         zoom={13}
-        style={{ height: "700px", width: "100%" }}
+        style={{ height: "100%", width: "100%" }}
       >
         <TileLayer
           attribution="OpenStreetMap"
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
         />
 
-        <Circle
-          center={incidentCenter}
-          radius={1000}
-          pathOptions={{
-            color: "red",
-            fillColor: "red",
-            fillOpacity: 0.15,
-            weight: 3
-          }}
-        >
-          <Popup>
-            <strong>Incident Impact Zone</strong>
-            <br />
-            Radius: 1000 meters
-            <br />
-            Population at Risk: {data.incident.population_at_risk}
-            <br />
-            Alert Level: {data.incident.alert_level}
-            <br />
-            Status: {data.incident.incident_status}
-
-            <hr />
-
-            <strong>Recommended Response Checklist</strong>
-            {renderRecommendedActions()}
-          </Popup>
-        </Circle>
-
-        {forecast
-          .filter((item) => item.hours > 0)
-          .map((item) => (
-            <Circle
-              key={item.hours}
-              center={incidentCenter}
-              radius={item.risk_zone_radius_m}
-              pathOptions={{
-                color: item.hours >= 24 ? "purple" : "orange",
-                fillColor: item.hours >= 24 ? "purple" : "orange",
-                fillOpacity: 0.04,
-                weight: 1
-              }}
-            >
-              <Popup>
-                <strong>{item.hours}-Hour Predictive Spread</strong>
-                <br />
-                Population at Risk: {item.population_at_risk}
-                <br />
-                Radius: {item.risk_zone_radius_m} m
-                <br />
-                Severity: {item.severity}
-              </Popup>
-            </Circle>
-          ))}
-
-        {lines.map((line) => (
+        {networkLines.map((line, idx) => (
           <Polyline
-            key={line.id}
-            positions={line.coordinates}
+            key={idx}
+            positions={line}
             pathOptions={{
-              color: lineColor(line),
-              weight: 6,
-              opacity: 0.85
+              color: "green",
+              weight: 5,
+              opacity: 0.75,
+            }}
+          />
+        ))}
+
+        {digitalTwinResult && (
+          <Circle
+            center={incidentCenter}
+            radius={1100}
+            pathOptions={{
+              color: "purple",
+              fillColor: "purple",
+              fillOpacity: 0.15,
+              weight: 3,
             }}
           >
             <Popup>
-              <strong>{line.line_name}</strong>
+              <strong>Digital Twin Predicted Impact Zone</strong>
               <br />
-              Code: {line.line_code}
+              Event: {digitalTwinResult.summary?.event}
               <br />
-              County: {line.county}, {line.state}
+              Severity: {digitalTwinResult.summary?.severity}
               <br />
-              Status: {line.id === 1 ? "Affected / Critical" : "Normal"}
-
-              <hr />
-
-              <strong>Recommended Response Checklist</strong>
-              {renderRecommendedActions(4)}
+              Affected Assets: {affectedAssetsCount}
             </Popup>
-          </Polyline>
-        ))}
+          </Circle>
+        )}
 
-        {data.map_points.map((point) => (
-          <div key={point.id}>
+        {affectedAssets.map((asset) => {
+          const position = nodeCoordinates[asset.node_id];
+          if (!position) return null;
+
+          return (
             <Circle
-              center={[Number(point.lat), Number(point.lon)]}
-              radius={90}
+              key={`risk-${asset.node_id}`}
+              center={position}
+              radius={130}
               pathOptions={{
-                color: riskColor(point),
-                fillColor: riskColor(point),
+                color: riskColor(asset.risk),
+                fillColor: riskColor(asset.risk),
                 fillOpacity: 0.35,
-                weight: 2
+                weight: 2,
               }}
             >
               <Popup>
-                <strong>{point.name}</strong>
+                <strong>{asset.name}</strong>
                 <br />
-                Type: {point.type}
+                Risk: {asset.risk}
                 <br />
-                Population: {point.population_served}
+                ETA: {asset.arrival_time_minutes} min
                 <br />
-                Criticality: {point.criticality_score}
-                <br />
-                Risk Color: {riskColor(point)}
-
-                <hr />
-
-                <strong>Recommended Response Checklist</strong>
-                {renderRecommendedActions(5)}
+                Distance: {asset.network_distance}
               </Popup>
             </Circle>
+          );
+        })}
 
-            <Marker
-              icon={getIcon(point.type)}
-              position={[Number(point.lat), Number(point.lon)]}
-            >
+        {Object.entries(nodeCoordinates).map(([nodeId, position]) => {
+          const affected = affectedAssets.find(
+            (asset) => String(asset.node_id) === nodeId
+          );
+
+          return (
+            <Marker key={nodeId} position={position} icon={defaultIcon}>
               <Popup>
-                <strong>{point.name}</strong>
+                <strong>
+                  {affected ? affected.name : `Network Node ${nodeId}`}
+                </strong>
                 <br />
-                Type: {point.type}
-                <br />
-                Population: {point.population_served}
-                <br />
-                Criticality: {point.criticality_score}
-
-                <hr />
-
-                <strong>Recommended Response Checklist</strong>
-                {renderRecommendedActions(5)}
+                Node ID: {nodeId}
+                {affected && (
+                  <>
+                    <br />
+                    Risk: {affected.risk}
+                    <br />
+                    ETA: {affected.arrival_time_minutes} min
+                  </>
+                )}
               </Popup>
             </Marker>
-          </div>
-        ))}
+          );
+        })}
       </MapContainer>
     </div>
   );

@@ -178,11 +178,11 @@ function formatAssessmentType(value?: string): string {
   const normalized = String(value ?? '').trim().toLowerCase();
 
   if (normalized === 'probabilistic_topology_aware') {
-    return 'Probabilistic - Topology-Aware';
+    return 'Probabilistic · Topology-Aware';
   }
 
   if (normalized === 'probabilistic_inferred') {
-    return 'Probabilistic - Inferred';
+    return 'Probabilistic · Inferred';
   }
 
   if (normalized === 'inferred') {
@@ -453,19 +453,10 @@ export function SourceAttribution() {
         ];
       }
 
-      const hasTravelTimeEvidence =
-        Array.isArray(attributionData.probable_origin_assets) &&
-        attributionData.probable_origin_assets.some(
-          (asset) =>
-            toNullableFiniteNumber(asset.estimated_travel_time_minutes) !== null,
-        );
-
       return [
         'Topology evidence included',
         'Upstream source pathway supported',
-        hasTravelTimeEvidence
-          ? 'Hydraulic travel-time context used'
-          : 'Relationship confidence evaluated',
+        'Hydraulic travel-time context used',
       ];
     }
 
@@ -478,11 +469,7 @@ export function SourceAttribution() {
     }
 
     return ['Upstream contribution possible', 'System-level context needed', 'Confirm with source sampling'];
-  }, [
-    attributionData.primary?.source,
-    attributionData.topology?.used,
-    attributionData.probable_origin_assets,
-  ]);
+  }, [attributionData.primary?.source, attributionData.topology?.used]);
 
   const breakdownItems =
     Array.isArray(attributionData.breakdown) && attributionData.breakdown.length > 0
@@ -589,7 +576,7 @@ export function SourceAttribution() {
             <div className="rounded-lg border border-zinc-800 bg-zinc-900/60 p-4">
               <p className="text-xs text-zinc-500 mb-1">Site Type</p>
               <p className="text-lg font-semibold">
-                {normalizeAssetTypeLabel(attributionData.site_type ?? siteMeta.type)}
+                {attributionData.site_type ?? siteMeta.type}
               </p>
             </div>
 
@@ -643,14 +630,14 @@ export function SourceAttribution() {
 
           {!apiLoading && apiError && (
             <div className="mt-4 rounded-lg border border-amber-500/20 bg-amber-500/5 p-3 text-sm text-amber-400">
-              Using site-aware fallback attribution - {apiError}
+              Using site-aware fallback attribution · {apiError}
             </div>
           )}
 
           {!apiLoading && !apiError && (
             <div className="mt-4 rounded-lg border border-emerald-500/20 bg-emerald-500/5 p-3 text-sm text-emerald-400">
               Source attribution connected successfully
-              {topologyUsed ? ' - topology evidence active' : ' - probabilistic evidence active'}
+              {topologyUsed ? ' · topology evidence active' : ' · probabilistic evidence active'}
             </div>
           )}
         </div>
@@ -807,7 +794,7 @@ export function SourceAttribution() {
                           <p className="mt-1 text-sm text-zinc-400">
                             {normalizeAssetTypeLabel(asset.asset_type)}
                             {asset.source_type
-                              ? ` - ${normalizeSourceLabel(asset.source_type)}`
+                              ? ` · ${normalizeSourceLabel(asset.source_type)}`
                               : ''}
                           </p>
 
@@ -823,7 +810,7 @@ export function SourceAttribution() {
                         <div>
                           <p className="text-xs text-zinc-500">Upstream Depth</p>
                           <p className="mt-1 text-zinc-200">
-                            {depth > 0 ? depth : '\u2014'}
+                            {depth > 0 ? depth : '—'}
                           </p>
                         </div>
 
@@ -880,7 +867,7 @@ export function SourceAttribution() {
                                 key={`${asset.asset_id ?? index}-evidence-${evidenceIndex}`}
                                 className="flex gap-2 text-sm text-zinc-400"
                               >
-                                <span className="text-amber-400 flex-shrink-0">{'\u2022'}</span>
+                                <span className="text-amber-400 flex-shrink-0">•</span>
                                 <p>{item}</p>
                               </div>
                             ))}
@@ -976,7 +963,7 @@ export function SourceAttribution() {
 
                         <div className="pl-12 space-y-1 text-sm text-zinc-400">
                           {factors.map((factor, factorIndex) => (
-                            <p key={`${factor}-${factorIndex}`}>{'\u2022'} {factor}</p>
+                            <p key={`${factor}-${factorIndex}`}>• {factor}</p>
                           ))}
                         </div>
                       </div>
@@ -1075,7 +1062,7 @@ export function SourceAttribution() {
                             key={`${item.source ?? 'source'}-${factor}-${factorIndex}`}
                             className="flex gap-2"
                           >
-                            <span className="text-amber-400 flex-shrink-0">{'\u2022'}</span>
+                            <span className="text-amber-400 flex-shrink-0">•</span>
                             <p>
                               <span className="text-zinc-100">
                                 {normalizeSourceLabel(item.source)}:
@@ -1088,7 +1075,7 @@ export function SourceAttribution() {
 
                     {topologyUsed && probableOriginAssets.length > 0 && (
                       <div className="flex gap-2">
-                        <span className="text-amber-400 flex-shrink-0">{'\u2022'}</span>
+                        <span className="text-amber-400 flex-shrink-0">•</span>
                         <p>
                           <span className="text-zinc-100">Topology:</span>{' '}
                           {probableOriginAssets.length} upstream origin candidate
