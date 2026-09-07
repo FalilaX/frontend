@@ -638,11 +638,10 @@ const buildHumanReportNumber = (
   detail: IncidentDetailResponse,
   fallbackDate: Date,
 ): string => {
-  const node = detail.incident.source_node_id;
-  const nodeToken =
-    node !== null && node !== undefined
-      ? String(node).padStart(4, "0")
-      : detail.incident.id.replace(/[^a-zA-Z0-9]+/g, "").slice(-6).toUpperCase();
+  const incidentToken = detail.incident.id
+    .replace(/^inc[_-]?/i, "")
+    .replace(/[^a-zA-Z0-9]+/g, "")
+    .toUpperCase();
 
   const currentGeneration = reportGeneration(detail);
   const currentActionDates = detail.actions
@@ -667,7 +666,7 @@ const buildHumanReportNumber = (
     ? fallbackDate
     : identityDate;
 
-  return `FX-IR-${reportDateStamp(stableDate)}-${nodeToken}-G${currentGeneration}`;
+  return `FX-IR-${reportDateStamp(stableDate)}-${incidentToken}-G${currentGeneration}`;
 };
 
 const buildMachineReportId = (
