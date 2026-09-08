@@ -2359,11 +2359,25 @@ export function IncidentInvestigation() {
         reportSyntheticOverride,
       );
       const fingerprint = await reportEvidenceFingerprint(snapshot);
+      const generatedAt = new Date();
+      const reportNumber = buildHumanReportNumber(detail, generatedAt);
+      const expectedReportStage = reportStageFor(detail, reportProfile);
+      const expectedUtilityName = reportProfile.utilityName.trim();
+      const expectedSystemName = reportProfile.systemName.trim();
+      const expectedSynthetic =
+        reportSyntheticOverride || detectSyntheticIncident(detail);
       const existing = reportHistory.find(
         (report) =>
           !report.is_superseded &&
+          report.report_number === reportNumber &&
           report.plan_generation === currentPlanGeneration &&
           report.report_type === reportType &&
+          String(report.report_stage ?? "").toLowerCase() ===
+            expectedReportStage &&
+          String(report.utility_name ?? "").trim() === expectedUtilityName &&
+          String(report.system_name ?? "").trim() === expectedSystemName &&
+          Boolean(report.synthetic) === expectedSynthetic &&
+          String(report.content_type ?? "").toLowerCase().includes("html") &&
           String(report.metadata?.evidence_fingerprint ?? "") === fingerprint,
       );
 
@@ -2384,8 +2398,6 @@ export function IncidentInvestigation() {
         return;
       }
 
-      const generatedAt = new Date();
-      const reportNumber = buildHumanReportNumber(detail, generatedAt);
       const content = buildIncidentEvidenceReportHtml(
         detail,
         variant,
@@ -2453,6 +2465,11 @@ export function IncidentInvestigation() {
         reportSyntheticOverride,
       );
       const fingerprint = await reportEvidenceFingerprint(snapshot);
+      const generatedAt = new Date();
+      const expectedReportNumber = buildHumanReportNumber(
+        detail,
+        generatedAt,
+      );
       const expectedReportStage = reportStageFor(detail, reportProfile);
       const expectedUtilityName = reportProfile.utilityName.trim();
       const expectedSystemName = reportProfile.systemName.trim();
@@ -2462,6 +2479,7 @@ export function IncidentInvestigation() {
       const existing = reportHistory.find(
         (report) =>
           !report.is_superseded &&
+          report.report_number === expectedReportNumber &&
           report.plan_generation === currentPlanGeneration &&
           report.report_type === reportType &&
           String(report.report_stage ?? "").toLowerCase() ===
@@ -2493,7 +2511,6 @@ export function IncidentInvestigation() {
         return;
       }
 
-      const generatedAt = new Date();
       const payload = buildIncidentEvidenceJsonPayload(
         detail,
         reportProfile,
@@ -2501,6 +2518,9 @@ export function IncidentInvestigation() {
         generatedAt,
       );
       const reportNumber = payload.report_number;
+      if (reportNumber !== expectedReportNumber) {
+        throw new Error("Generated report identity is inconsistent.");
+      }
       const content = JSON.stringify(payload, null, 2);
 
       const persisted = await apiFetch<PersistIncidentReportResponse>(
