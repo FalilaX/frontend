@@ -22,18 +22,63 @@ export default function App() {
   return (
     <BrowserRouter>
       <Routes>
-        {/* Public / entry */}
-        <Route path="/" element={<LandingPage />} />
+
+        {/* =====================================================
+            PUBLIC / ENTRY
+        ===================================================== */}
+
+        <Route
+          path="/"
+          element={<LandingPage />}
+        />
+
         <Route
           path="/select-context"
           element={<ContextSelection />}
         />
 
-        {/* FalilaX operational workspace */}
+
+        {/* =====================================================
+            CONTEXT-AWARE FALILAX WORKSPACES
+        ===================================================== */}
+
+        {/*
+          The selected context is carried in the URL:
+
+          /dashboard/home
+          /dashboard/school
+          /dashboard/hospital
+          /dashboard/restaurant
+          /dashboard/utility
+
+          Dashboard will read the :context parameter and adapt
+          its presentation accordingly.
+        */}
         <Route
-          path="/dashboard"
+          path="/dashboard/:context"
           element={<Dashboard />}
         />
+
+        {/*
+          Preserve the old /dashboard URL.
+
+          Existing buttons, bookmarks, or links that still use
+          /dashboard will enter the professional Utility workspace.
+        */}
+        <Route
+          path="/dashboard"
+          element={
+            <Navigate
+              to="/dashboard/utility"
+              replace
+            />
+          }
+        />
+
+
+        {/* =====================================================
+            OPERATIONAL INTELLIGENCE TOOLS
+        ===================================================== */}
 
         <Route
           path="/map"
@@ -55,7 +100,11 @@ export default function App() {
           element={<IncidentInvestigation />}
         />
 
-        {/* Legal / consent */}
+
+        {/* =====================================================
+            LEGAL / CONSENT
+        ===================================================== */}
+
         <Route
           path="/privacy"
           element={<PrivacyPolicy />}
@@ -71,11 +120,21 @@ export default function App() {
           element={<SmsConsent />}
         />
 
-        {/* Unknown routes */}
+
+        {/* =====================================================
+            UNKNOWN ROUTES
+        ===================================================== */}
+
         <Route
           path="*"
-          element={<Navigate to="/" replace />}
+          element={
+            <Navigate
+              to="/"
+              replace
+            />
+          }
         />
+
       </Routes>
     </BrowserRouter>
   );
