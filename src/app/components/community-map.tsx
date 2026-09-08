@@ -25,6 +25,7 @@ import {
 
 import { Button } from "@/app/components/ui/button";
 import logoImage from "@/assets/falilax-logo.png";
+import { API_BASE_URL } from "@/app/config/api";
 
 type RiskStatus = "safe" | "moderate" | "critical" | "action";
 type ResourceType = "field_team" | "flush_crew" | "mobile_lab";
@@ -91,7 +92,7 @@ type ForecastStep = {
   severity: RiskStatus;
 };
 
-const API_BASE = "http://127.0.0.1:8001/api/v1";
+const API_BASE = `${API_BASE_URL}/api/v1`;
 
 const forecastSteps: ForecastStep[] = [
   {
