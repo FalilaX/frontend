@@ -275,7 +275,7 @@ type SourceOriginAsset = {
   asset_id: number;
   asset_name: string;
   asset_type: string;
-  source_type: string;
+  source_type: string | null;
   score: number;
   depth: number;
   relationship_id: number | null;
@@ -288,7 +288,7 @@ type SourceOriginAsset = {
 };
 
 type SourceTypeSupport = {
-  source_type: string;
+  source_type: string | null;
   score: number;
   share_percent: number;
   evidence_count: number;
