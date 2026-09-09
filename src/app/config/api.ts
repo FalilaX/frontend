@@ -4,6 +4,11 @@ export const API_BASE_URL =
 export const API_ENDPOINTS = {
   DASHBOARD_OVERVIEW: "/api/v1/dashboard/overview",
 
+  AUTH_LOGIN: "/api/v1/auth/login",
+  NOTIFICATION_INBOX: "/api/v1/notification-inbox",
+  NOTIFICATION_ACKNOWLEDGE:
+    "/api/v1/notification-inbox/{notification_id}/acknowledge",
+
   DIGITAL_TWIN_SIMULATE: "/api/v1/digital-twin/simulate",
 
   INCIDENTS: "/api/v1/incidents",
