@@ -142,10 +142,10 @@ export default function Dashboard() {
 
     const incidentHeadline =
       data.status === "critical"
-        ? "CRITICAL INCIDENT ACTIVE"
+        ? "Critical incident requires action"
         : data.status === "moderate"
-          ? "ELEVATED INCIDENT ACTIVE"
-          : "NO ACTIVE INCIDENT";
+          ? "Elevated conditions detected"
+          : "Network operating normally";
 
     const escalationLevel =
       data.status === "critical"
@@ -251,7 +251,7 @@ export default function Dashboard() {
   };
 
   return (
-    <div className="min-h-screen bg-zinc-950 text-zinc-100">
+    <div className="fx-app-shell min-h-screen bg-zinc-950 text-zinc-100">
       <div className="fixed top-4 right-4 z-50 px-2 py-1 rounded text-xs text-zinc-500 bg-zinc-900 border border-zinc-800">
         Live Backend · Deployed API
       </div>
@@ -261,8 +261,7 @@ export default function Dashboard() {
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-8">
               <div onClick={() => navigate("/")} className="flex items-center gap-3 cursor-pointer">
-                <img src={logoImage} alt="FalilaX" className="h-20 w-auto object-contain" />
-                <span className="text-xl font-semibold tracking-wide">FalilaX</span>
+                <img src={logoImage} alt="FalilaX" className="fx-brand-logo" />
               </div>
 
               <nav className="hidden md:flex gap-6 text-sm">
@@ -276,9 +275,14 @@ export default function Dashboard() {
                 </Link>
               </nav>
             </div>
-<a href="/incident-map">Open Incident Operations Center</a>
+            <a
+              href="/incident-map"
+              className="hidden xl:inline-flex rounded-lg border border-cyan-400/20 bg-cyan-400/5 px-3 py-2 text-sm font-medium text-cyan-200 transition-colors hover:border-cyan-300/40 hover:bg-cyan-300/10 hover:text-white"
+            >
+              Operations Center
+            </a>
 
-            <Button variant="ghost" onClick={() => navigate("/select-context")} className="text-zinc-400 hover:text-white">
+            <Button variant="ghost" onClick={() => navigate("/")} className="text-zinc-400 hover:text-white">
               <ArrowLeft className="w-4 h-4 mr-2" />
               Back
             </Button>
@@ -303,58 +307,59 @@ export default function Dashboard() {
               </div>
             </div>
 
-            <section className={`rounded-2xl border p-6 mb-6 shadow-xl ${bannerClasses(data.status)}`}>
-              <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
-                <div className="flex items-start gap-4">
-                  <div className="p-3 rounded-xl bg-zinc-950/60 border border-zinc-800">
-                    {data.status === "safe" ? (
-                      <CheckCircle2 className="w-8 h-8 text-green-400" />
-                    ) : (
-                      <Siren className="w-8 h-8 text-red-400" />
-                    )}
+            <section className={`relative mb-6 overflow-hidden rounded-[28px] border shadow-2xl ${bannerClasses(data.status)}`}>
+              <div className="absolute inset-0 bg-[radial-gradient(circle_at_12%_0%,rgba(34,211,238,0.08),transparent_34%)]" />
+              <div className="relative grid xl:grid-cols-[minmax(0,1fr)_minmax(560px,0.9fr)]">
+                <div className="p-7 md:p-9">
+                  <div className="flex items-center gap-3">
+                    <div className="grid h-11 w-11 place-items-center rounded-2xl border border-white/10 bg-black/20">
+                      {data.status === "safe" ? (
+                        <CheckCircle2 className="h-5 w-5 text-emerald-300" />
+                      ) : (
+                        <Siren className={`h-5 w-5 ${data.status === "critical" ? "text-red-300" : "text-amber-300"}`} />
+                      )}
+                    </div>
+                    <div>
+                      <p className="text-[10px] font-bold uppercase tracking-[0.24em] text-zinc-400">Current operational posture</p>
+                      <div className="mt-1 flex items-center gap-2">
+                        <span className={`h-2 w-2 rounded-full ${data.status === "safe" ? "bg-emerald-400" : data.status === "critical" ? "bg-red-400" : "bg-amber-400"}`} />
+                        <span className="text-xs font-semibold text-zinc-300">Live command view</span>
+                      </div>
+                    </div>
                   </div>
 
-                  <div>
-                    <div className="flex flex-wrap items-center gap-3 mb-2">
-                      <span className={`px-3 py-1 rounded-full text-xs font-bold tracking-wide ${severityLabelClass(data.status)}`}>
-                        {commandCenter.severity}
-                      </span>
+                  <h2 className="mt-7 max-w-2xl text-3xl font-semibold tracking-[-0.035em] text-white md:text-4xl">
+                    {commandCenter.incidentHeadline}
+                  </h2>
+                  <p className="mt-3 text-sm leading-6 text-zinc-400">
+                    {data.location} · The response team is tracking the latest network evidence and notification status.
+                  </p>
 
-                      <span className="text-xs uppercase tracking-[0.25em] text-zinc-400">
-                        Incident Command Mode
-                      </span>
-                    </div>
-
-                    <h2 className="text-2xl md:text-3xl font-bold">
-                      {commandCenter.incidentHeadline}
-                    </h2>
-
-                    <p className="text-sm text-zinc-300 mt-1">
-                      {data.location} · Incident Status: {commandCenter.incidentStatus}
-                    </p>
+                  <div className="mt-7 flex flex-wrap items-center gap-3">
+                    <span className={`rounded-full px-3 py-1.5 text-[11px] font-bold uppercase tracking-[0.16em] ${severityLabelClass(data.status)}`}>
+                      {commandCenter.severity}
+                    </span>
+                    <span className="rounded-full border border-white/10 bg-black/15 px-3 py-1.5 text-xs text-zinc-300">
+                      {commandCenter.incidentStatus}
+                    </span>
                   </div>
                 </div>
 
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                  <div className="rounded-xl bg-zinc-950/50 border border-zinc-800 p-4 min-w-[130px]">
-                    <p className="text-xs text-zinc-400 mb-1">Population at Risk</p>
-                    <p className="text-xl font-semibold">{commandCenter.populationAtRisk.toLocaleString()}</p>
-                  </div>
-
-                  <div className="rounded-xl bg-zinc-950/50 border border-zinc-800 p-4 min-w-[130px]">
-                    <p className="text-xs text-zinc-400 mb-1">Escalation Level</p>
-                    <p className="text-xl font-semibold">{commandCenter.escalationLevel}</p>
-                  </div>
-
-                  <div className="rounded-xl bg-zinc-950/50 border border-zinc-800 p-4 min-w-[130px]">
-                    <p className="text-xs text-zinc-400 mb-1">Incident Status</p>
-                    <p className="text-xl font-semibold">{commandCenter.incidentStatus}</p>
-                  </div>
-
-                  <div className="rounded-xl bg-zinc-950/50 border border-zinc-800 p-4 min-w-[130px]">
-                    <p className="text-xs text-zinc-400 mb-1">Risk Score</p>
-                    <p className="text-xl font-semibold">{data.risk_score}%</p>
-                  </div>
+                <div className="grid grid-cols-2 border-t border-white/[0.07] bg-black/10 xl:border-l xl:border-t-0">
+                  {[
+                    ["Population at risk", commandCenter.populationAtRisk.toLocaleString()],
+                    ["Escalation", commandCenter.escalationLevel],
+                    ["Incident status", commandCenter.incidentStatus],
+                    ["Risk score", `${data.risk_score}%`],
+                  ].map(([label, value], index) => (
+                    <div
+                      key={label}
+                      className={`flex min-h-[116px] flex-col justify-center px-6 py-5 ${index % 2 === 0 ? "border-r border-white/[0.07]" : ""} ${index < 2 ? "border-b border-white/[0.07]" : ""}`}
+                    >
+                      <p className="text-[11px] font-medium uppercase tracking-[0.13em] text-zinc-500">{label}</p>
+                      <p className="mt-2 text-2xl font-semibold tracking-tight text-white">{value}</p>
+                    </div>
+                  ))}
                 </div>
               </div>
             </section>

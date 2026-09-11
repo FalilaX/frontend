@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useParams } from "react-router-dom";
 import {
   Activity,
   AlertTriangle,
@@ -1703,10 +1703,13 @@ const executionOutcomeClasses = (outcome: string) => {
 
 export function IncidentInvestigation() {
   const navigate = useNavigate();
+  const { incidentId: routeIncidentId } = useParams<{
+    incidentId?: string;
+  }>();
 
   const [incidents, setIncidents] = useState<IncidentSummary[]>([]);
   const [selectedIncidentId, setSelectedIncidentId] = useState<string | null>(
-    null,
+    routeIncidentId?.trim() || null,
   );
   const [detail, setDetail] = useState<IncidentDetailResponse | null>(null);
 
@@ -1805,6 +1808,12 @@ export function IncidentInvestigation() {
       setIncidents(result.items ?? []);
 
       setSelectedIncidentId((current) => {
+        const requestedIncidentId = routeIncidentId?.trim();
+
+        if (requestedIncidentId) {
+          return requestedIncidentId;
+        }
+
         if (
           current &&
           result.items.some((incident) => incident.id === current)
@@ -1823,7 +1832,7 @@ export function IncidentInvestigation() {
     } finally {
       setLoadingList(false);
     }
-  }, [apiFetch]);
+  }, [apiFetch, routeIncidentId]);
 
   const loadDetail = useCallback(
     async (incidentId: string) => {
@@ -2566,7 +2575,7 @@ export function IncidentInvestigation() {
   };
 
   return (
-    <div className="min-h-screen bg-zinc-950 text-zinc-100">
+    <div className="fx-app-shell min-h-screen bg-zinc-950 text-zinc-100">
       <header className="sticky top-0 z-20 border-b border-zinc-800 bg-zinc-950/90 backdrop-blur">
         <div className="container mx-auto px-6 py-4">
           <div className="flex items-center justify-between gap-6">
@@ -2755,7 +2764,12 @@ export function IncidentInvestigation() {
                       <button
                         key={incident.id}
                         type="button"
-                        onClick={() => setSelectedIncidentId(incident.id)}
+                        onClick={() => {
+                          setSelectedIncidentId(incident.id);
+                          navigate(
+                            `/incidents/${encodeURIComponent(incident.id)}`,
+                          );
+                        }}
                         className={`w-full rounded-xl border p-4 text-left transition ${
                           active
                             ? "border-amber-600 bg-amber-950/20"

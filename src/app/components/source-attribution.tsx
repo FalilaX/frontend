@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+﻿import { useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import {
   ArrowLeft,
@@ -513,7 +513,7 @@ export function SourceAttribution() {
   const assessmentLabel = formatAssessmentType(attributionData.assessment_type);
 
   return (
-    <div className="min-h-screen bg-zinc-950 text-zinc-100">
+    <div className="fx-app-shell min-h-screen bg-zinc-950 text-zinc-100">
       <header className="border-b border-zinc-800 bg-zinc-950/50 backdrop-blur-sm sticky top-0 z-10">
         <div className="container mx-auto px-6 py-4">
           <div className="flex items-center justify-between">

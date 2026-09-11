@@ -6,7 +6,6 @@ import {
 } from 'react-router-dom';
 
 import { LandingPage } from '@/app/components/landing-page';
-import { ContextSelection } from '@/app/components/context-selection';
 import Dashboard from '@/app/components/dashboard';
 import CommunityMap from '@/app/components/community-map';
 import { SourceAttribution } from '@/app/components/source-attribution';
@@ -17,12 +16,10 @@ import PrivacyPolicy from '@/app/docs/PrivacyPolicy';
 import TermsOfService from '@/app/docs/TermsOfService';
 import SmsConsent from '@/app/docs/SmsConsent';
 
-
 export default function App() {
   return (
     <BrowserRouter>
       <Routes>
-
         {/* =====================================================
             PUBLIC / ENTRY
         ===================================================== */}
@@ -34,9 +31,8 @@ export default function App() {
 
         <Route
           path="/select-context"
-          element={<ContextSelection />}
+          element={<Navigate to="/dashboard/utility" replace />}
         />
-
 
         {/* =====================================================
             CONTEXT-AWARE FALILAX WORKSPACES
@@ -75,7 +71,6 @@ export default function App() {
           }
         />
 
-
         {/* =====================================================
             OPERATIONAL INTELLIGENCE TOOLS
         ===================================================== */}
@@ -95,11 +90,23 @@ export default function App() {
           element={<SourceAttribution />}
         />
 
+        {/*
+          General incident workspace.
+        */}
         <Route
           path="/incidents"
           element={<IncidentInvestigation />}
         />
 
+        {/*
+          Incident-specific deep link used by FalilaX notifications:
+
+          /incidents/{incidentId}
+        */}
+        <Route
+          path="/incidents/:incidentId"
+          element={<IncidentInvestigation />}
+        />
 
         {/* =====================================================
             LEGAL / CONSENT
@@ -120,7 +127,6 @@ export default function App() {
           element={<SmsConsent />}
         />
 
-
         {/* =====================================================
             UNKNOWN ROUTES
         ===================================================== */}
@@ -134,7 +140,6 @@ export default function App() {
             />
           }
         />
-
       </Routes>
     </BrowserRouter>
   );

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+﻿import { useEffect, useState } from "react";
 import L from "leaflet";
 import {
   MapContainer,
@@ -167,7 +167,7 @@ export default function FalilaXIncidentMap() {
     impact?.affected_assets ?? impact?.affected_asset_count ?? affectedAssets.length;
 
   return (
-    <div style={{ position: "relative", height: "100vh", width: "100%" }}>
+    <div className="fx-app-shell fx-incident-map" style={{ position: "relative", height: "100vh", width: "100%" }}>
       <div
         style={{
           position: "absolute",
@@ -177,15 +177,15 @@ export default function FalilaXIncidentMap() {
           width: "455px",
           maxHeight: "85vh",
           overflowY: "auto",
-          background: "white",
+          background: "rgba(6, 24, 39, 0.96)",
           padding: "16px",
           borderRadius: "10px",
           boxShadow: "0 4px 14px rgba(0,0,0,0.25)",
-          fontFamily: "Arial, sans-serif",
+          fontFamily: "Inter, Segoe UI, sans-serif",
           fontSize: "14px",
         }}
       >
-        <h2 style={{ marginTop: 0, color: "#b00020" }}>
+        <h2 style={{ marginTop: 0, color: "#f6f9fc" }}>
           FalilaX Incident Operations Center
         </h2>
 
