@@ -21,6 +21,7 @@ import {
 } from "lucide-react";
 
 import { API_BASE_URL } from "@/app/config/api";
+import { authenticatedFetch } from "@/app/utils/auth-session";
 import { Button } from "@/app/components/ui/button";
 import { Input } from "@/app/components/ui/input";
 import { Textarea } from "@/app/components/ui/textarea";
@@ -1766,7 +1767,7 @@ export function IncidentInvestigation() {
 
   const apiFetch = useCallback(
     async <T,>(path: string, options?: RequestInit): Promise<T> => {
-      const response = await fetch(`${API_BASE_URL}${path}`, {
+      const response = await authenticatedFetch(`${API_BASE_URL}${path}`, {
         headers: {
           "Content-Type": "application/json",
           ...(options?.headers || {}),

@@ -18,6 +18,7 @@ import { Button } from '@/app/components/ui/button';
 import { Progress } from '@/app/components/ui/progress';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/app/components/ui/tooltip';
 import { API_BASE_URL } from '@/app/config/api';
+import { authenticatedFetch } from '@/app/utils/auth-session';
 import logoImage from '@/assets/falilax-logo.png';
 
 type AttributionPrimary = {
@@ -315,7 +316,9 @@ export function SourceAttribution() {
         setApiLoading(true);
         setApiError(null);
 
-        const response = await fetch(`${API_BASE_URL}/api/v1/source-attribution/${siteId}`);
+        const response = await authenticatedFetch(
+          `${API_BASE_URL}/api/v1/source-attribution/${encodeURIComponent(siteId)}`,
+        );
 
         if (!response.ok) {
           throw new Error(`Source attribution endpoint error: ${response.status}`);

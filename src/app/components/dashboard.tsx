@@ -24,6 +24,7 @@ import {
 } from "lucide-react";
 
 import AlertFeed from "@/app/components/AlertFeed";
+import { authenticatedFetch } from "@/app/utils/auth-session";
 import IngestionHealthPanel from "@/app/components/IngestionHealthPanel";
 import { Button } from "@/app/components/ui/button";
 import { Progress } from "@/app/components/ui/progress";
@@ -55,7 +56,9 @@ export default function Dashboard() {
   useEffect(() => {
     const loadDashboard = async () => {
       try {
-        const res = await fetch(`${API_BASE_URL}/api/v1/alerts/dashboard/summary`);
+        const res = await authenticatedFetch(
+          `${API_BASE_URL}/api/v1/alerts/dashboard/summary`,
+        );
 
         if (!res.ok) throw new Error(`API error: ${res.status}`);
 

@@ -10,6 +10,7 @@ import {
 } from "@/app/config/api";
 
 import type { APIError, APIState } from "@/app/types/api";
+import { authenticatedFetch } from "@/app/utils/auth-session";
 
 export async function fetchAPI<T>(
   url: string,
@@ -19,7 +20,7 @@ export async function fetchAPI<T>(
   const timeoutId = setTimeout(() => controller.abort(), API_CONFIG.TIMEOUT);
 
   try {
-    const response = await fetch(url, {
+    const response = await authenticatedFetch(url, {
       ...options,
       signal: controller.signal,
       headers: {

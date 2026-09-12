@@ -10,9 +10,12 @@ import {
   API_ENDPOINTS,
   buildApiUrl,
 } from "../config/api";
-
-const TOKEN_STORAGE_KEY =
-  "falilax_notification_session_token";
+import {
+  authenticatedFetch,
+  clearAccessToken,
+  getAccessToken,
+  storeAccessToken,
+} from "../utils/auth-session";
 
 type NotificationContext = {
   parameter?: string;
@@ -191,9 +194,7 @@ export default function AlertFeed() {
       return null;
     }
 
-    return window.sessionStorage.getItem(
-      TOKEN_STORAGE_KEY,
-    );
+    return getAccessToken();
   });
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -219,7 +220,7 @@ export default function AlertFeed() {
   );
 
   const signOut = useCallback((message?: string) => {
-    window.sessionStorage.removeItem(TOKEN_STORAGE_KEY);
+    clearAccessToken();
     setToken(null);
     setPassword("");
     setNotifications([]);
@@ -240,11 +241,10 @@ export default function AlertFeed() {
       }
 
       try {
-        const response = await fetch(
+        const response = await authenticatedFetch(
           buildApiUrl(API_ENDPOINTS.NOTIFICATION_INBOX),
           {
             headers: {
-              Authorization: `Bearer ${token}`,
             },
             cache: "no-store",
           },
@@ -352,10 +352,7 @@ export default function AlertFeed() {
         );
       }
 
-      window.sessionStorage.setItem(
-        TOKEN_STORAGE_KEY,
-        accessToken,
-      );
+      storeAccessToken(accessToken);
       setPassword("");
       setToken(accessToken);
     } catch (requestError) {
@@ -381,16 +378,13 @@ export default function AlertFeed() {
     setError(null);
 
     try {
-      const response = await fetch(
+      const response = await authenticatedFetch(
         buildApiUrl(
           API_ENDPOINTS.NOTIFICATION_ACKNOWLEDGE,
           { notification_id: notificationId },
         ),
         {
           method: "POST",
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
           cache: "no-store",
         },
       );
