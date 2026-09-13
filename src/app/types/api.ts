@@ -28,6 +28,42 @@ export interface DashboardOverview {
 }
 
 // ============================================================================
+// Utility Demonstration Readiness API
+// Endpoint: /api/v1/readiness/utilities/{utility_id}
+// ============================================================================
+
+export interface ReadinessComponent {
+  key: string;
+  label: string;
+  count: number;
+  represented: boolean;
+}
+
+export interface UtilityReadinessResponse {
+  schema_version: string;
+  generated_at: string;
+  utility_id: number;
+  utility_name: string;
+  score: number;
+  status: "ready" | "partial" | "needs_data";
+  components: ReadinessComponent[];
+  missing_components: string[];
+  geography: {
+    total_sites: number;
+    geocoded_sites: number;
+    assigned_service_areas: number;
+    represented_jurisdictions: number;
+  };
+  data_trust: {
+    total_sources: number;
+    healthy_sources: number;
+    stale_sources: number;
+    modes: Array<"live" | "imported" | "simulated" | "configured">;
+  };
+  disclosure: string;
+}
+
+// ============================================================================
 // Measurements API
 // Endpoint: /api/v1/measurements/latest
 // ============================================================================

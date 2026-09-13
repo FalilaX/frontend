@@ -2610,7 +2610,7 @@ export function IncidentInvestigation() {
                   Community Map
                 </Link>
                 <Link
-                  to="/attribution?siteId=1"
+                  to="/map"
                   className="text-zinc-400 hover:text-zinc-100"
                 >
                   Source Attribution

@@ -97,37 +97,8 @@ const siteLabels: Record<string, { name: string; type: string }> = {
 };
 
 const fallbackAttributionData: AttributionResponse = {
-  engine_version: '3.0',
-  assessment_type: 'probabilistic_inferred',
-  primary: {
-    source: 'distribution',
-    confidence: 74,
-    indicator: 'Critical water quality signal detected across Montgomery pilot infrastructure.',
-  },
-  breakdown: [
-    {
-      source: 'Distribution System',
-      probability: 74,
-      factors: [
-        'County-level alert cluster detected',
-        'Multiple downstream sites affected',
-        'Shared infrastructure risk pattern',
-      ],
-    },
-    {
-      source: 'Building Plumbing',
-      probability: 18,
-      factors: [
-        'Endpoint-specific plumbing may contribute',
-        'Site-level confirmation recommended',
-      ],
-    },
-    {
-      source: 'Central Water System',
-      probability: 8,
-      factors: ['Upstream contribution cannot be excluded without source sampling'],
-    },
-  ],
+  primary: {},
+  breakdown: [],
   probable_origin_assets: [],
   topology: {
     used: false,
@@ -139,16 +110,8 @@ const fallbackAttributionData: AttributionResponse = {
     probable_origin_assets: [],
   },
   recommendations: {
-    immediate: [
-      'Inspect affected site and nearby connected points',
-      'Repeat confirmatory water quality testing',
-      'Notify responsible water safety personnel',
-    ],
-    followUp: [
-      'Compare upstream and downstream measurements',
-      'Review distribution-line maintenance records',
-      'Continue monitoring until readings normalize',
-    ],
+    immediate: [],
+    followUp: [],
   },
 };
 
@@ -299,18 +262,25 @@ export function SourceAttribution() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
 
-  const siteId = searchParams.get('siteId') || '1';
+  const siteId = searchParams.get('siteId')?.trim() || '';
 
   const siteMeta = useMemo(
     () =>
       siteLabels[siteId] ?? {
-        name: `Pilot Site ${siteId}`,
+        name: siteId ? `Pilot Site ${siteId}` : 'No site selected',
         type: 'Monitored Site',
       },
     [siteId],
   );
 
   useEffect(() => {
+    if (!siteId) {
+      setAttributionData(fallbackAttributionData);
+      setApiError('Select an authorized site from the Community Map.');
+      setApiLoading(false);
+      return;
+    }
+
     const loadAttribution = async () => {
       try {
         setApiLoading(true);
@@ -320,8 +290,16 @@ export function SourceAttribution() {
           `${API_BASE_URL}/api/v1/source-attribution/${encodeURIComponent(siteId)}`,
         );
 
+        if (response.status === 401) {
+          throw new Error('Your secure session expired. Please sign in again.');
+        }
+
+        if (response.status === 404) {
+          throw new Error('This site was not found or is not authorized for your account.');
+        }
+
         if (!response.ok) {
-          throw new Error(`Source attribution endpoint error: ${response.status}`);
+          throw new Error(`Source attribution is unavailable (${response.status}).`);
         }
 
         const result = await response.json();
@@ -401,15 +379,13 @@ export function SourceAttribution() {
           future_evidence_hooks: result?.future_evidence_hooks,
         });
       } catch (error) {
-        console.warn('Source attribution unavailable, using site-aware fallback:', error);
+        console.warn('Source attribution unavailable:', error);
         setApiError(error instanceof Error ? error.message : 'Unknown error');
 
         setAttributionData({
           ...fallbackAttributionData,
           site_name: siteMeta.name,
           site_type: siteMeta.type,
-          county: 'Montgomery',
-          state: 'AL',
         });
       } finally {
         setApiLoading(false);
@@ -547,7 +523,7 @@ export function SourceAttribution() {
                   Community Map
                 </Link>
                 <Link
-                  to={`/attribution?siteId=${siteId}`}
+                  to="/map"
                   className="text-zinc-100 font-medium"
                 >
                   Source Attribution
@@ -557,7 +533,7 @@ export function SourceAttribution() {
 
             <div className="flex items-center gap-4">
               <div className="px-2 py-1 rounded text-xs text-emerald-400 bg-emerald-500/10 border border-emerald-500/20">
-                {topologyUsed ? 'Topology-Aware Attribution' : 'Site-Aware Attribution'}
+                {apiError ? 'Attribution Unavailable' : topologyUsed ? 'Topology-Aware Attribution' : 'Site-Aware Attribution'}
               </div>
 
               <Button
@@ -599,7 +575,9 @@ export function SourceAttribution() {
             <div className="rounded-lg border border-zinc-800 bg-zinc-900/60 p-4">
               <p className="text-xs text-zinc-500 mb-1">Location</p>
               <p className="text-lg font-semibold">
-                {attributionData.county ?? 'Montgomery'}, {attributionData.state ?? 'AL'}
+                {attributionData.county && attributionData.state
+                  ? `${attributionData.county}, ${attributionData.state}`
+                  : 'Not available'}
               </p>
             </div>
           </div>
@@ -608,7 +586,7 @@ export function SourceAttribution() {
 
           <div className="flex flex-wrap items-center gap-2 mb-2">
             <span className="inline-block px-2 py-0.5 rounded text-xs bg-blue-500/10 text-blue-400 border border-blue-500/20">
-              Assessment: {assessmentLabel}
+              Assessment: {apiError ? 'Not available' : assessmentLabel}
             </span>
 
             {attributionData.engine_version && (
@@ -634,7 +612,7 @@ export function SourceAttribution() {
           <div className="flex items-center gap-1.5 text-xs text-zinc-500">
             <Clock className="w-3 h-3" />
             <span>
-              Analysis refreshed: {formatRefreshTime(attributionData.updated_at)}
+              Analysis refreshed: {apiError ? 'Not available' : formatRefreshTime(attributionData.updated_at)}
             </span>
           </div>
 
@@ -646,7 +624,7 @@ export function SourceAttribution() {
 
           {!apiLoading && apiError && (
             <div className="mt-4 rounded-lg border border-amber-500/20 bg-amber-500/5 p-3 text-sm text-amber-400">
-              Using site-aware fallback attribution - {apiError}
+              Source attribution unavailable — {apiError}
             </div>
           )}
 
@@ -658,6 +636,8 @@ export function SourceAttribution() {
           )}
         </div>
 
+        {!apiLoading && !apiError && (
+          <>
         <div className="mb-8 p-8 rounded-lg bg-gradient-to-br from-amber-500/10 to-amber-500/5 border border-amber-500/30">
           <div className="flex items-start gap-4 mb-4">
             <div className="p-3 rounded-full bg-amber-500/20">
@@ -1169,6 +1149,8 @@ export function SourceAttribution() {
             </div>
           </div>
         </div>
+          </>
+        )}
       </main>
 
       <footer className="border-t border-zinc-800 mt-16 py-8 bg-zinc-950/50">

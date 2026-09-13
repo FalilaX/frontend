@@ -21,6 +21,7 @@ import {
   DollarSign,
   RadioTower,
   Circle,
+  ClipboardCheck,
 } from "lucide-react";
 
 import AlertFeed from "@/app/components/AlertFeed";
@@ -51,6 +52,7 @@ export default function Dashboard() {
   const [data, setData] = useState<DashboardData | null>(null);
   const [loading, setLoading] = useState(true);
   const [showDetails, setShowDetails] = useState(false);
+  const [readinessUtilityId, setReadinessUtilityId] = useState<number | null>(null);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -102,8 +104,29 @@ export default function Dashboard() {
       }
     };
 
+    const loadAuthorizedUtility = async () => {
+      try {
+        const response = await authenticatedFetch(
+          `${API_BASE_URL}/api/v1/utilities?limit=1`,
+        );
+        if (!response.ok) {
+          throw new Error(`Utilities API error: ${response.status}`);
+        }
+        const utilities: Array<{ id: number }> = await response.json();
+        setReadinessUtilityId(utilities[0]?.id ?? null);
+      } catch (error) {
+        console.warn("Unable to resolve an authorized utility:", error);
+        setReadinessUtilityId(null);
+      }
+    };
+
     loadDashboard();
+    loadAuthorizedUtility();
   }, []);
+
+  const readinessPath = readinessUtilityId
+    ? `/readiness?utilityId=${readinessUtilityId}`
+    : null;
 
   const statusIcon = (status: RiskStatus) => {
     switch (status) {
@@ -270,11 +293,21 @@ export default function Dashboard() {
               <nav className="hidden md:flex gap-6 text-sm">
                 <Link to="/dashboard" className="text-zinc-100 font-medium">Dashboard</Link>
                 <Link to="/map" className="text-zinc-400 hover:text-zinc-100 transition-colors">Community Map</Link>
-                <Link to="/attribution?siteId=1" className="text-zinc-400 hover:text-zinc-100 transition-colors">
+                <Link to="/map" className="text-zinc-400 hover:text-zinc-100 transition-colors">
                   Source Attribution
                 </Link>
                 <Link to="/incidents" className="text-zinc-400 hover:text-zinc-100 transition-colors">
                   Investigation Workflow
+                </Link>
+                <Link
+                  to={readinessPath ?? "#"}
+                  onClick={(event) => {
+                    if (!readinessPath) event.preventDefault();
+                  }}
+                  aria-disabled={!readinessPath}
+                  className={`transition-colors ${readinessPath ? "text-zinc-400 hover:text-zinc-100" : "cursor-not-allowed text-zinc-600"}`}
+                >
+                  Readiness
                 </Link>
               </nav>
             </div>
@@ -502,7 +535,7 @@ export default function Dashboard() {
               </div>
             </div>
 
-            <div className="grid md:grid-cols-2 xl:grid-cols-4 gap-6 mb-6">
+            <div className="grid md:grid-cols-2 xl:grid-cols-5 gap-6 mb-6">
               <div
                 onClick={() => navigate("/map")}
                 className="p-6 bg-zinc-900 rounded-xl border border-zinc-800 hover:border-amber-500 transition cursor-pointer"
@@ -517,7 +550,7 @@ export default function Dashboard() {
               </div>
 
               <div
-                onClick={() => navigate("/attribution?siteId=1")}
+                onClick={() => navigate("/map")}
                 className="p-6 bg-zinc-900 rounded-xl border border-zinc-800 hover:border-amber-500 transition cursor-pointer"
               >
                 <div className="flex items-center gap-3 mb-2">
@@ -539,6 +572,19 @@ export default function Dashboard() {
                 </div>
                 <p className="text-sm text-zinc-400">
                   Acknowledge, assign, investigate, verify, resolve, and close operational incidents.
+                </p>
+              </div>
+
+              <div
+                onClick={() => readinessPath && navigate(readinessPath)}
+                className={`p-6 bg-zinc-900 rounded-xl border border-zinc-800 transition ${readinessPath ? "cursor-pointer hover:border-amber-500" : "cursor-not-allowed opacity-60"}`}
+              >
+                <div className="flex items-center gap-3 mb-2">
+                  <ClipboardCheck className="w-5 h-5 text-amber-400" />
+                  <h3 className="text-lg font-medium">Demo Readiness</h3>
+                </div>
+                <p className="text-sm text-zinc-400">
+                  Confirm system, geographic, and data-source representation before a demonstration.
                 </p>
               </div>
 

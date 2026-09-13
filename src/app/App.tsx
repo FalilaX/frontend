@@ -11,6 +11,7 @@ import CommunityMap from '@/app/components/community-map';
 import { SourceAttribution } from '@/app/components/source-attribution';
 import { IncidentInvestigation } from '@/app/components/incident-investigation';
 import FalilaXIncidentMap from '@/app/FalilaXIncidentMap';
+import UtilityReadiness from '@/app/components/utility-readiness';
 
 import PrivacyPolicy from '@/app/docs/PrivacyPolicy';
 import TermsOfService from '@/app/docs/TermsOfService';
@@ -83,6 +84,11 @@ export default function App() {
         <Route
           path="/incident-map"
           element={<FalilaXIncidentMap />}
+        />
+
+        <Route
+          path="/readiness"
+          element={<UtilityReadiness />}
         />
 
         <Route

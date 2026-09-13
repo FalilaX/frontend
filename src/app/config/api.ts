@@ -3,6 +3,7 @@ export const API_BASE_URL =
 
 export const API_ENDPOINTS = {
   DASHBOARD_OVERVIEW: "/api/v1/dashboard/overview",
+  UTILITY_READINESS: "/api/v1/readiness/utilities/{utility_id}",
 
   AUTH_LOGIN: "/api/v1/auth/login",
   NOTIFICATION_INBOX: "/api/v1/notification-inbox",
