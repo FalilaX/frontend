@@ -99,6 +99,25 @@ export async function fetchAPIWithRetry<T>(
   throw lastError;
 }
 
+export async function runUnsafeTurbiditySimulation() {
+  const url = buildApiUrlWithQuery(
+    API_ENDPOINTS.SIMULATION_RUN,
+    undefined,
+    {
+      user_id: 1,
+      sample_id: 1,
+      scenario: "unsafe_turbidity",
+      location_label: "FalilaX Deterministic Safety Test",
+      origin_scope_type: "site",
+      origin_scope_id: 1,
+    }
+  );
+
+  return fetchAPI<any>(url, {
+    method: "POST",
+  });
+}
+
 export async function simulateDigitalTwinMeasurement(params: {
   node_id: number;
   chlorine_mg_l?: number;

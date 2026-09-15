@@ -14,6 +14,7 @@ import {
   closeIncident,
   fetchIncidentDetail,
   fetchIncidents,
+  runUnsafeTurbiditySimulation,
   simulateAndSaveIncident,
 } from "@/app/utils/api-client";
 
@@ -74,6 +75,9 @@ export default function FalilaXIncidentMap() {
   const [digitalTwinLoading, setDigitalTwinLoading] = useState(false);
   const [digitalTwinError, setDigitalTwinError] = useState(null);
   const [savedIncidentId, setSavedIncidentId] = useState(null);
+  const [safetyTestLoading, setSafetyTestLoading] = useState(false);
+  const [safetyTestResult, setSafetyTestResult] = useState(null);
+  const [safetyTestError, setSafetyTestError] = useState(null);
 
   const [incidents, setIncidents] = useState([]);
   const [incidentHistoryLoading, setIncidentHistoryLoading] = useState(false);
@@ -96,6 +100,29 @@ export default function FalilaXIncidentMap() {
   useEffect(() => {
     loadIncidents();
   }, []);
+
+  const runUnsafeTurbiditySafetyTest = async () => {
+    const confirmed = window.confirm(
+      "SIMULATION ONLY: Generate a deterministic unsafe turbidity reading of 10.0 NTU? No email or SMS will be sent."
+    );
+
+    if (!confirmed) return;
+
+    setSafetyTestLoading(true);
+    setSafetyTestResult(null);
+    setSafetyTestError(null);
+
+    try {
+      const result = await runUnsafeTurbiditySimulation();
+      setSafetyTestResult(result);
+    } catch (error) {
+      setSafetyTestError(
+        error?.message || "Deterministic safety simulation failed"
+      );
+    } finally {
+      setSafetyTestLoading(false);
+    }
+  };
 
   const runDigitalTwinSimulation = async () => {
     setDigitalTwinLoading(true);
@@ -207,6 +234,93 @@ export default function FalilaXIncidentMap() {
             ? "Running & Saving Incident..."
             : "Run and Save Incident Simulation"}
         </button>
+
+        <div
+          style={{
+            marginTop: "14px",
+            padding: "12px",
+            border: "1px solid #f59e0b",
+            borderRadius: "8px",
+            background: "rgba(245, 158, 11, 0.10)",
+          }}
+        >
+          <div style={{ color: "#fbbf24", fontWeight: "bold" }}>
+            Controlled Safety Simulation
+          </div>
+          <div
+            style={{
+              marginTop: "5px",
+              marginBottom: "10px",
+              color: "#d1d5db",
+              fontSize: "12px",
+            }}
+          >
+            Admin-only deterministic test. External email and SMS delivery
+            remain disabled.
+          </div>
+
+          <button
+            onClick={runUnsafeTurbiditySafetyTest}
+            disabled={safetyTestLoading}
+            style={{
+              width: "100%",
+              padding: "12px",
+              border: "none",
+              borderRadius: "6px",
+              background: safetyTestLoading ? "#999" : "#d97706",
+              color: "white",
+              fontWeight: "bold",
+              cursor: safetyTestLoading ? "not-allowed" : "pointer",
+            }}
+          >
+            {safetyTestLoading
+              ? "Running Safety Test..."
+              : "Run Unsafe Turbidity Safety Test"}
+          </button>
+
+          {safetyTestResult && (
+            <div
+              style={{
+                marginTop: "10px",
+                padding: "10px",
+                borderRadius: "6px",
+                background: "#451a03",
+                color: "#fde68a",
+              }}
+            >
+              <strong>SIMULATION ONLY</strong>
+              <div>
+                Generated:{" "}
+                {safetyTestResult.measurements?.[0]?.value ?? "?"}{" "}
+                {safetyTestResult.measurements?.[0]?.unit ?? ""}
+              </div>
+              <div>
+                Parameter:{" "}
+                {safetyTestResult.measurements?.[0]?.parameter_code ?? "?"}
+              </div>
+              <div>
+                Location: {safetyTestResult.location_label ?? "?"}
+              </div>
+              <div style={{ marginTop: "5px", fontSize: "12px" }}>
+                The resulting alert is restricted to the in-app channel.
+              </div>
+            </div>
+          )}
+
+          {safetyTestError && (
+            <div
+              style={{
+                marginTop: "10px",
+                padding: "10px",
+                borderRadius: "6px",
+                background: "#7f1d1d",
+                color: "#fecaca",
+              }}
+            >
+              {safetyTestError}
+            </div>
+          )}
+        </div>
 
         {savedIncidentId && (
           <div

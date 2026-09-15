@@ -11,6 +11,7 @@ export const API_ENDPOINTS = {
     "/api/v1/notification-inbox/{notification_id}/acknowledge",
 
   DIGITAL_TWIN_SIMULATE: "/api/v1/digital-twin/simulate",
+  SIMULATION_RUN: "/api/v1/simulation/run",
 
   INCIDENTS: "/api/v1/incidents",
   INCIDENT_SIMULATE: "/api/v1/incidents/simulate",
