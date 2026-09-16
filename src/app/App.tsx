@@ -10,6 +10,7 @@ import Dashboard from '@/app/components/dashboard';
 import CommunityMap from '@/app/components/community-map';
 import { SourceAttribution } from '@/app/components/source-attribution';
 import { IncidentInvestigation } from '@/app/components/incident-investigation';
+import AlertFeed from '@/app/components/AlertFeed';
 import FalilaXIncidentMap from '@/app/FalilaXIncidentMap';
 import UtilityReadiness from '@/app/components/utility-readiness';
 
@@ -84,6 +85,11 @@ export default function App() {
         <Route
           path="/incident-map"
           element={<FalilaXIncidentMap />}
+        />
+
+        <Route
+          path="/alerts"
+          element={<AlertFeed />}
         />
 
         <Route

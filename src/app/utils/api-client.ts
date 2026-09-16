@@ -17,7 +17,10 @@ export async function fetchAPI<T>(
   options?: RequestInit
 ): Promise<T> {
   const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), API_CONFIG.TIMEOUT);
+  const timeoutId = setTimeout(
+    () => controller.abort(),
+    API_CONFIG.TIMEOUT
+  );
 
   try {
     const response = await authenticatedFetch(url, {
@@ -28,8 +31,6 @@ export async function fetchAPI<T>(
         ...options?.headers,
       },
     });
-
-    clearTimeout(timeoutId);
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({
@@ -47,8 +48,6 @@ export async function fetchAPI<T>(
 
     return await response.json();
   } catch (error) {
-    clearTimeout(timeoutId);
-
     if (error instanceof Error) {
       if (error.name === "AbortError") {
         throw {
@@ -68,6 +67,8 @@ export async function fetchAPI<T>(
     }
 
     throw error;
+  } finally {
+    clearTimeout(timeoutId);
   }
 }
 
@@ -84,19 +85,31 @@ export async function fetchAPIWithRetry<T>(
     } catch (error) {
       lastError = error as APIError;
 
-      if (lastError.status_code >= 400 && lastError.status_code < 500) {
+      const statusCode = lastError.status_code ?? 0;
+
+      if (statusCode >= 400 && statusCode < 500) {
         throw lastError;
       }
 
       if (attempt < maxRetries) {
-        await new Promise((resolve) =>
-          setTimeout(resolve, API_CONFIG.RETRY_DELAY * Math.pow(2, attempt))
-        );
+        const retryDelay =
+          API_CONFIG.RETRY_DELAY * Math.pow(2, attempt);
+
+        await new Promise<void>((resolve) => {
+          setTimeout(resolve, retryDelay);
+        });
       }
     }
   }
 
-  throw lastError;
+  throw (
+    lastError ?? {
+      error: "API Error",
+      message: "The request failed after all retry attempts",
+      status_code: 0,
+      timestamp: new Date().toISOString(),
+    }
+  );
 }
 
 export async function runUnsafeTurbiditySimulation() {
@@ -104,12 +117,12 @@ export async function runUnsafeTurbiditySimulation() {
     API_ENDPOINTS.SIMULATION_RUN,
     undefined,
     {
-      user_id: 1,
       sample_id: 1,
       scenario: "unsafe_turbidity",
       location_label: "FalilaX Deterministic Safety Test",
-      origin_scope_type: "site",
+      origin_scope_type: "asset",
       origin_scope_id: 1,
+      notification_asset_id: 1,
     }
   );
 
@@ -157,19 +170,43 @@ export async function simulateAndSaveIncident(params: {
 
 export async function fetchIncidents() {
   const url = buildApiUrl(API_ENDPOINTS.INCIDENTS);
-  return fetchAPI<any[]>(url);
+  const response = await fetchAPI<any>(url);
+
+  const items = Array.isArray(response)
+    ? response
+    : response?.items ?? [];
+
+  return items.map((incident: any) => ({
+    ...incident,
+    incident_id: incident.incident_id ?? incident.id,
+  }));
 }
 
-export async function fetchIncidentDetail(incident_id: string) {
-  const url = buildApiUrl(API_ENDPOINTS.INCIDENT_DETAIL, { incident_id });
+export async function fetchIncidentDetail(
+  incident_id: string
+) {
+  const url = buildApiUrl(
+    API_ENDPOINTS.INCIDENT_DETAIL,
+    {
+      incident_id,
+    }
+  );
+
   return fetchAPI<any>(url);
 }
 
-export async function closeIncident(incident_id: string) {
-  const url = buildApiUrl(API_ENDPOINTS.INCIDENT_CLOSE, { incident_id });
+export async function closeIncident(
+  incident_id: string
+) {
+  const url = buildApiUrl(
+    API_ENDPOINTS.INCIDENT_CLOSE,
+    {
+      incident_id,
+    }
+  );
 
   return fetchAPI<any>(url, {
-    method: "PATCH",
+    method: "POST",
   });
 }
 
@@ -193,17 +230,32 @@ export function createAPIState<T>(
 ): APIState<T> {
   switch (status) {
     case "idle":
-      return { status: "idle" };
+      return {
+        status: "idle",
+      };
+
     case "loading":
-      return { status: "loading" };
+      return {
+        status: "loading",
+      };
+
     case "success":
-      return { status: "success", data: data as T };
+      return {
+        status: "success",
+        data: data as T,
+      };
+
     case "error":
-      return { status: "error", error: error as APIError };
+      return {
+        status: "error",
+        error: error as APIError,
+      };
   }
 }
 
-export function formatTimestamp(timestamp: string): string {
+export function formatTimestamp(
+  timestamp: string
+): string {
   const date = new Date(timestamp);
   const now = new Date();
 
@@ -212,23 +264,58 @@ export function formatTimestamp(timestamp: string): string {
   const diffHours = Math.floor(diffMs / 3600000);
   const diffDays = Math.floor(diffMs / 86400000);
 
-  if (diffMins < 1) return "just now";
-  if (diffMins < 60) return `${diffMins} minute${diffMins > 1 ? "s" : ""} ago`;
-  if (diffHours < 24) return `${diffHours} hour${diffHours > 1 ? "s" : ""} ago`;
-  if (diffDays < 7) return `${diffDays} day${diffDays > 1 ? "s" : ""} ago`;
+  if (diffMins < 1) {
+    return "just now";
+  }
+
+  if (diffMins < 60) {
+    return `${diffMins} minute${
+      diffMins === 1 ? "" : "s"
+    } ago`;
+  }
+
+  if (diffHours < 24) {
+    return `${diffHours} hour${
+      diffHours === 1 ? "" : "s"
+    } ago`;
+  }
+
+  if (diffDays < 7) {
+    return `${diffDays} day${
+      diffDays === 1 ? "" : "s"
+    } ago`;
+  }
 
   return date.toLocaleDateString();
 }
 
-export function formatRelativeTime(timestamp: string): string {
+export function formatRelativeTime(
+  timestamp: string
+): string {
   const date = new Date(timestamp);
   const now = new Date();
 
   const diffMs = date.getTime() - now.getTime();
-  const diffMins = Math.floor(diffMs / 60000);
-  const diffHours = Math.floor(diffMs / 3600000);
+  const diffMins = Math.max(
+    0,
+    Math.ceil(diffMs / 60000)
+  );
+  const diffHours = Math.max(
+    0,
+    Math.ceil(diffMs / 3600000)
+  );
 
-  if (diffMins < 1) return "updating now";
-  if (diffMins < 60) return `~${diffMins} minute${diffMins > 1 ? "s" : ""}`;
-  return `~${diffHours} hour${diffHours > 1 ? "s" : ""}`;
+  if (diffMins < 1) {
+    return "updating now";
+  }
+
+  if (diffMins < 60) {
+    return `~${diffMins} minute${
+      diffMins === 1 ? "" : "s"
+    }`;
+  }
+
+  return `~${diffHours} hour${
+    diffHours === 1 ? "" : "s"
+  }`;
 }
