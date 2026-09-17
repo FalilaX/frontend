@@ -90,10 +90,11 @@ type AttributionResponse = {
   future_evidence_hooks?: unknown;
 };
 
-const siteLabels: Record<string, { name: string; type: string }> = {
-  '2': { name: 'Line A School', type: 'School' },
-  '3': { name: 'Line A Clinic', type: 'Clinic' },
-  '4': { name: 'Line B Household', type: 'Household' },
+type AuthorizedSiteMeta = {
+  name: string;
+  type: string;
+  county?: string;
+  state?: string;
 };
 
 const fallbackAttributionData: AttributionResponse = {
@@ -264,12 +265,11 @@ export function SourceAttribution() {
 
   const siteId = searchParams.get('siteId')?.trim() || '';
 
-  const siteMeta = useMemo(
-    () =>
-      siteLabels[siteId] ?? {
-        name: siteId ? `Pilot Site ${siteId}` : 'No site selected',
-        type: 'Monitored Site',
-      },
+  const unavailableSiteMeta = useMemo<AuthorizedSiteMeta>(
+    () => ({
+      name: siteId ? 'Authorized site unavailable' : 'No site selected',
+      type: 'Not available',
+    }),
     [siteId],
   );
 
@@ -282,9 +282,47 @@ export function SourceAttribution() {
     }
 
     const loadAttribution = async () => {
+      let resolvedSiteMeta: AuthorizedSiteMeta | null = null;
+
       try {
         setApiLoading(true);
         setApiError(null);
+
+        const locationResponse = await authenticatedFetch(
+          `${API_BASE_URL}/api/v1/locations/${encodeURIComponent(siteId)}`,
+        );
+
+        if (locationResponse.status === 401) {
+          throw new Error('Your secure session expired. Please sign in again.');
+        }
+
+        if (locationResponse.status === 404) {
+          throw new Error('This site was not found or is not authorized for your account.');
+        }
+
+        if (!locationResponse.ok) {
+          throw new Error(`Site details are unavailable (${locationResponse.status}).`);
+        }
+
+        const location = await locationResponse.json();
+        resolvedSiteMeta = {
+          name: String(location?.name ?? `Site ${siteId}`),
+          type: String(location?.type ?? 'Monitored Site'),
+          county: location?.county ? String(location.county) : undefined,
+          state: location?.state
+            ? String(location.state)
+            : location?.state_code
+              ? String(location.state_code)
+              : undefined,
+        };
+
+        setAttributionData({
+          ...fallbackAttributionData,
+          site_name: resolvedSiteMeta.name,
+          site_type: resolvedSiteMeta.type,
+          county: resolvedSiteMeta.county,
+          state: resolvedSiteMeta.state,
+        });
 
         const response = await authenticatedFetch(
           `${API_BASE_URL}/api/v1/source-attribution/${encodeURIComponent(siteId)}`,
@@ -313,10 +351,10 @@ export function SourceAttribution() {
             : [];
 
         setAttributionData({
-          site_name: result?.site_name ?? siteMeta.name,
-          site_type: result?.site_type ?? siteMeta.type,
-          county: result?.county ?? 'Montgomery',
-          state: result?.state ?? 'AL',
+          site_name: result?.site_name ?? resolvedSiteMeta.name,
+          site_type: result?.site_type ?? resolvedSiteMeta.type,
+          county: result?.county ?? resolvedSiteMeta.county,
+          state: result?.state ?? resolvedSiteMeta.state,
 
           engine_version: result?.engine_version,
           assessment_type: result?.assessment_type,
@@ -384,8 +422,10 @@ export function SourceAttribution() {
 
         setAttributionData({
           ...fallbackAttributionData,
-          site_name: siteMeta.name,
-          site_type: siteMeta.type,
+          site_name: resolvedSiteMeta?.name ?? unavailableSiteMeta.name,
+          site_type: resolvedSiteMeta?.type ?? unavailableSiteMeta.type,
+          county: resolvedSiteMeta?.county,
+          state: resolvedSiteMeta?.state,
         });
       } finally {
         setApiLoading(false);
@@ -393,7 +433,7 @@ export function SourceAttribution() {
     };
 
     loadAttribution();
-  }, [siteId, siteMeta.name, siteMeta.type]);
+  }, [siteId, unavailableSiteMeta.name, unavailableSiteMeta.type]);
 
   const primaryConfidence = toFiniteNumber(attributionData.primary?.confidence, 0);
 
@@ -561,14 +601,14 @@ export function SourceAttribution() {
             <div className="rounded-lg border border-zinc-800 bg-zinc-900/60 p-4">
               <p className="text-xs text-zinc-500 mb-1">Selected Site</p>
               <p className="text-lg font-semibold">
-                {attributionData.site_name ?? siteMeta.name}
+                {attributionData.site_name ?? unavailableSiteMeta.name}
               </p>
             </div>
 
             <div className="rounded-lg border border-zinc-800 bg-zinc-900/60 p-4">
               <p className="text-xs text-zinc-500 mb-1">Site Type</p>
               <p className="text-lg font-semibold">
-                {normalizeAssetTypeLabel(attributionData.site_type ?? siteMeta.type)}
+                {normalizeAssetTypeLabel(attributionData.site_type ?? unavailableSiteMeta.type)}
               </p>
             </div>
 
@@ -1109,7 +1149,7 @@ export function SourceAttribution() {
                   <MapPin className="w-4 h-4 text-amber-400 mt-0.5 flex-shrink-0" />
                   <div>
                     <p className="text-zinc-300">
-                      {attributionData.site_name ?? siteMeta.name}
+                      {attributionData.site_name ?? unavailableSiteMeta.name}
                     </p>
                     <p className="text-zinc-500 text-xs">Active monitored location</p>
                   </div>
