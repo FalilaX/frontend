@@ -28,6 +28,7 @@ const TOKEN_STORAGE_KEY = "falilax_notification_session_token";
 
 type OperationalSite = {
   id: string;
+  attributionSiteId?: string;
   name: string;
   type: string;
   network: string;
@@ -83,8 +84,21 @@ const collection = (payload: unknown, keys: string[]): RawRecord[] => {
 const siteFromLocation = (record: RawRecord, index: number): OperationalSite => {
   const address = nested(record, "address");
   const organization = nested(record, "organization");
+  const locationId =
+    idValue(record.location_id, record.id) || `location-${index}`;
+  const attributionSiteId = idValue(
+    record.site_id,
+    record.monitored_site_id,
+    record.monitoring_site_id,
+    record.attribution_site_id,
+  );
+
   return {
-    id: idValue(record.location_id, record.site_id, record.id) || `location-${index}`,
+    // A location ID and a monitored-site ID are different namespaces. Keep
+    // the location ID for directory selection and use only an explicit site
+    // mapping when opening source-attribution intelligence.
+    id: locationId,
+    attributionSiteId: attributionSiteId || undefined,
     name: textValue(record.location_name, record.name, record.label, record.location_label) || `Monitoring site ${index + 1}`,
     type: textValue(record.facility_type, record.location_type, record.site_type, record.type) || "Monitoring site",
     network: textValue(record.utility_name, record.network_name, record.organization_name, organization.name) || "Connected water network",
@@ -289,7 +303,29 @@ export default function CommunityMap() {
                 {selectedSite.county && <Detail label="County / region" value={selectedSite.county} />}
                 {selectedSite.community && <Detail label="City / community" value={selectedSite.community} />}
                 <Detail label="Last update" value={formatTime(selectedSite.lastUpdated)} />
-                <Button className="w-full" onClick={() => navigate(`/attribution?siteId=${encodeURIComponent(selectedSite.id)}`)}>Open site intelligence <ChevronRight className="ml-2 h-4 w-4" /></Button>
+                {selectedSite.attributionSiteId ? (
+                  <Button
+                    className="w-full"
+                    onClick={() =>
+                      navigate(
+                        `/attribution?siteId=${encodeURIComponent(selectedSite.attributionSiteId!)}`,
+                      )
+                    }
+                  >
+                    Open site intelligence
+                    <ChevronRight className="ml-2 h-4 w-4" />
+                  </Button>
+                ) : (
+                  <>
+                    <Button className="w-full" disabled>
+                      Site intelligence unavailable
+                    </Button>
+                    <p className="text-xs leading-relaxed text-zinc-500">
+                      This location is connected, but the API has not supplied
+                      an authorized monitored-site mapping for attribution.
+                    </p>
+                  </>
+                )}
               </div>}
             </aside>
           </div>
