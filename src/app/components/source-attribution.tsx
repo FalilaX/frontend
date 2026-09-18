@@ -56,6 +56,10 @@ type ProbableOriginAsset = {
 
 type AttributionTopology = {
   used?: boolean;
+  available?: boolean;
+  status?: string;
+  mapping_status?: string;
+  mapping_reason?: string;
   target_asset_id?: number | string | null;
   target_asset_name?: string | null;
   target_asset_type?: string | null;
@@ -103,6 +107,7 @@ const fallbackAttributionData: AttributionResponse = {
   probable_origin_assets: [],
   topology: {
     used: false,
+    available: false,
     target_asset_id: null,
     target_asset_name: null,
     target_asset_type: null,
@@ -166,7 +171,9 @@ function formatAssessmentType(value?: string): string {
 }
 
 function normalizeSourceLabel(value?: string | null): string {
-  const v = String(value ?? '').toLowerCase();
+  const v = String(value ?? '').trim().toLowerCase();
+
+  if (!v || v === 'unknown' || v === 'unknown source') return 'Unknown Source';
 
   if (v.includes('building')) return 'Building Plumbing';
   if (v.includes('distribution')) return 'Distribution System';
@@ -242,6 +249,10 @@ function formatTravelTime(value: unknown): string {
 
 function sourceIcon(source?: string | null) {
   const v = String(source ?? '').toLowerCase();
+
+  if (!v || v === 'unknown' || v === 'unknown source') {
+    return <AlertCircle className="w-6 h-6 text-zinc-400" />;
+  }
 
   if (v.includes('building')) return <Building2 className="w-6 h-6 text-amber-400" />;
   if (v.includes('distribution')) return <Network className="w-6 h-6 text-amber-400" />;
@@ -373,7 +384,7 @@ export function SourceAttribution() {
               result?.primary?.confidence ??
                 result?.confidence_score ??
                 fallbackAttributionData.primary?.confidence,
-              74,
+              0,
             ),
             indicator:
               result?.primary?.indicator ??
@@ -393,7 +404,14 @@ export function SourceAttribution() {
           probable_origin_assets: probableOriginAssets,
 
           topology: {
-            used: Boolean(result?.topology?.used),
+            used: result?.topology?.used === true,
+            available:
+              typeof result?.topology?.available === 'boolean'
+                ? result.topology.available
+                : result?.topology?.used === true,
+            status: result?.topology?.status,
+            mapping_status: result?.topology?.mapping_status,
+            mapping_reason: result?.topology?.mapping_reason,
             target_asset_id: result?.topology?.target_asset_id,
             target_asset_name: result?.topology?.target_asset_name,
             target_asset_type: result?.topology?.target_asset_type,
@@ -435,9 +453,14 @@ export function SourceAttribution() {
     loadAttribution();
   }, [siteId, unavailableSiteMeta.name, unavailableSiteMeta.type]);
 
-  const primaryConfidence = toFiniteNumber(attributionData.primary?.confidence, 0);
+  const primaryConfidence = Math.max(
+    0, Math.min(100, toFiniteNumber(attributionData.primary?.confidence, 0)),
+  );
+  const hasAttribution = primaryConfidence > 0 &&
+    normalizeSourceLabel(attributionData.primary?.source) !== 'Unknown Source';
 
   const confidenceLabel = useMemo(() => {
+    if (!hasAttribution) return 'Insufficient Data';
     if (attributionData.confidence_label) {
       return attributionData.confidence_label
         .split(' ')
@@ -449,9 +472,12 @@ export function SourceAttribution() {
     if (primaryConfidence >= 75) return 'High Confidence';
     if (primaryConfidence >= 50) return 'Moderate Confidence';
     return 'Low Confidence';
-  }, [attributionData.confidence_label, primaryConfidence]);
+  }, [attributionData.confidence_label, primaryConfidence, hasAttribution]);
 
   const primaryWhyTags = useMemo(() => {
+    if (!hasAttribution) {
+      return ['Insufficient signal evidence', 'No source probabilities generated'];
+    }
     const source = String(attributionData.primary?.source ?? '').toLowerCase();
     const topologyUsed = Boolean(attributionData.topology?.used);
 
@@ -498,6 +524,7 @@ export function SourceAttribution() {
 
     return ['Upstream contribution possible', 'System-level context needed', 'Confirm with source sampling'];
   }, [
+    hasAttribution,
     attributionData.primary?.source,
     attributionData.topology?.used,
     attributionData.probable_origin_assets,
@@ -529,7 +556,26 @@ export function SourceAttribution() {
     0,
   );
 
-  const assessmentLabel = formatAssessmentType(attributionData.assessment_type);
+  const topologyAvailable = attributionData.topology?.available ?? topologyUsed;
+  const targetResolved = toNullableFiniteNumber(attributionData.topology?.target_asset_id) !== null;
+  const topologyLookupFailed = attributionData.topology?.status === 'topology_lookup_failed';
+  const targetAssetLabel = attributionData.topology?.target_asset_name ||
+    (targetResolved ? `Asset ${attributionData.topology?.target_asset_id}` : 'Not resolved');
+  const topologyLabel = topologyLookupFailed
+    ? 'Topology lookup unavailable'
+    : topologyAvailable
+      ? topologyUsed ? 'Network topology used' : 'Network connectivity available'
+      : targetResolved ? 'No upstream path found' : 'Topology not available';
+  const topologyDescription = topologyLookupFailed
+    ? 'The upstream lookup could not be completed. Connectivity has not been assessed.'
+    : topologyAvailable
+      ? `${upstreamRelationshipCount} active upstream relationship${upstreamRelationshipCount === 1 ? '' : 's'} identified.`
+      : targetResolved
+        ? 'The site is linked to an asset, but no upstream relationships were returned.'
+        : attributionData.topology?.mapping_reason || 'No infrastructure asset was resolved for this site.';
+  const assessmentLabel = hasAttribution
+    ? formatAssessmentType(attributionData.assessment_type)
+    : 'Insufficient evidence';
 
   return (
     <div className="fx-app-shell min-h-screen bg-zinc-950 text-zinc-100">
@@ -670,8 +716,13 @@ export function SourceAttribution() {
 
           {!apiLoading && !apiError && (
             <div className="mt-4 rounded-lg border border-emerald-500/20 bg-emerald-500/5 p-3 text-sm text-emerald-400">
-              Source attribution connected successfully
-              {topologyUsed ? ' - topology evidence active' : ' - probabilistic evidence active'}
+              {hasAttribution
+                ? topologyUsed
+                  ? 'Assessment loaded — topology evidence included'
+                  : 'Assessment loaded — inferred attribution available'
+                : topologyAvailable
+                  ? 'Site context loaded — connectivity available; source attribution awaits signal evidence'
+                  : 'Site context loaded — insufficient evidence for source attribution'}
             </div>
           )}
         </div>
@@ -687,7 +738,9 @@ export function SourceAttribution() {
             <div className="flex-1">
               <h2 className="text-2xl font-light mb-2">
                 {attributionData.headline ??
-                  `${normalizeSourceLabel(attributionData.primary?.source)} Issue Likely`}
+                  (hasAttribution
+                    ? `${normalizeSourceLabel(attributionData.primary?.source)} Issue Likely`
+                    : 'Insufficient evidence for source attribution')}
               </h2>
 
               <p className="text-zinc-300 mb-4">
@@ -734,18 +787,20 @@ export function SourceAttribution() {
             <div>
               <h2 className="text-xl font-light mb-1">Topology-Aware Investigation</h2>
               <p className="text-sm text-zinc-400">
-                Ranked infrastructure candidates that may explain the observed signal.
+                {hasAttribution
+                  ? 'Ranked infrastructure candidates that may explain the observed signal.'
+                  : 'Infrastructure connectivity is shown separately from source attribution.'}
               </p>
             </div>
 
             <span
               className={`inline-flex self-start px-2.5 py-1 rounded text-xs border ${
-                topologyUsed
+                topologyAvailable
                   ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
                   : 'bg-zinc-800 text-zinc-400 border-zinc-700'
               }`}
             >
-              {topologyUsed ? 'Network topology used' : 'Topology not available'}
+              {topologyLabel}
             </span>
           </div>
 
@@ -753,7 +808,7 @@ export function SourceAttribution() {
             <div className="rounded-lg border border-zinc-800 bg-zinc-950/40 p-4">
               <p className="text-xs text-zinc-500 mb-1">Resolved Target Asset</p>
               <p className="text-sm font-medium text-zinc-200">
-                {attributionData.topology?.target_asset_name || 'Not resolved'}
+                {targetAssetLabel}
               </p>
               <p className="text-xs text-zinc-500 mt-1">
                 {attributionData.topology?.target_asset_type
@@ -765,10 +820,10 @@ export function SourceAttribution() {
             <div className="rounded-lg border border-zinc-800 bg-zinc-950/40 p-4">
               <p className="text-xs text-zinc-500 mb-1">Upstream Relationships</p>
               <p className="text-2xl font-light text-zinc-200">
-                {upstreamRelationshipCount}
+                {topologyLookupFailed ? 'Unavailable' : upstreamRelationshipCount}
               </p>
               <p className="text-xs text-zinc-500 mt-1">
-                Active relationships considered
+                {topologyUsed ? 'Relationships used in attribution' : 'Structural connections only'}
               </p>
             </div>
 
@@ -928,10 +983,10 @@ export function SourceAttribution() {
                     No ranked upstream assets available yet
                   </p>
                   <p className="text-sm text-zinc-500 mt-1">
-                    FalilaX is using probabilistic alert and site evidence for this assessment.
-                    Once the selected site is linked to active asset relationships, this section
-                    will rank upstream origin candidates using topology, distance, travel time, and
-                    relationship confidence.
+                    {topologyDescription}{' '}
+                    {hasAttribution
+                      ? 'No upstream origin candidates were ranked for this assessment.'
+                      : 'A qualifying signal is needed before ranking possible sources. Connectivity alone does not establish a contamination source.'}
                   </p>
                 </div>
               </div>
@@ -945,6 +1000,11 @@ export function SourceAttribution() {
               <h2 className="text-xl font-light mb-6">Water Source Flow & Attribution</h2>
 
               <div className="space-y-4">
+                {breakdownItems.length === 0 && (
+                  <p className="text-sm text-zinc-400">
+                    No source probabilities are available. Additional signal evidence is needed.
+                  </p>
+                )}
                 {breakdownItems.map((item, index) => {
                   const probability = toFiniteNumber(item.probability, 0);
                   const isTop = index === 0 || probability >= 50;
@@ -1073,7 +1133,7 @@ export function SourceAttribution() {
               >
                 <h2 className="text-xl font-light flex items-center gap-2">
                   <FileText className="w-5 h-5 text-amber-400" />
-                  Why this conclusion?
+                  {hasAttribution ? 'Why this conclusion?' : 'Evidence availability'}
                 </h2>
 
                 {showDetails ? (
@@ -1086,7 +1146,9 @@ export function SourceAttribution() {
               {showDetails && (
                 <div className="mt-4 pt-4 border-t border-zinc-800 space-y-3 text-sm text-zinc-300">
                   <p className="text-zinc-400 mb-3">
-                    This attribution is based on the currently available evidence layers:
+                    {hasAttribution
+                      ? 'This attribution is based on the currently available evidence layers:'
+                      : 'Source attribution is pending sufficient signal evidence.'}
                   </p>
 
                   <div className="space-y-2">
@@ -1130,10 +1192,9 @@ export function SourceAttribution() {
                   )}
 
                   <p className="text-zinc-400 mt-4 pt-3 border-t border-zinc-800">
-                    These factors point to{' '}
-                    {normalizeSourceLabel(attributionData.primary?.source).toLowerCase()} as the
-                    primary source category, with {confidenceLabel.toLowerCase()} based on the
-                    available evidence.
+                    {hasAttribution
+                      ? `These factors support ${normalizeSourceLabel(attributionData.primary?.source).toLowerCase()} as the primary source category, with ${confidenceLabel.toLowerCase()} based on the available evidence.`
+                      : 'No source category has been identified. Infrastructure connectivity does not establish water quality or a contamination source.'}
                   </p>
                 </div>
               )}
@@ -1159,17 +1220,10 @@ export function SourceAttribution() {
                   <Network className="w-4 h-4 text-amber-400 mt-0.5 flex-shrink-0" />
                   <div>
                     <p className="text-zinc-300">
-                      {topologyUsed
-                        ? attributionData.topology?.target_asset_name ||
-                          'Resolved infrastructure asset'
-                        : 'Montgomery County Distribution Context'}
+                      {targetResolved ? targetAssetLabel : 'Infrastructure mapping unavailable'}
                     </p>
                     <p className="text-zinc-500 text-xs">
-                      {topologyUsed
-                        ? `${upstreamRelationshipCount} upstream relationship${
-                            upstreamRelationshipCount === 1 ? '' : 's'
-                          } considered`
-                        : 'County-level alert cluster and site pathway analysis'}
+                      {topologyDescription}
                     </p>
                   </div>
                 </div>
