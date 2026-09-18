@@ -1,4 +1,4 @@
-﻿import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import L from "leaflet";
 import {
   MapContainer,
@@ -6,7 +6,6 @@ import {
   Marker,
   Popup,
   Polyline,
-  Circle,
 } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 
@@ -29,12 +28,6 @@ const defaultIcon = new L.Icon({
   shadowSize: [41, 41],
 });
 
-const riskColor = (risk) => {
-  if (risk === "HIGH") return "red";
-  if (risk === "MODERATE") return "orange";
-  return "green";
-};
-
 const nodeCoordinates = {
   1: [32.378, -86.3077],
   2: [32.373, -86.301],
@@ -45,18 +38,6 @@ const nodeCoordinates = {
   7: [32.356, -86.308],
   8: [32.351, -86.281],
   9: [32.349, -86.312],
-};
-
-const assetNameToNodeId = {
-  "North Reservoir": 1,
-  "Treatment Plant A": 2,
-  "Main Pump Station": 3,
-  "Pressure Zone A": 4,
-  "Pressure Zone B": 5,
-  "DMA A": 6,
-  "DMA B": 7,
-  "Customer Area A": 8,
-  "Customer Area B": 9,
 };
 
 const networkLines = [
@@ -70,7 +51,20 @@ const networkLines = [
   [nodeCoordinates[7], nodeCoordinates[9]],
 ];
 
+const formatConfidence = (value) =>
+  typeof value === "number" && Number.isFinite(value)
+    ? `${Math.round(value * 10000) / 100}%`
+    : "Not established";
+
+const isSimulation = (id, report) =>
+  String(id || "").startsWith("SIM-") ||
+  report?.summary?.simulation === true ||
+  report?.simulation?.simulation === true;
+
 export default function FalilaXIncidentMap() {
+  const reportRef = useRef(null);
+  const [openingIncidentId, setOpeningIncidentId] = useState(null);
+  const [closingIncidentId, setClosingIncidentId] = useState(null);
   const [digitalTwinResult, setDigitalTwinResult] = useState(null);
   const [digitalTwinLoading, setDigitalTwinLoading] = useState(false);
   const [digitalTwinError, setDigitalTwinError] = useState(null);
@@ -82,6 +76,13 @@ export default function FalilaXIncidentMap() {
   const [incidents, setIncidents] = useState([]);
   const [incidentHistoryLoading, setIncidentHistoryLoading] = useState(false);
   const [incidentHistoryError, setIncidentHistoryError] = useState(null);
+
+  useEffect(() => {
+    if (digitalTwinLoading || openingIncidentId || digitalTwinResult || digitalTwinError) {
+      reportRef.current?.scrollIntoView({ block: "start" });
+      reportRef.current?.focus({ preventScroll: true });
+    }
+  }, [digitalTwinLoading, openingIncidentId, digitalTwinResult, digitalTwinError]);
 
   const loadIncidents = async () => {
     setIncidentHistoryLoading(true);
@@ -128,6 +129,7 @@ export default function FalilaXIncidentMap() {
     setDigitalTwinLoading(true);
     setDigitalTwinError(null);
     setSavedIncidentId(null);
+    setDigitalTwinResult(null);
 
     try {
       const result = await simulateAndSaveIncident({
@@ -136,6 +138,9 @@ export default function FalilaXIncidentMap() {
         pressure_psi: 55,
       });
 
+      if (!result?.report || typeof result.report !== "object") {
+        throw new Error("The simulation returned no report. Refresh saved incidents to check its record.");
+      }
       setDigitalTwinResult(result.report);
       setSavedIncidentId(result.incident_id);
       await loadIncidents();
@@ -147,43 +152,62 @@ export default function FalilaXIncidentMap() {
   };
 
   const openIncident = async (incidentId) => {
-    setDigitalTwinLoading(true);
+    setOpeningIncidentId(incidentId);
     setDigitalTwinError(null);
+    setDigitalTwinResult(null);
+    setSavedIncidentId(incidentId);
 
     try {
       const data = await fetchIncidentDetail(incidentId);
-      setDigitalTwinResult(data.report);
-      setSavedIncidentId(data.incident_id);
+      if (!data?.report || typeof data.report !== "object") {
+        throw new Error("This saved incident has no report available.");
+      }
+      setDigitalTwinResult({
+        ...data.report,
+        summary: {
+          ...data.report.summary,
+          status: data.incident?.status ?? data.status ?? data.report.summary?.status,
+        },
+      });
+      setSavedIncidentId(data.incident_id ?? incidentId);
     } catch (error) {
-      setDigitalTwinError(error?.message || "Failed to open incident");
+      setDigitalTwinError(error?.message || error?.detail || "Failed to open incident");
     } finally {
-      setDigitalTwinLoading(false);
+      setOpeningIncidentId(null);
     }
   };
 
   const handleCloseIncident = async (incidentId) => {
-    setIncidentHistoryLoading(true);
+    setClosingIncidentId(incidentId);
     setIncidentHistoryError(null);
-
     try {
       await closeIncident(incidentId);
+      if (savedIncidentId === incidentId) {
+        await openIncident(incidentId);
+      }
       await loadIncidents();
     } catch (error) {
-      setIncidentHistoryError(error?.message || "Failed to close incident");
+      setIncidentHistoryError(error?.message || error?.detail || "Failed to close incident");
     } finally {
-      setIncidentHistoryLoading(false);
+      setClosingIncidentId(null);
     }
   };
 
   const impact = digitalTwinResult?.impact || {};
-  const predictionTimeline = digitalTwinResult?.prediction?.timeline || [];
+  const impactNotEvaluated = impact.assessment_status === "not_evaluated";
+  const predictionNotEvaluated = digitalTwinResult?.prediction?.assessment_status === "not_evaluated";
+  const predictionTimeline = predictionNotEvaluated
+    ? [] : digitalTwinResult?.prediction?.timeline || [];
+  const simulationSelected = isSimulation(savedIncidentId, digitalTwinResult);
+  const reportBusy = digitalTwinLoading || openingIncidentId !== null;
+  const incidentBusy = reportBusy || closingIncidentId !== null;
   const recommendations = digitalTwinResult?.recommendations || [];
-  const isolation = impact?.recommended_isolation;
+  const isolation = impactNotEvaluated ? null : impact?.recommended_isolation;
   const rootCause = digitalTwinResult?.root_cause;
   const incidentCenter = nodeCoordinates[1];
 
   const affectedAssets = predictionTimeline.map((item) => ({
-    node_id: assetNameToNodeId[item.asset],
+    node_id: item.node_id,
     name: item.asset,
     risk: item.risk,
     arrival_time_minutes: item.eta_minutes,
@@ -202,6 +226,10 @@ export default function FalilaXIncidentMap() {
           left: "60px",
           zIndex: 1000,
           width: "455px",
+          maxWidth: "calc(100vw - 76px)",
+          boxSizing: "border-box",
+          color: "#f6f9fc",
+          overflowWrap: "anywhere",
           maxHeight: "85vh",
           overflowY: "auto",
           background: "rgba(6, 24, 39, 0.96)",
@@ -216,9 +244,12 @@ export default function FalilaXIncidentMap() {
           FalilaX Incident Operations Center
         </h2>
 
+        <p style={{ color: "#cbd5e1", fontSize: "12px" }}>
+          Illustrative demo network. Coordinates and connections are not verified infrastructure or predicted impact.
+        </p>
         <button
           onClick={runDigitalTwinSimulation}
-          disabled={digitalTwinLoading}
+          disabled={incidentBusy}
           style={{
             width: "100%",
             padding: "12px",
@@ -322,6 +353,10 @@ export default function FalilaXIncidentMap() {
           )}
         </div>
 
+        <hr />
+
+        <section ref={reportRef} tabIndex={-1} aria-label="Selected incident report" aria-busy={reportBusy}>
+          {reportBusy && <p role="status">{openingIncidentId ? `Opening report: ${openingIncidentId}` : "Running and saving simulation..."}</p>}
         {savedIncidentId && (
           <div
             style={{
@@ -333,12 +368,12 @@ export default function FalilaXIncidentMap() {
               fontWeight: "bold",
             }}
           >
-            Active incident: {savedIncidentId}
+            Selected incident: {savedIncidentId}
           </div>
         )}
 
         {digitalTwinError && (
-          <div
+          <div role="alert"
             style={{
               marginTop: "12px",
               color: "#842029",
@@ -351,7 +386,224 @@ export default function FalilaXIncidentMap() {
           </div>
         )}
 
-        <hr />
+        {digitalTwinResult && (
+          <>
+            <hr />
+
+            <h3>Incident Summary</h3>
+            {simulationSelected && (
+              <div style={{ padding: "10px", background: "#312447", color: "#f3e8ff", borderRadius: "6px" }}>
+                <strong>SIMULATION — synthetic measurements</strong>
+                <p>This report does not establish real-world exposure or a contamination source.</p>
+                {digitalTwinResult.simulation?.external_delivery_authorized === false &&
+                  <div>External delivery: not authorized</div>}
+                {digitalTwinResult.simulation?.notification_dispatch_enabled === false &&
+                  <div>Notification dispatch: disabled for this run</div>}
+              </div>
+            )}
+            <div><strong>Detection confidence:</strong> {formatConfidence(digitalTwinResult.detection?.confidence ?? digitalTwinResult.decision?.detection_confidence)}</div>
+            <div>
+              <strong>Event:</strong> {digitalTwinResult.summary?.event}
+            </div>
+            <div>
+              <strong>Severity:</strong> {digitalTwinResult.summary?.severity}
+            </div>
+            <div>
+              <strong>Status:</strong> {digitalTwinResult.summary?.status}
+            </div>
+            <div>
+              <strong>Node:</strong> {digitalTwinResult.summary?.node_id}
+            </div>
+
+            <hr />
+
+            <h3>Measurements</h3>
+            <div>
+              <strong>Chlorine:</strong>{" "}
+              {digitalTwinResult.measurements?.chlorine_mg_l ?? "Not recorded"} mg/L
+            </div>
+            <div>
+              <strong>Pressure:</strong>{" "}
+              {digitalTwinResult.measurements?.pressure_psi ?? "Not recorded"} psi
+            </div>
+
+            <hr />
+
+            <h3>Root Cause Intelligence</h3>
+            <div>
+              <strong>Most Likely Cause:</strong>{" "}
+              {rootCause?.most_likely_cause}
+            </div>
+            <div>
+              <strong>Source-attribution confidence:</strong>{" "}
+              {formatConfidence(rootCause?.confidence)}
+            </div>
+            <p>{rootCause?.explanation}</p>
+
+            {rootCause?.hypotheses?.map((hypothesis, idx) => (
+              <div
+                key={idx}
+                style={{
+                  marginTop: "8px",
+                  padding: "8px",
+                  borderRadius: "6px",
+                  background: "#eef2ff",
+                  border: "1px solid #ddd",
+                  color: "#172b3a",
+                }}
+              >
+                <strong>{hypothesis.cause}</strong>
+                <br />
+                Probability: {formatConfidence(hypothesis.probability)}
+                <ul style={{ marginTop: "6px" }}>
+                  {hypothesis.evidence?.map((item, i) => (
+                    <li key={i}>{item}</li>
+                  ))}
+                </ul>
+              </div>
+            ))}
+
+            <hr />
+
+            <h3>Impact</h3>
+            <div>
+              <strong>Affected Assets:</strong> {impactNotEvaluated ? "Not evaluated" : affectedAssetsCount}
+            </div>
+
+            {isolation && (
+              <div
+                style={{
+                  marginTop: "10px",
+                  background: "#fff3cd",
+                  color: "#172b3a",
+                  padding: "10px",
+                  borderRadius: "6px",
+                }}
+              >
+                <strong>Recommended Isolation</strong>
+                <br />
+                Close pipe: {String(isolation.closed_edge)}
+                <br />
+                From: {isolation.from_node}
+                <br />
+                To: {isolation.to_node}
+                <br />
+                Critical Protected: {isolation.critical_protected_count}
+                <br />
+                Service Disruption: {isolation.service_disruption_count}
+              </div>
+            )}
+
+            <hr />
+
+            <h3>Response Recommendations</h3>
+            {simulationSelected && <p>Simulation guidance for review; no operational action has been executed.</p>}
+            {recommendations.length === 0 && <p>No recommendations recorded.</p>}
+            {recommendations.map((rec, idx) => (
+              <div
+                key={idx}
+                style={{
+                  marginTop: "8px",
+                  padding: "8px",
+                  borderRadius: "6px",
+                  background:
+                    rec.priority === "HIGH" ? "#ffcccc" : "#fff3cd",
+                  border: "1px solid #ddd",
+                  color: "#172b3a",
+                }}
+              >
+                <strong>{rec.priority}</strong>
+                <br />
+                {rec.action}
+                <br />
+                {rec.source === "event_response_rule" && <small>Source: event response rule</small>}
+                <small>{rec.reason}</small>
+                <br />
+                {typeof rec.confidence === "number" && (
+                  <small>
+                    Confidence: {formatConfidence(rec.confidence)}
+                  </small>
+                )}
+                {rec.expected_outcome && (
+                  <>
+                    <br />
+                    <small>Expected outcome: {rec.expected_outcome}</small>
+                  </>
+                )}
+              </div>
+            ))}
+
+            <hr />
+
+            <h3>Prediction Timeline</h3>
+            {predictionNotEvaluated ? <p>Hydraulic arrival times were not evaluated.</p>
+              : predictionTimeline.length === 0 && <p>No prediction timeline recorded.</p>}
+            {predictionTimeline.map((item) => (
+              <div
+                key={`${item.rank}-${item.asset}`}
+                style={{
+                  marginTop: "8px",
+                  padding: "8px",
+                  borderRadius: "6px",
+                  background:
+                    item.risk === "HIGH"
+                      ? "#ffcccc"
+                      : item.risk === "MODERATE"
+                      ? "#fff3cd"
+                      : "#e8f5e9",
+                  border: "1px solid #ddd",
+                  color: "#172b3a",
+                }}
+              >
+                <strong>
+                  #{item.rank} {item.asset}
+                </strong>
+                <br />
+                Risk: {item.risk}
+                <br />
+                ETA: {item.eta_minutes} min
+                <br />
+                Action: {item.recommended_action}
+              </div>
+            ))}
+
+            <hr />
+
+            <h3>Affected Assets</h3>
+            {impactNotEvaluated ? <p>Network impact was not evaluated. A zero count does not establish that no assets are affected.</p>
+              : affectedAssets.length === 0 && <p>No asset details recorded.</p>}
+            {!impactNotEvaluated && affectedAssets.map((asset, index) => (
+              <div
+                key={`${asset.node_id ?? asset.name}-${index}`}
+                style={{
+                  marginTop: "8px",
+                  padding: "8px",
+                  borderRadius: "6px",
+                  background:
+                    asset.risk === "HIGH"
+                      ? "#ffcccc"
+                      : asset.risk === "MODERATE"
+                      ? "#fff3cd"
+                      : "#e8f5e9",
+                  border: "1px solid #ddd",
+                  color: "#172b3a",
+                }}
+              >
+                <strong>{asset.name}</strong>
+                <br />
+                Risk: {asset.risk}
+                <br />
+                ETA: {asset.arrival_time_minutes} min
+                <br />
+                Distance: {asset.network_distance}
+              </div>
+            ))}
+            {digitalTwinResult.limitations?.length > 0 && (
+              <><h3>Report Limitations</h3><ul>{digitalTwinResult.limitations.map((item, index) => <li key={index}>{item}</li>)}</ul></>
+            )}
+          </>
+        )}
+        </section>
 
         <h3>Saved Incident History</h3>
 
@@ -364,6 +616,7 @@ export default function FalilaXIncidentMap() {
             border: "1px solid #ddd",
             borderRadius: "6px",
             background: "#f8f9fa",
+            color: "#172b3a",
             fontWeight: "bold",
             cursor: incidentHistoryLoading ? "not-allowed" : "pointer",
           }}
@@ -398,10 +651,12 @@ export default function FalilaXIncidentMap() {
                 padding: "10px",
                 borderRadius: "8px",
                 background:
-                  incident.status === "CLOSED" ? "#e8f5e9" : "#fff3cd",
+                  String(incident.status).toLowerCase() === "closed" ? "#e8f5e9" : "#fff3cd",
                 border: "1px solid #ddd",
+                  color: "#172b3a",
               }}
             >
+              {isSimulation(incident.incident_id) && <div><strong>SIMULATION</strong></div>}
               <strong>{incident.incident_id}</strong>
               <br />
               Event: {incident.event_type}
@@ -422,6 +677,7 @@ export default function FalilaXIncidentMap() {
               <div style={{ display: "flex", gap: "8px", marginTop: "8px" }}>
                 <button
                   onClick={() => openIncident(incident.incident_id)}
+                  disabled={incidentBusy}
                   style={{
                     flex: 1,
                     padding: "7px",
@@ -433,12 +689,13 @@ export default function FalilaXIncidentMap() {
                     cursor: "pointer",
                   }}
                 >
-                  Open
+                  {openingIncidentId === incident.incident_id ? "Opening report..." : "Open report"}
                 </button>
 
-                {incident.status !== "CLOSED" && (
+                {String(incident.status).toLowerCase() !== "closed" && (
                   <button
                     onClick={() => handleCloseIncident(incident.incident_id)}
+                    disabled={incidentBusy}
                     style={{
                       flex: 1,
                       padding: "7px",
@@ -450,7 +707,7 @@ export default function FalilaXIncidentMap() {
                       cursor: "pointer",
                     }}
                   >
-                    Close
+                    {closingIncidentId === incident.incident_id ? "Closing..." : "Close"}
                   </button>
                 )}
               </div>
@@ -460,204 +717,11 @@ export default function FalilaXIncidentMap() {
 
         {!digitalTwinResult && (
           <p style={{ marginTop: "14px" }}>
-            Click the button to simulate low chlorine at Node 1, run the full
-            incident intelligence engine, and save the incident to the database.
+            Open a saved report, or run a separate low-chlorine simulation at Node 1.
           </p>
         )}
 
-        {digitalTwinResult && (
-          <>
-            <hr />
 
-            <h3>Incident Summary</h3>
-            <div>
-              <strong>Event:</strong> {digitalTwinResult.summary?.event}
-            </div>
-            <div>
-              <strong>Severity:</strong> {digitalTwinResult.summary?.severity}
-            </div>
-            <div>
-              <strong>Status:</strong> {digitalTwinResult.summary?.status}
-            </div>
-            <div>
-              <strong>Node:</strong> {digitalTwinResult.summary?.node_id}
-            </div>
-
-            <hr />
-
-            <h3>Measurements</h3>
-            <div>
-              <strong>Chlorine:</strong>{" "}
-              {digitalTwinResult.measurements?.chlorine_mg_l} mg/L
-            </div>
-            <div>
-              <strong>Pressure:</strong>{" "}
-              {digitalTwinResult.measurements?.pressure_psi} psi
-            </div>
-
-            <hr />
-
-            <h3>Root Cause Intelligence</h3>
-            <div>
-              <strong>Most Likely Cause:</strong>{" "}
-              {rootCause?.most_likely_cause}
-            </div>
-            <div>
-              <strong>Confidence:</strong>{" "}
-              {rootCause?.confidence
-                ? `${Math.round(rootCause.confidence * 100)}%`
-                : "N/A"}
-            </div>
-            <p>{rootCause?.explanation}</p>
-
-            {rootCause?.hypotheses?.map((hypothesis, idx) => (
-              <div
-                key={idx}
-                style={{
-                  marginTop: "8px",
-                  padding: "8px",
-                  borderRadius: "6px",
-                  background: "#eef2ff",
-                  border: "1px solid #ddd",
-                }}
-              >
-                <strong>{hypothesis.cause}</strong>
-                <br />
-                Probability: {Math.round(hypothesis.probability * 100)}%
-                <ul style={{ marginTop: "6px" }}>
-                  {hypothesis.evidence?.map((item, i) => (
-                    <li key={i}>{item}</li>
-                  ))}
-                </ul>
-              </div>
-            ))}
-
-            <hr />
-
-            <h3>Impact</h3>
-            <div>
-              <strong>Affected Assets:</strong> {affectedAssetsCount}
-            </div>
-
-            {isolation && (
-              <div
-                style={{
-                  marginTop: "10px",
-                  background: "#fff3cd",
-                  padding: "10px",
-                  borderRadius: "6px",
-                }}
-              >
-                <strong>Recommended Isolation</strong>
-                <br />
-                Close pipe: {String(isolation.closed_edge)}
-                <br />
-                From: {isolation.from_node}
-                <br />
-                To: {isolation.to_node}
-                <br />
-                Critical Protected: {isolation.critical_protected_count}
-                <br />
-                Service Disruption: {isolation.service_disruption_count}
-              </div>
-            )}
-
-            <hr />
-
-            <h3>AI Recommendations</h3>
-            {recommendations.map((rec, idx) => (
-              <div
-                key={idx}
-                style={{
-                  marginTop: "8px",
-                  padding: "8px",
-                  borderRadius: "6px",
-                  background:
-                    rec.priority === "HIGH" ? "#ffcccc" : "#fff3cd",
-                  border: "1px solid #ddd",
-                }}
-              >
-                <strong>{rec.priority}</strong>
-                <br />
-                {rec.action}
-                <br />
-                <small>{rec.reason}</small>
-                <br />
-                {rec.confidence && (
-                  <small>
-                    Confidence: {Math.round(rec.confidence * 100)}%
-                  </small>
-                )}
-                {rec.expected_outcome && (
-                  <>
-                    <br />
-                    <small>Expected outcome: {rec.expected_outcome}</small>
-                  </>
-                )}
-              </div>
-            ))}
-
-            <hr />
-
-            <h3>Prediction Timeline</h3>
-            {predictionTimeline.map((item) => (
-              <div
-                key={`${item.rank}-${item.asset}`}
-                style={{
-                  marginTop: "8px",
-                  padding: "8px",
-                  borderRadius: "6px",
-                  background:
-                    item.risk === "HIGH"
-                      ? "#ffcccc"
-                      : item.risk === "MODERATE"
-                      ? "#fff3cd"
-                      : "#e8f5e9",
-                  border: "1px solid #ddd",
-                }}
-              >
-                <strong>
-                  #{item.rank} {item.asset}
-                </strong>
-                <br />
-                Risk: {item.risk}
-                <br />
-                ETA: {item.eta_minutes} min
-                <br />
-                Action: {item.recommended_action}
-              </div>
-            ))}
-
-            <hr />
-
-            <h3>Affected Assets</h3>
-            {affectedAssets.map((asset) => (
-              <div
-                key={asset.node_id}
-                style={{
-                  marginTop: "8px",
-                  padding: "8px",
-                  borderRadius: "6px",
-                  background:
-                    asset.risk === "HIGH"
-                      ? "#ffcccc"
-                      : asset.risk === "MODERATE"
-                      ? "#fff3cd"
-                      : "#e8f5e9",
-                  border: "1px solid #ddd",
-                }}
-              >
-                <strong>{asset.name}</strong>
-                <br />
-                Risk: {asset.risk}
-                <br />
-                ETA: {asset.arrival_time_minutes} min
-                <br />
-                Distance: {asset.network_distance}
-              </div>
-            ))}
-          </>
-        )}
       </div>
 
       <MapContainer
@@ -682,83 +746,14 @@ export default function FalilaXIncidentMap() {
           />
         ))}
 
-        {digitalTwinResult && (
-          <Circle
-            center={incidentCenter}
-            radius={1100}
-            pathOptions={{
-              color: "purple",
-              fillColor: "purple",
-              fillOpacity: 0.15,
-              weight: 3,
-            }}
-          >
+        {Object.entries(nodeCoordinates).map(([nodeId, position]) => (
+          <Marker key={nodeId} position={position} icon={defaultIcon}>
             <Popup>
-              <strong>Digital Twin Predicted Impact Zone</strong>
-              <br />
-              Event: {digitalTwinResult.summary?.event}
-              <br />
-              Severity: {digitalTwinResult.summary?.severity}
-              <br />
-              Affected Assets: {affectedAssetsCount}
+              <strong>Illustrative Network Node {nodeId}</strong>
+              <br />Demo coordinates; not verified asset geography.
             </Popup>
-          </Circle>
-        )}
-
-        {affectedAssets.map((asset) => {
-          const position = nodeCoordinates[asset.node_id];
-          if (!position) return null;
-
-          return (
-            <Circle
-              key={`risk-${asset.node_id}`}
-              center={position}
-              radius={130}
-              pathOptions={{
-                color: riskColor(asset.risk),
-                fillColor: riskColor(asset.risk),
-                fillOpacity: 0.35,
-                weight: 2,
-              }}
-            >
-              <Popup>
-                <strong>{asset.name}</strong>
-                <br />
-                Risk: {asset.risk}
-                <br />
-                ETA: {asset.arrival_time_minutes} min
-                <br />
-                Distance: {asset.network_distance}
-              </Popup>
-            </Circle>
-          );
-        })}
-
-        {Object.entries(nodeCoordinates).map(([nodeId, position]) => {
-          const affected = affectedAssets.find(
-            (asset) => String(asset.node_id) === nodeId
-          );
-
-          return (
-            <Marker key={nodeId} position={position} icon={defaultIcon}>
-              <Popup>
-                <strong>
-                  {affected ? affected.name : `Network Node ${nodeId}`}
-                </strong>
-                <br />
-                Node ID: {nodeId}
-                {affected && (
-                  <>
-                    <br />
-                    Risk: {affected.risk}
-                    <br />
-                    ETA: {affected.arrival_time_minutes} min
-                  </>
-                )}
-              </Popup>
-            </Marker>
-          );
-        })}
+          </Marker>
+        ))}
       </MapContainer>
     </div>
   );
