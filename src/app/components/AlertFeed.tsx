@@ -17,7 +17,13 @@ import {
   storeAccessToken,
 } from "../utils/auth-session";
 
+import { simulationEvidence } from "../utils/notification-evidence";
+
 type NotificationContext = {
+  simulation?: boolean | string | Record<string, unknown>;
+  data_mode?: string;
+  simulation_location?: string;
+  location_label?: string;
   parameter?: string;
   observed_value?: string | number;
   unit?: string;
@@ -29,8 +35,8 @@ type NotificationContext = {
   source?: string;
   source_name?: string;
   source_type?: string;
-  source_confidence?: number;
-  confidence?: number;
+  source_confidence?: number | null;
+  confidence?: number | null;
   evidence?: unknown[];
   affected_assets?: unknown[];
   affected_areas?: unknown[];
@@ -580,6 +586,7 @@ export default function AlertFeed() {
                 notification.severity,
               );
               const context = notification.context ?? {};
+              const { simulated, location } = simulationEvidence(notification);
               const likelySource =
                 context.likely_source ??
                 context.source_name ??
@@ -648,22 +655,28 @@ export default function AlertFeed() {
                     </span>
                   </div>
 
+                  {simulated && (
+                    <p className="mt-4 rounded-lg border border-violet-500/30 bg-violet-950/30 p-3 text-sm text-violet-100">
+                      Simulation — synthetic measurements. This test does not establish a contamination source or real-world affected area.
+                    </p>
+                  )}
+
                   <div className="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
                     <div className="rounded-lg border border-zinc-800 bg-black/20 p-3">
                       <div className="text-xs uppercase tracking-wide text-zinc-500">
-                        Likely source
+                        {simulated ? "Simulation location" : "Likely source"}
                       </div>
                       <div className="mt-1 text-sm font-medium text-zinc-100">
-                        {String(likelySource)}
+                        {simulated ? location : String(likelySource)}
                       </div>
                     </div>
 
                     <div className="rounded-lg border border-zinc-800 bg-black/20 p-3">
                       <div className="text-xs uppercase tracking-wide text-zinc-500">
-                        Confidence
+                        {simulated ? "Source attribution" : "Confidence"}
                       </div>
                       <div className="mt-1 text-sm font-medium text-zinc-100">
-                        {formatConfidence(context)}
+                        {simulated ? "Not established" : formatConfidence(context)}
                       </div>
                     </div>
 
@@ -699,9 +712,10 @@ export default function AlertFeed() {
                   <div className="mt-5 grid gap-5 lg:grid-cols-2">
                     <div>
                       <h5 className="text-sm font-semibold text-zinc-100">
-                        Evidence and affected scope
+                        {simulated ? "Simulation evidence and scope" : "Evidence and affected scope"}
                       </h5>
                       <ul className="mt-2 space-y-1.5 text-sm text-zinc-400">
+                        {simulated && <li>Network impact was not evaluated.</li>}
                         {evidence.map((item) => (
                           <li key={`evidence-${item}`}>
                             Evidence: {item}
@@ -709,12 +723,12 @@ export default function AlertFeed() {
                         ))}
                         {affectedAreas.map((item) => (
                           <li key={`area-${item}`}>
-                            Affected area: {item}
+                            {simulated ? "Test location" : "Affected area"}: {item}
                           </li>
                         ))}
                         {affectedAssets.map((item) => (
                           <li key={`asset-${item}`}>
-                            Affected asset: {item}
+                            {simulated ? "Test asset" : "Affected asset"}: {item}
                           </li>
                         ))}
                         {evidence.length === 0 &&
