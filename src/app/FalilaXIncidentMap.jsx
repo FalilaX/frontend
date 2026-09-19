@@ -1,3 +1,5 @@
+import { apiErrorMessage } from "@/app/utils/api-error";
+import { canCloseIncident } from "@/app/utils/incident-closure";
 import { useEffect, useRef, useState } from "react";
 import L from "leaflet";
 import {
@@ -171,13 +173,18 @@ export default function FalilaXIncidentMap() {
       });
       setSavedIncidentId(data.incident_id ?? incidentId);
     } catch (error) {
-      setDigitalTwinError(error?.message || error?.detail || "Failed to open incident");
+      setDigitalTwinError(apiErrorMessage(error, "Failed to open incident"));
     } finally {
       setOpeningIncidentId(null);
     }
   };
 
   const handleCloseIncident = async (incidentId) => {
+    if (incidentBusy) return;
+    if (!canCloseIncident(incidents.find((item) => item.incident_id === incidentId))) {
+      setIncidentHistoryError("Resolve the incident through its investigation workflow before closing it.");
+      return;
+    }
     setClosingIncidentId(incidentId);
     setIncidentHistoryError(null);
     try {
@@ -187,7 +194,7 @@ export default function FalilaXIncidentMap() {
       }
       await loadIncidents();
     } catch (error) {
-      setIncidentHistoryError(error?.message || error?.detail || "Failed to close incident");
+      setIncidentHistoryError(apiErrorMessage(error, "Failed to close incident"));
     } finally {
       setClosingIncidentId(null);
     }
@@ -692,7 +699,7 @@ export default function FalilaXIncidentMap() {
                   {openingIncidentId === incident.incident_id ? "Opening report..." : "Open report"}
                 </button>
 
-                {String(incident.status).toLowerCase() !== "closed" && (
+                {canCloseIncident(incident) && (
                   <button
                     onClick={() => handleCloseIncident(incident.incident_id)}
                     disabled={incidentBusy}
@@ -711,6 +718,12 @@ export default function FalilaXIncidentMap() {
                   </button>
                 )}
               </div>
+              {!canCloseIncident(incident) &&
+                String(incident.status).toLowerCase() !== "closed" && (
+                  <p style={{ marginTop: "8px", fontSize: "13px" }}>
+                    Closure becomes available after the investigation workflow is resolved.
+                  </p>
+                )}
             </div>
           ))}
         </div>

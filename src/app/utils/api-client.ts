@@ -9,6 +9,8 @@ import {
   buildApiUrlWithQuery,
 } from "@/app/config/api";
 
+import { apiErrorMessage } from "@/app/utils/api-error";
+
 import type { APIError, APIState } from "@/app/types/api";
 import { authenticatedFetch } from "@/app/utils/auth-session";
 
@@ -42,6 +44,7 @@ export async function fetchAPI<T>(
 
       throw {
         ...errorData,
+        message: apiErrorMessage(errorData, `Request failed (HTTP ${response.status}).`),
         status_code: response.status,
       } as APIError;
     }
