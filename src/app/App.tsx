@@ -13,6 +13,11 @@ import { IncidentInvestigation } from '@/app/components/incident-investigation';
 import AlertFeed from '@/app/components/AlertFeed';
 import FalilaXIncidentMap from '@/app/FalilaXIncidentMap';
 import UtilityReadiness from '@/app/components/utility-readiness';
+import EnrollmentFabric from '@/app/components/enrollment-fabric';
+import ParticipantHome from '@/app/components/participant-home';
+import { ParticipantRoute } from '@/app/components/participant-route';
+import OperatorSignIn from '@/app/components/operator-sign-in';
+import { OperatorRoute } from '@/app/components/operator-route';
 
 import PrivacyPolicy from '@/app/docs/PrivacyPolicy';
 import TermsOfService from '@/app/docs/TermsOfService';
@@ -31,6 +36,34 @@ export default function App() {
           element={<LandingPage />}
         />
 
+        {/*
+          Secure FalilaX Enrollment Fabric.
+
+          Invitation secrets may arrive through the path and are removed
+          from the visible URL immediately after acceptance.
+        */}
+        <Route
+          path="/enroll"
+          element={<EnrollmentFabric />}
+        />
+
+        <Route
+          path="/enroll/:invitationToken"
+          element={<EnrollmentFabric />}
+        />
+
+        <Route
+          path="/participant/home"
+          element={
+            <ParticipantRoute>
+              <ParticipantHome />
+            </ParticipantRoute>
+          }
+        />
+        <Route
+          path="/operator/sign-in"
+          element={<OperatorSignIn />}
+        />
         <Route
           path="/select-context"
           element={<Navigate to="/dashboard/utility" replace />}
@@ -54,7 +87,11 @@ export default function App() {
         */}
         <Route
           path="/dashboard/:context"
-          element={<Dashboard />}
+          element={
+            <OperatorRoute>
+              <Dashboard />
+            </OperatorRoute>
+          }
         />
 
         {/*
@@ -79,27 +116,27 @@ export default function App() {
 
         <Route
           path="/map"
-          element={<CommunityMap />}
+          element={<OperatorRoute><CommunityMap /></OperatorRoute>}
         />
 
         <Route
           path="/incident-map"
-          element={<FalilaXIncidentMap />}
+          element={<OperatorRoute><FalilaXIncidentMap /></OperatorRoute>}
         />
 
         <Route
           path="/alerts"
-          element={<AlertFeed />}
+          element={<OperatorRoute><AlertFeed /></OperatorRoute>}
         />
 
         <Route
           path="/readiness"
-          element={<UtilityReadiness />}
+          element={<OperatorRoute><UtilityReadiness /></OperatorRoute>}
         />
 
         <Route
           path="/attribution"
-          element={<SourceAttribution />}
+          element={<OperatorRoute><SourceAttribution /></OperatorRoute>}
         />
 
         {/*
@@ -107,7 +144,7 @@ export default function App() {
         */}
         <Route
           path="/incidents"
-          element={<IncidentInvestigation />}
+          element={<OperatorRoute><IncidentInvestigation /></OperatorRoute>}
         />
 
         {/*
@@ -117,7 +154,7 @@ export default function App() {
         */}
         <Route
           path="/incidents/:incidentId"
-          element={<IncidentInvestigation />}
+          element={<OperatorRoute><IncidentInvestigation /></OperatorRoute>}
         />
 
         {/* =====================================================
