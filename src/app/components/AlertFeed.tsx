@@ -1,5 +1,4 @@
-﻿import {
-  FormEvent,
+import {
   useCallback,
   useEffect,
   useMemo,
@@ -14,8 +13,9 @@ import {
   authenticatedFetch,
   clearAccessToken,
   getAccessToken,
-  storeAccessToken,
 } from "../utils/auth-session";
+
+import { OperatorAuthForm } from "./operator-auth-form";
 
 import { simulationEvidence } from "../utils/notification-evidence";
 
@@ -81,11 +81,6 @@ type InboxResponse = {
   limit: number;
   offset: number;
   notifications: InboxNotification[];
-};
-
-type LoginResponse = {
-  access_token?: string;
-  token_type?: string;
 };
 
 function responseMessage(
@@ -202,14 +197,11 @@ export default function AlertFeed() {
 
     return getAccessToken();
   });
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
   const [notifications, setNotifications] = useState<
     InboxNotification[]
   >([]);
   const [loading, setLoading] = useState(Boolean(token));
   const [refreshing, setRefreshing] = useState(false);
-  const [authenticating, setAuthenticating] = useState(false);
   const [acknowledgingId, setAcknowledgingId] = useState<
     number | null
   >(null);
@@ -228,7 +220,6 @@ export default function AlertFeed() {
   const signOut = useCallback((message?: string) => {
     clearAccessToken();
     setToken(null);
-    setPassword("");
     setNotifications([]);
     setLoading(false);
     setRefreshing(false);
@@ -311,67 +302,6 @@ export default function AlertFeed() {
 
     return () => window.clearInterval(interval);
   }, [fetchNotifications, token]);
-
-  const handleLogin = async (
-    event: FormEvent<HTMLFormElement>,
-  ) => {
-    event.preventDefault();
-    setAuthenticating(true);
-    setError(null);
-
-    try {
-      const response = await fetch(
-        buildApiUrl(API_ENDPOINTS.AUTH_LOGIN),
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            email: email.trim(),
-            password,
-          }),
-          cache: "no-store",
-        },
-      );
-
-      const payload = await response
-        .json()
-        .catch(() => ({}));
-
-      if (!response.ok) {
-        throw new Error(
-          responseMessage(
-            payload,
-            "Unable to sign in with those credentials.",
-          ),
-        );
-      }
-
-      const accessToken = (
-        payload as LoginResponse
-      ).access_token;
-
-      if (!accessToken) {
-        throw new Error(
-          "The server did not return a secure session token.",
-        );
-      }
-
-      storeAccessToken(accessToken);
-      setPassword("");
-      setToken(accessToken);
-    } catch (requestError) {
-      setPassword("");
-      setError(
-        requestError instanceof Error
-          ? requestError.message
-          : "Unable to sign in.",
-      );
-    } finally {
-      setAuthenticating(false);
-    }
-  };
 
   const acknowledge = async (
     notificationId: number,
@@ -473,66 +403,7 @@ export default function AlertFeed() {
       </div>
 
       {!token ? (
-        <form
-          onSubmit={handleLogin}
-          className="mt-6 grid gap-4 rounded-xl border border-cyan-900/70 bg-cyan-950/20 p-5 md:grid-cols-[1fr_1fr_auto]"
-        >
-          <div>
-            <label
-              htmlFor="notification-email"
-              className="mb-2 block text-sm font-medium text-zinc-200"
-            >
-              FalilaX email
-            </label>
-            <input
-              id="notification-email"
-              type="email"
-              value={email}
-              onChange={(event) =>
-                setEmail(event.target.value)
-              }
-              autoComplete="email"
-              required
-              className="w-full rounded-lg border border-zinc-700 bg-zinc-950 px-3 py-2.5 text-white outline-none transition focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/20"
-            />
-          </div>
-
-          <div>
-            <label
-              htmlFor="notification-password"
-              className="mb-2 block text-sm font-medium text-zinc-200"
-            >
-              Password
-            </label>
-            <input
-              id="notification-password"
-              type="password"
-              value={password}
-              onChange={(event) =>
-                setPassword(event.target.value)
-              }
-              autoComplete="current-password"
-              required
-              className="w-full rounded-lg border border-zinc-700 bg-zinc-950 px-3 py-2.5 text-white outline-none transition focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/20"
-            />
-          </div>
-
-          <button
-            type="submit"
-            disabled={authenticating}
-            className="self-end rounded-lg bg-cyan-500 px-5 py-2.5 font-semibold text-black transition hover:bg-cyan-400 disabled:cursor-not-allowed disabled:opacity-60"
-          >
-            {authenticating
-              ? "Signing in..."
-              : "Open secure inbox"}
-          </button>
-
-          <p className="text-xs leading-5 text-zinc-500 md:col-span-3">
-            Your password is sent only to the FalilaX authentication
-            endpoint and is never stored by this page. The access token
-            is kept only for this browser tab session.
-          </p>
-        </form>
+        <OperatorAuthForm submitLabel="Open secure inbox" onAuthenticated={(accessToken) => { setError(null); setToken(accessToken); }} />
       ) : null}
 
       {error ? (
