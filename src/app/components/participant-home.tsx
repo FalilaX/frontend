@@ -4,12 +4,13 @@ import { useNavigate } from "react-router-dom";
 import logoImage from "@/assets/falilax-logo.png";
 import {
   clearParticipantSession,
-  getParticipantSession,
 } from "@/app/utils/participant-session";
+
+import { useParticipantProfile } from "@/app/components/participant-route";
 
 export function ParticipantHome() {
   const navigate = useNavigate();
-  const session = getParticipantSession();
+  const profile = useParticipantProfile();
 
   function signOut() {
     clearParticipantSession();
@@ -45,7 +46,7 @@ export function ParticipantHome() {
                 Your FalilaX connection is active.
               </h1>
               <p className="mt-5 max-w-2xl text-sm leading-7 text-slate-400 sm:text-base">
-                Your verified contact preferences and approved service area are connected. Safety updates will follow the choices you made during enrollment.
+                Welcome, {profile.full_name}. Your participant profile has been verified.
               </p>
             </div>
 
@@ -53,7 +54,7 @@ export function ParticipantHome() {
               <ShieldCheck className="h-7 w-7 text-emerald-300" />
               <p className="mt-4 text-sm font-medium text-white">Secure session active</p>
               <p className="mt-2 text-xs leading-5 text-slate-500">
-                Participant reference {session?.subscriberId ?? "verified"}. This session cannot access operator or administrative controls.
+                Participant reference {profile.subscriber_id}. This session cannot access operator or administrative controls.
               </p>
             </div>
           </div>
@@ -64,14 +65,14 @@ export function ParticipantHome() {
             <BellRing className="h-6 w-6 text-cyan-300" />
             <h2 className="mt-4 text-lg font-semibold text-white">Safety notifications</h2>
             <p className="mt-2 text-sm leading-6 text-slate-400">
-              FalilaX will use only your verified channels and enrollment preferences when safety information requires your attention.
+              Notification preferences and delivery history are not yet available in this workspace.
             </p>
           </article>
           <article className="rounded-3xl border border-white/[0.08] bg-white/[0.025] p-6">
             <Waves className="h-6 w-6 text-sky-300" />
             <h2 className="mt-4 text-lg font-semibold text-white">Trusted service context</h2>
             <p className="mt-2 text-sm leading-6 text-slate-400">
-              Your connection is scoped to the service context approved during enrollment. Operational command tools remain restricted to authorized personnel.
+              Service-location details are not yet displayed here. Demonstration associations do not establish actual water quality or safety.
             </p>
           </article>
         </section>
