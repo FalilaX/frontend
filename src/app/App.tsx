@@ -15,6 +15,7 @@ import FalilaXIncidentMap from '@/app/FalilaXIncidentMap';
 import UtilityReadiness from '@/app/components/utility-readiness';
 import EnrollmentFabric from '@/app/components/enrollment-fabric';
 import ParticipantHome from '@/app/components/participant-home';
+import ParticipantSignIn from '@/app/components/participant-sign-in';
 import { ParticipantRoute } from '@/app/components/participant-route';
 import OperatorSignIn from '@/app/components/operator-sign-in';
 import { OperatorRoute } from '@/app/components/operator-route';
@@ -52,6 +53,7 @@ export default function App() {
           element={<EnrollmentFabric />}
         />
 
+        <Route path="/participant/sign-in" element={<ParticipantSignIn />} />
         <Route
           path="/participant/home"
           element={
