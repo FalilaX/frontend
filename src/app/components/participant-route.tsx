@@ -79,6 +79,7 @@ export function ParticipantRoute({ children }: { children: ReactNode }) {
         <h1 className="mt-4 text-2xl font-semibold">{ended ? "Session ended" : message ? "Connection unavailable" : "Checking your secure connection"}</h1>
         <p role="status" className="mt-4 text-sm leading-6 text-slate-300">{message || "Please wait while we verify access to your profile."}</p>
         {message && !ended && <button type="button" onClick={() => setAttempt(value => value + 1)} className="mt-6 rounded-xl bg-cyan-300 px-5 py-3 font-medium text-slate-950">Try again</button>}
+        {ended && <Link className="mt-6 inline-block rounded-xl bg-cyan-300 px-5 py-3 font-medium text-slate-950" to="/participant/sign-in">Sign in to your workspace</Link>}
         {message && <Link className="mt-6 block text-sm text-cyan-300 underline" to="/">Return to FalilaX</Link>}
       </section>
     </main>
