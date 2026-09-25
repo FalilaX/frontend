@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState } from "react";
+import { createContext, useContext, useEffect, useRef, useState } from "react";
 import type { ReactNode } from "react";
 import { Link } from "react-router-dom";
 import { getParticipantProfile, ParticipantAccessError } from "@/app/services/participant-api";
@@ -17,6 +17,7 @@ export function ParticipantRoute({ children }: { children: ReactNode }) {
   const [message, setMessage] = useState("");
   const [ended, setEnded] = useState(false);
   const [attempt, setAttempt] = useState(0);
+  const verifiedToken = useRef<string | null>(null);
 
   useEffect(() => {
     let disposed = false;
@@ -27,10 +28,10 @@ export function ParticipantRoute({ children }: { children: ReactNode }) {
       clearTimeout(deadline);
       const controller = new AbortController();
       active = controller;
-      setProfile(null);
       setMessage("");
       setEnded(false);
       const session = getParticipantSession();
+      if (!session || verifiedToken.current !== session.accessToken) setProfile(null);
       if (!session) {
         setEnded(true);
         setMessage("Your participant session has ended.");
@@ -41,14 +42,19 @@ export function ParticipantRoute({ children }: { children: ReactNode }) {
         const verified = await getParticipantProfile(session, controller.signal);
         if (!disposed && active === controller) {
           if (getParticipantSession()?.accessToken !== session.accessToken) {
+            setProfile(null);
+            verifiedToken.current = null;
             setEnded(true);
             setMessage("Your participant session has changed. Please reopen your workspace.");
           } else {
+            verifiedToken.current = session.accessToken;
             setProfile(verified);
           }
         }
       } catch (error) {
         if (disposed || active !== controller) return;
+        setProfile(null);
+        verifiedToken.current = null;
         const expired = error instanceof ParticipantAccessError && error.expired;
         if (expired && getParticipantSession()?.accessToken === session.accessToken) clearParticipantSession();
         setEnded(expired);
