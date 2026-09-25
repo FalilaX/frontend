@@ -1,3 +1,4 @@
+import { ParticipantPreferencesEditor } from "@/app/components/participant-preferences-editor";
 import { useEffect, useState } from "react";
 import { getParticipantContext, ParticipantAccessError } from "@/app/services/participant-api";
 import type { ParticipantContext } from "@/app/services/participant-api";
@@ -19,6 +20,8 @@ export function ParticipantHome() {
   const [context, setContext] = useState<ParticipantContext | null>(null);
   const [contextError, setContextError] = useState(false);
   const [attempt, setAttempt] = useState(0);
+  const [editing, setEditing] = useState(false);
+  const [savedMessage, setSavedMessage] = useState("");
 
   useEffect(() => {
     const controller = new AbortController();
@@ -123,7 +126,12 @@ export function ParticipantHome() {
                 <div><dt className="text-slate-400">Escalation</dt><dd className="mt-1">{preference.escalation_enabled ? `Configured after ${preference.escalation_timeout_minutes} minutes` : "Not enabled"}</dd></div>
               </dl>
             </> : <p className="mt-4 text-sm text-slate-300">No notification preferences have been saved for your participant profile.</p>}
-            <p className="mt-5 border-t border-white/10 pt-4 text-xs leading-5 text-slate-400">Saved choices do not confirm delivery eligibility or that an alert was sent. Delivery history and preference editing are not available here yet.</p>
+            <p className="mt-5 border-t border-white/10 pt-4 text-xs leading-5 text-slate-400">Saved choices do not confirm delivery eligibility or that an alert was sent. Delivery history is not available here yet.</p>
+            {savedMessage && <p role="status" className="mt-4 text-sm text-emerald-200">{savedMessage}</p>}
+            {!editing && <button type="button" onClick={() => { setSavedMessage(""); setEditing(true); }} className="mt-5 rounded-xl border border-cyan-300/30 px-4 py-3 text-sm font-medium text-cyan-200 focus-visible:outline focus-visible:outline-2 focus-visible:outline-cyan-300">Manage notification choices</button>}
+            {editing && <ParticipantPreferencesEditor onCancel={() => setEditing(false)} onSaved={() => {
+              setEditing(false); setSavedMessage("Your notification choices have been saved."); setAttempt(value => value + 1);
+            }} />}
           </article>
           <article className="rounded-3xl border border-white/[0.08] bg-white/[0.025] p-6">
             <Waves className="h-6 w-6 text-sky-300" />
