@@ -1,3 +1,7 @@
+import { useEffect, useState } from "react";
+import { getParticipantContext, ParticipantAccessError } from "@/app/services/participant-api";
+import type { ParticipantContext } from "@/app/services/participant-api";
+import { getParticipantSession } from "@/app/utils/participant-session";
 import { BellRing, CheckCircle2, LogOut, ShieldCheck, Waves } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
@@ -11,6 +15,44 @@ import { useParticipantProfile } from "@/app/components/participant-route";
 export function ParticipantHome() {
   const navigate = useNavigate();
   const profile = useParticipantProfile();
+
+  const [context, setContext] = useState<ParticipantContext | null>(null);
+  const [contextError, setContextError] = useState(false);
+  const [attempt, setAttempt] = useState(0);
+
+  useEffect(() => {
+    const controller = new AbortController();
+    let disposed = false;
+    setContext(null);
+    setContextError(false);
+    const session = getParticipantSession();
+    if (!session) {
+      navigate("/participant/sign-in", { replace: true });
+      return;
+    }
+    const timeout = setTimeout(() => controller.abort(), 30000);
+    void getParticipantContext(session, controller.signal).then(result => {
+      if (disposed) return;
+      if (getParticipantSession()?.accessToken !== session.accessToken) {
+        navigate("/participant/sign-in", { replace: true });
+        return;
+      }
+      setContext(result);
+    }).catch(error => {
+      if (disposed) return;
+      if (error instanceof ParticipantAccessError && error.expired) {
+        if (getParticipantSession()?.accessToken === session.accessToken) clearParticipantSession();
+        navigate("/participant/sign-in", { replace: true });
+      } else {
+        setContextError(true);
+      }
+    }).finally(() => clearTimeout(timeout));
+    return () => { disposed = true; clearTimeout(timeout); controller.abort(); };
+  }, [attempt, navigate, profile.subscriber_id, profile.organization_id]);
+
+  const preference = context?.preferences;
+  const readable = (value: string) => value.toLowerCase().replaceAll("_", " ");
+  const channelNames: Record<string, string> = { EMAIL: "Email", SMS: "SMS", WHATSAPP: "WhatsApp", IN_APP: "In-app", PUSH: "Push" };
 
   function signOut() {
     clearParticipantSession();
@@ -60,22 +102,45 @@ export function ParticipantHome() {
           </div>
         </section>
 
-        <section className="mt-6 grid gap-5 md:grid-cols-2">
+        {!context && <div role="status" className="mt-6 rounded-3xl border border-white/10 p-6 text-sm text-slate-300">
+          {contextError ? "Your profile is verified, but we could not load your saved preferences and service context." : "Loading your saved preferences and service context…"}
+          {contextError && <button type="button" onClick={() => setAttempt(value => value + 1)} className="ml-3 rounded-xl border border-cyan-300/30 px-4 py-2 text-cyan-200">Try again</button>}
+        </div>}
+        {context && <section className="mt-6 grid gap-5 md:grid-cols-2">
           <article className="rounded-3xl border border-white/[0.08] bg-white/[0.025] p-6">
             <BellRing className="h-6 w-6 text-cyan-300" />
             <h2 className="mt-4 text-lg font-semibold text-white">Safety notifications</h2>
-            <p className="mt-2 text-sm leading-6 text-slate-400">
-              Notification preferences and delivery history are not yet available in this workspace.
-            </p>
+            <p className="mt-2 text-sm leading-6 text-slate-400">Your saved notification choices.</p>
+            {preference ? <>
+              <p className="mt-4 text-sm text-cyan-200">{!preference.is_active ? "Preferences inactive" : preference.paused ? "Notifications paused" : "Preferences active"}</p>
+              <dl className="mt-4 space-y-4 text-sm">
+                <div><dt className="text-slate-400">Selected channels</dt><dd className="mt-1 text-slate-100">{preference.channels.map(channel => channelNames[channel]).join(" · ") || "No channels selected"}</dd></div>
+                <div><dt className="text-slate-400">Minimum severity</dt><dd className="mt-1 capitalize">{readable(preference.minimum_severity)}</dd></div>
+                <div><dt className="text-slate-400">Quiet hours</dt><dd className="mt-1">{preference.quiet_hours_enabled ? `${preference.quiet_hours_start?.slice(0, 5)}–${preference.quiet_hours_end?.slice(0, 5)} (${preference.quiet_hours_timezone})` : "Not enabled"}</dd></div>
+                {preference.paused && <div><dt className="text-slate-400">Paused until</dt><dd className="mt-1">{preference.paused_until ? new Date(preference.paused_until).toLocaleString() : "Not specified"} (your device time)</dd></div>}
+                <div><dt className="text-slate-400">Emergency quiet-hours override</dt><dd className="mt-1">{preference.emergency_override_enabled ? "Enabled" : "Not enabled"}</dd></div>
+                <div><dt className="text-slate-400">Acknowledgement</dt><dd className="mt-1">{preference.acknowledgement_required ? `Requested within ${preference.acknowledgement_timeout_minutes} minutes` : "Not requested"}</dd></div>
+                <div><dt className="text-slate-400">Escalation</dt><dd className="mt-1">{preference.escalation_enabled ? `Configured after ${preference.escalation_timeout_minutes} minutes` : "Not enabled"}</dd></div>
+              </dl>
+            </> : <p className="mt-4 text-sm text-slate-300">No notification preferences have been saved for your participant profile.</p>}
+            <p className="mt-5 border-t border-white/10 pt-4 text-xs leading-5 text-slate-400">Saved choices do not confirm delivery eligibility or that an alert was sent. Delivery history and preference editing are not available here yet.</p>
           </article>
           <article className="rounded-3xl border border-white/[0.08] bg-white/[0.025] p-6">
             <Waves className="h-6 w-6 text-sky-300" />
             <h2 className="mt-4 text-lg font-semibold text-white">Trusted service context</h2>
-            <p className="mt-2 text-sm leading-6 text-slate-400">
-              Service-location details are not yet displayed here. Demonstration associations do not establish actual water quality or safety.
-            </p>
+            <p className="mt-2 text-sm leading-6 text-slate-400">Approved associations recorded during your completed enrollment.</p>
+            {context.assignments.length ? <ul className="mt-5 space-y-3">
+              {context.assignments.map(assignment => <li key={assignment.assignment_id} className="rounded-2xl border border-white/10 p-4">
+                <p className="text-xs font-medium text-cyan-200">{assignment.context_kind === "DEMONSTRATION" ? "Demonstration association" : "Recorded association"}</p>
+                <p className="mt-2 text-sm capitalize">{readable(assignment.scope_type)} · Reference {assignment.scope_id}</p>
+                <p className="mt-1 text-xs capitalize text-slate-400">{readable(assignment.relationship_type)}</p>
+              </li>)}
+            </ul> : <p className="mt-4 text-sm text-slate-300">No approved service associations from completed enrollment are available.</p>}
+            {context.assignments_truncated && <p className="mt-3 text-xs text-slate-400">Showing the 100 most recent associations.</p>}
+            <p className="mt-5 border-t border-white/10 pt-4 text-xs leading-5 text-slate-400">Demonstration associations are synthetic. These records do not establish current water quality, safety, or active alert routing.</p>
           </article>
-        </section>
+        </section>}
+
       </main>
     </div>
   );
