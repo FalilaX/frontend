@@ -49,7 +49,8 @@ export async function verifySigninCode(challenge: SigninChallenge, code: string,
       || data.expires_in <= 0 || data.expires_in > 1800
       || !Number.isInteger(data.subscriber_id) || data.subscriber_id <= 0
       || !Number.isInteger(data.organization_id) || data.organization_id <= 0
-      || !Array.isArray(data.scopes) || data.scopes.length !== 1
-      || data.scopes[0] !== "participant:profile:read") throw new SigninError("An unexpected sign-in response was received.");
+      || !Array.isArray(data.scopes) || !data.scopes.includes("participant:profile:read")
+      || data.scopes.length > 2 || new Set(data.scopes).size !== data.scopes.length
+      || !data.scopes.every(scope => ["participant:profile:read", "participant:preferences:write"].includes(scope))) throw new SigninError("An unexpected sign-in response was received.");
   return data;
 }
