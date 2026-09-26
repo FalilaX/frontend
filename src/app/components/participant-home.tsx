@@ -1,3 +1,4 @@
+import { ParticipantEmailRehearsal } from "@/app/components/participant-email-rehearsal";
 import { ParticipantPreferencesEditor } from "@/app/components/participant-preferences-editor";
 import { useEffect, useState } from "react";
 import { getParticipantContext, ParticipantAccessError } from "@/app/services/participant-api";
@@ -149,6 +150,7 @@ export function ParticipantHome() {
           </article>
         </section>}
 
+        <ParticipantEmailRehearsal />
       </main>
     </div>
   );
