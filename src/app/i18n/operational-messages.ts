@@ -2723,5 +2723,105 @@ export const operationalMessages: Record<string, { es: string; fr: string }> = {
   "Recommended actions:": {
     "es": "Acciones recomendadas:",
     "fr": "Actions recommandées :"
+  },
+  "Simulation: {event} at asset {id}": {
+    "es": "Simulación: {event} en el activo {id}",
+    "fr": "Simulation : {event} sur l’actif {id}"
+  },
+  "Controlled simulation. No operational state was changed and notifications are disabled.": {
+    "es": "Simulación controlada. No se modificó ningún estado operativo y las notificaciones están desactivadas.",
+    "fr": "Simulation contrôlée. Aucun état opérationnel n’a été modifié et les notifications sont désactivées."
+  },
+  "Target Resolved No Upstream Topology": {
+    "es": "Objetivo identificado sin topología aguas arriba",
+    "fr": "Cible identifiée sans topologie en amont"
+  },
+  "Source asset resolved; no upstream path found": {
+    "es": "Activo de origen identificado; no se encontró una ruta aguas arriba",
+    "fr": "Actif source identifié ; aucun chemin en amont trouvé"
+  },
+  "FalilaX resolved {asset} as the explicit incident source asset, but no active upstream topology relationship was available for investigation.": {
+    "es": "FalilaX identificó {asset} como el activo de origen explícito del incidente, pero no había ninguna relación topológica activa aguas arriba disponible para la investigación.",
+    "fr": "FalilaX a identifié {asset} comme l’actif source explicite de l’incident, mais aucune relation topologique active en amont n’était disponible pour l’enquête."
+  },
+  "This incident view is topology-first source intelligence. It is not a site-level source-attribution probability.": {
+    "es": "Esta vista del incidente analiza el origen principalmente mediante la topología. No representa una probabilidad de atribución del origen a nivel del sitio.",
+    "fr": "Cette vue de l’incident analyse la source principalement à partir de la topologie. Elle ne représente pas une probabilité d’attribution de la source à l’échelle du site."
+  },
+  "FalilaX does not infer a Location/site identifier from Asset.id. Site-specific alert and measurement evidence require an explicit site identity.": {
+    "es": "FalilaX no deduce un identificador de Location/sitio a partir de Asset.id. Las evidencias de alertas y mediciones específicas del sitio requieren una identidad explícita del sitio.",
+    "fr": "FalilaX ne déduit pas d’identifiant Location/site à partir de Asset.id. Les éléments de preuve issus des alertes et mesures propres au site nécessitent une identité explicite du site."
+  },
+  "Probable origin assets are investigation candidates and require field, laboratory, hydraulic, and operator confirmation.": {
+    "es": "Los activos de origen probable son candidatos para la investigación y requieren confirmación de campo, de laboratorio, hidráulica y del operador.",
+    "fr": "Les actifs d’origine probable sont des candidats à examiner et nécessitent une confirmation sur le terrain, en laboratoire, hydraulique et par l’opérateur."
+  },
+  "No resolved upstream topology path is available for this assessment.": {
+    "es": "No hay una ruta topológica aguas arriba identificada para esta evaluación.",
+    "fr": "Aucun chemin topologique en amont identifié n’est disponible pour cette évaluation."
+  },
+  "No verified hydraulic-model provenance is registered for this Source Attribution assessment.": {
+    "es": "No hay procedencia verificada del modelo hidráulico registrada para esta evaluación de atribución del origen.",
+    "fr": "Aucune provenance vérifiée du modèle hydraulique n’est enregistrée pour cette évaluation d’attribution de la source."
+  },
+  "FalilaX v3.3 does not mark a hydraulic model as ready until verified hydraulic-model provenance is registered.": {
+    "es": "FalilaX v3.3 no marca un modelo hidráulico como listo hasta que se registra su procedencia verificada.",
+    "fr": "FalilaX v3.3 ne marque pas un modèle hydraulique comme prêt tant que sa provenance vérifiée n’est pas enregistrée."
+  },
+  "Lifetime Workflow History": {
+    "es": "Historial completo del flujo de trabajo",
+    "fr": "Historique complet du processus"
+  },
+  "Operator attestation records completed non-physical operational work. It does not issue SCADA, valve, pump, chemical-dosing, pressure-control, PLC, or RTU commands.": {
+    "es": "La declaración del operador registra trabajo operativo no físico completado. No emite comandos SCADA ni de válvulas, bombas, dosificación química, control de presión, PLC o RTU.",
+    "fr": "L’attestation de l’opérateur consigne les travaux opérationnels non physiques terminés. Elle n’émet aucune commande SCADA, de vanne, de pompe, de dosage chimique, de régulation de pression, de PLC ou de RTU."
+  },
+  "Status Changed": {
+    "es": "Estado modificado",
+    "fr": "État modifié"
+  },
+  "Incident acknowledged.": {
+    "es": "Incidente reconocido.",
+    "fr": "Incident pris en compte."
+  },
+  "Investigation started.": {
+    "es": "Investigación iniciada.",
+    "fr": "Enquête commencée."
+  },
+  "Verification started.": {
+    "es": "Verificación iniciada.",
+    "fr": "Vérification commencée."
+  },
+  "Incident resolved.": {
+    "es": "Incidente resuelto.",
+    "fr": "Incident résolu."
+  },
+  "Incident closed.": {
+    "es": "Incidente cerrado.",
+    "fr": "Incident clôturé."
+  },
+  "Central system": {
+    "es": "Sistema central",
+    "fr": "Système central"
+  },
+  "Distribution network": {
+    "es": "Red de distribución",
+    "fr": "Réseau de distribution"
+  },
+  "Treatment plant": {
+    "es": "Planta de tratamiento",
+    "fr": "Station de traitement"
+  },
+  "Water source": {
+    "es": "Fuente de agua",
+    "fr": "Source d’eau"
+  },
+  "Network distance metadata is not available for every relationship in the upstream path.": {
+    "es": "Los metadatos de distancia de la red no están disponibles para todas las relaciones del recorrido aguas arriba.",
+    "fr": "Les métadonnées de distance du réseau ne sont pas disponibles pour toutes les relations du parcours en amont."
+  },
+  "Hydraulic travel-time metadata is not available for every relationship in the upstream path.": {
+    "es": "Los metadatos del tiempo de tránsito hidráulico no están disponibles para todas las relaciones del recorrido aguas arriba.",
+    "fr": "Les métadonnées de temps de transit hydraulique ne sont pas disponibles pour toutes les relations du parcours en amont."
   }
 };

@@ -2848,7 +2848,7 @@ export function IncidentInvestigation() {
 
                       <div className="mt-4 flex flex-wrap gap-x-5 gap-y-2 text-xs text-zinc-500">
                         <span><Localize>{"Incident: "}</Localize>{selected.id}</span>
-                        <span><Localize>{"Event: "}</Localize>{selected.event_type ?? "N/A"}</span>
+                        <span><Localize>{"Event: "}</Localize>{labelText(selected.event_type ?? "N/A")}</span>
                         <span><Localize>{"Node: "}</Localize>{selected.source_node_id ?? "N/A"}</span>
                         <span><Localize>{"Detected: "}</Localize>{dateText(selected.detected_at)}</span>
                       </div>
@@ -3284,7 +3284,7 @@ export function IncidentInvestigation() {
                             {!hydraulicEvidence?.hydraulic_model_ready &&
                               hydraulicEvidence?.hydraulic_model_reason && (
                                 <div className="mt-4 rounded-lg border border-amber-900/60 bg-amber-950/20 p-3 text-xs text-amber-200/90">
-                                  {hydraulicEvidence.hydraulic_model_reason}
+                                  <GeneratedText value={hydraulicEvidence.hydraulic_model_reason} />
                                 </div>
                               )}
                           </div>
@@ -3305,7 +3305,7 @@ export function IncidentInvestigation() {
                                       key={index}
                                       className="text-xs text-zinc-500"
                                     >
-                                      • {limitation}
+                                      • <GeneratedText value={limitation} />
                                     </p>
                                   ))}
                               </div>
@@ -3970,8 +3970,8 @@ export function IncidentInvestigation() {
                         <div>
                           <p className="text-sm font-medium text-zinc-300"><Localize>{" Execution safety boundary "}</Localize></p>
                           <p className="mt-1 text-xs text-zinc-500">
-                            {executionSummary.safety_note ||
-                              t("Operator attestation records non-physical operational work and does not issue physical utility-control commands.")}
+                            <GeneratedText value={executionSummary.safety_note ||
+                              "Operator attestation records non-physical operational work and does not issue physical utility-control commands."} />
                           </p>
                         </div>
                       </div>

@@ -4,7 +4,9 @@ import type { Locale } from './locale';
 // Exact, versioned English templates only. Captured names, IDs, measurements,
 // percentages and units remain unchanged. Never write this display text to an API.
 const rules: Array<{ pattern: RegExp; key: string; fields: string[]; labels?: string[] }> = [
-  { pattern: /^Last successful pull is older than expected threshold \((\d+) minutes\)\.$/, key: 'Last successful pull is older than expected threshold ({minutes} minutes).', fields: ['minutes'] },
+
+  { pattern: /^Simulation: (Low Pressure|Nitrate Attention|High Turbidity|Low Chlorine) at asset (\d+)$/, key: 'Simulation: {event} at asset {id}', fields: ['event','id'], labels: ['event'] },
+  { pattern: /^FalilaX resolved (.+) as the explicit incident source asset, but no active upstream topology relationship was available for investigation\.$/, key: 'FalilaX resolved {asset} as the explicit incident source asset, but no active upstream topology relationship was available for investigation.', fields: ['asset'] },  { pattern: /^Last successful pull is older than expected threshold \((\d+) minutes\)\.$/, key: 'Last successful pull is older than expected threshold ({minutes} minutes).', fields: ['minutes'] },
   { pattern: /^Affected area: (.+)$/, key: 'Affected area: {area}', fields: ['area'] },
   { pattern: /^Likely source: (.+) \((\d+(?:\.\d+)?)% confidence\)$/, key: 'Likely source: {source} ({confidence}% confidence)', fields: ['source', 'confidence'] },
   { pattern: /^Full details: (https?:\/\/\S+)$/, key: 'Full details: {url}', fields: ['url'] },
