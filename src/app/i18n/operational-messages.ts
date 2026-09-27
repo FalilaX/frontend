@@ -2823,5 +2823,9 @@ export const operationalMessages: Record<string, { es: string; fr: string }> = {
   "Hydraulic travel-time metadata is not available for every relationship in the upstream path.": {
     "es": "Los metadatos del tiempo de tránsito hidráulico no están disponibles para todas las relaciones del recorrido aguas arriba.",
     "fr": "Les métadonnées de temps de transit hydraulique ne sont pas disponibles pour toutes les relations du parcours en amont."
+  },
+  "Note Added": {
+    "es": "Nota añadida",
+    "fr": "Note ajoutée"
   }
 };
