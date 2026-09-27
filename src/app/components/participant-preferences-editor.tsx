@@ -1,3 +1,4 @@
+import { Localize } from "@/app/i18n/language";
 import { useEffect, useRef, useState } from "react";
 import type { FormEvent } from "react";
 import { Link, useNavigate } from "react-router-dom";
@@ -113,42 +114,41 @@ export function ParticipantPreferencesEditor({ onSaved, onCancel }: { onSaved: (
   }
 
   return <section aria-labelledby="preference-editor-heading" className="mt-6 rounded-2xl border border-cyan-300/20 bg-[#071b2a] p-5">
-    <h3 ref={heading} tabIndex={-1} id="preference-editor-heading" className="text-base font-semibold text-white">Your notification choices</h3>
-    {!canEdit ? <p className="mt-3 text-sm leading-6 text-slate-300">Please <Link to="/participant/sign-in" className="text-cyan-200 underline">sign in again</Link> to enable preference editing.</p> : <>
-      {loading && <p role="status" className="mt-3 text-sm text-slate-300">Loading saved choices...</p>}
+    <h3 ref={heading} tabIndex={-1} id="preference-editor-heading" className="text-base font-semibold text-white"><Localize>{"Your notification choices"}</Localize></h3>
+    {!canEdit ? <p className="mt-3 text-sm leading-6 text-slate-300"><Localize>{"Please "}</Localize><Link to="/participant/sign-in" className="text-cyan-200 underline"><Localize>{"sign in again"}</Localize></Link><Localize>{" to enable preference editing."}</Localize></p> : <>
+      {loading && <p role="status" className="mt-3 text-sm text-slate-300"><Localize>{"Loading saved choices..."}</Localize></p>}
       {error && <p role="alert" className="mt-3 text-sm leading-6 text-amber-200">{error}</p>}
-      {!loading && (!saved || needsReload) && <button type="button" className={`${secondary} mt-3`} onClick={() => setAttempt(value => value + 1)}>Reload saved choices{draft ? " (discard edits)" : ""}</button>}
+      {!loading && (!saved || needsReload) && <button type="button" className={`${secondary} mt-3`} onClick={() => setAttempt(value => value + 1)}><Localize>{"Reload saved choices"}</Localize><Localize>{draft ? " (discard edits)" : ""}</Localize></button>}
       {!loading && saved && draft && <form onSubmit={save} className="mt-5 space-y-5">
-        {!saved.is_active && <p className="text-sm text-amber-200">These preferences are inactive. Saving choices will not reactivate delivery. Contact your organizer.</p>}
+        {!saved.is_active && <p className="text-sm text-amber-200"><Localize>{"These preferences are inactive. Saving choices will not reactivate delivery. Contact your organizer."}</Localize></p>}
         <fieldset disabled={saving || needsReload} className="space-y-5 disabled:opacity-60">
-          <legend className="sr-only">Notification preferences</legend>
+          <legend className="sr-only"><Localize>{"Notification preferences"}</Localize></legend>
           <label className="flex items-start gap-3 text-sm text-slate-100">
             <input type="checkbox" checked={draft.email_enabled} disabled={!saved.email_verified && !draft.email_enabled}
               onChange={e => setDraft({ ...draft, email_enabled: e.target.checked })} className="mt-1 h-4 w-4 accent-cyan-300" />
-            <span>Email notifications<span className="mt-1 block text-xs leading-5 text-slate-400">{saved.email_verified ? "Use the email verified during your enrollment." : "Your current email needs verification before email notifications can be enabled."}</span></span>
+            <span><Localize>{"Email notifications"}</Localize><span className="mt-1 block text-xs leading-5 text-slate-400"><Localize>{saved.email_verified ? "Use the email verified during your enrollment." : "Your current email needs verification before email notifications can be enabled."}</Localize></span></span>
           </label>
-          <label className="block text-sm text-slate-300">Minimum severity
-            <select value={draft.minimum_severity} onChange={e => setDraft({ ...draft, minimum_severity: e.target.value as Severity })} className={control}>
-              <option value="LOW">Low and above</option><option value="MEDIUM">Medium and above</option>
-              <option value="HIGH">High and critical</option><option value="CRITICAL">Critical only</option>
+          <label className="block text-sm text-slate-300"><Localize>{"Minimum severity "}</Localize><select value={draft.minimum_severity} onChange={e => setDraft({ ...draft, minimum_severity: e.target.value as Severity })} className={control}>
+              <option value="LOW"><Localize>{"Low and above"}</Localize></option><option value="MEDIUM"><Localize>{"Medium and above"}</Localize></option>
+              <option value="HIGH"><Localize>{"High and critical"}</Localize></option><option value="CRITICAL"><Localize>{"Critical only"}</Localize></option>
             </select>
           </label>
-          <label className="flex items-center gap-3 text-sm"><input type="checkbox" checked={draft.quiet_hours_enabled} onChange={e => quietHours(e.target.checked)} className="h-4 w-4 accent-cyan-300" />Use quiet hours</label>
+          <label className="flex items-center gap-3 text-sm"><input type="checkbox" checked={draft.quiet_hours_enabled} onChange={e => quietHours(e.target.checked)} className="h-4 w-4 accent-cyan-300" /><Localize>{"Use quiet hours"}</Localize></label>
           {draft.quiet_hours_enabled && <div className="space-y-4 rounded-xl border border-white/10 p-4">
             <div className="grid grid-cols-2 gap-3">
-              <label className="text-sm text-slate-300">From<input required type="time" value={draft.quiet_hours_start || ""} onChange={e => setDraft({ ...draft, quiet_hours_start: e.target.value })} className={control} /></label>
-              <label className="text-sm text-slate-300">Until<input required type="time" value={draft.quiet_hours_end || ""} onChange={e => setDraft({ ...draft, quiet_hours_end: e.target.value })} className={control} /></label>
+              <label className="text-sm text-slate-300"><Localize>{"From"}</Localize><input required type="time" value={draft.quiet_hours_start || ""} onChange={e => setDraft({ ...draft, quiet_hours_start: e.target.value })} className={control} /></label>
+              <label className="text-sm text-slate-300"><Localize>{"Until"}</Localize><input required type="time" value={draft.quiet_hours_end || ""} onChange={e => setDraft({ ...draft, quiet_hours_end: e.target.value })} className={control} /></label>
             </div>
-            <label className="block text-sm text-slate-300">Timezone<input required maxLength={64} value={draft.quiet_hours_timezone || ""} onChange={e => setDraft({ ...draft, quiet_hours_timezone: e.target.value })} placeholder="America/Chicago" className={control} />
-              <span className="mt-2 block text-xs text-slate-400">Use an IANA timezone, such as America/Chicago or Africa/Accra. Quiet hours may cross midnight.</span>
+            <label className="block text-sm text-slate-300"><Localize>{"Timezone"}</Localize><input required maxLength={64} value={draft.quiet_hours_timezone || ""} onChange={e => setDraft({ ...draft, quiet_hours_timezone: e.target.value })} placeholder="America/Chicago" className={control} />
+              <span className="mt-2 block text-xs text-slate-400"><Localize>{"Use an IANA timezone, such as America/Chicago or Africa/Accra. Quiet hours may cross midnight."}</Localize></span>
             </label>
           </div>}
-          <label className="flex items-start gap-3 text-sm"><input type="checkbox" checked={draft.emergency_override_enabled} onChange={e => setDraft({ ...draft, emergency_override_enabled: e.target.checked })} className="mt-1 h-4 w-4 accent-cyan-300" /><span>Allow emergency notifications during quiet hours</span></label>
-          <p className="text-xs leading-5 text-slate-400">These choices apply to eligible notifications. Saving does not send an alert. Other channels, pauses, acknowledgement, and escalation settings remain unchanged.</p>
-          <button type="submit" className="w-full rounded-xl bg-cyan-300 px-5 py-3 text-sm font-semibold text-slate-950 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cyan-200">{saving ? "Saving choices..." : "Save choices"}</button>
+          <label className="flex items-start gap-3 text-sm"><input type="checkbox" checked={draft.emergency_override_enabled} onChange={e => setDraft({ ...draft, emergency_override_enabled: e.target.checked })} className="mt-1 h-4 w-4 accent-cyan-300" /><span><Localize>{"Allow emergency notifications during quiet hours"}</Localize></span></label>
+          <p className="text-xs leading-5 text-slate-400"><Localize>{"These choices apply to eligible notifications. Saving does not send an alert. Other channels, pauses, acknowledgement, and escalation settings remain unchanged."}</Localize></p>
+          <button type="submit" className="w-full rounded-xl bg-cyan-300 px-5 py-3 text-sm font-semibold text-slate-950 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cyan-200"><Localize>{saving ? "Saving choices..." : "Save choices"}</Localize></button>
         </fieldset>
       </form>}
     </>}
-    <button type="button" disabled={saving} onClick={onCancel} className={`${secondary} mt-4`}>Close editor</button>
+    <button type="button" disabled={saving} onClick={onCancel} className={`${secondary} mt-4`}><Localize>{"Close editor"}</Localize></button>
   </section>;
 }

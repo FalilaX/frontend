@@ -1,3 +1,4 @@
+import { LanguageProvider } from "@/app/i18n/language";
 import {
   BrowserRouter,
   Navigate,
@@ -27,6 +28,7 @@ import SmsConsent from '@/app/docs/SmsConsent';
 export default function App() {
   return (
     <BrowserRouter>
+      <LanguageProvider>
       <Routes>
         {/* =====================================================
             PUBLIC / ENTRY
@@ -192,6 +194,7 @@ export default function App() {
           }
         />
       </Routes>
+    </LanguageProvider>
     </BrowserRouter>
   );
 }

@@ -1,3 +1,4 @@
+import { Localize, useLanguage } from "@/app/i18n/language";
 import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { History } from "lucide-react";
@@ -11,6 +12,7 @@ const titles = { REHEARSAL: "Demonstration email rehearsal", SIMULATION: "Simula
 const channels: Record<string, string> = { email: "Email", sms: "SMS", whatsapp: "WhatsApp", in_app: "In-app", push: "Push", voice: "Voice" };
 
 export function ParticipantNotificationHistory() {
+  const { locale } = useLanguage();
   const profile = useParticipantProfile();
   const navigate = useNavigate();
   const [history, setHistory] = useState<NotificationHistory | null>(null);
@@ -90,42 +92,42 @@ export function ParticipantNotificationHistory() {
     return () => { disposed = true; clearTimeout(timeout); controller.abort(); };
   }, [attempt, navigate, profile.subscriber_id, profile.organization_id]);
   const visible = history?.subscriber_id === profile.subscriber_id && history?.organization_id === profile.organization_id ? history : null;
-  const time = (value: string) => new Date(value).toLocaleString();
+  const time = (value: string) => new Date(value).toLocaleString(locale);
   return <section aria-labelledby="notification-history-title" className="mt-6 rounded-3xl border border-white/10 bg-[#071b2a]/90 p-6 sm:p-8">
     <div className="flex flex-wrap items-center justify-between gap-4">
       <div><History aria-hidden="true" className="h-6 w-6 text-cyan-300" />
-        <h2 id="notification-history-title" className="mt-3 text-xl font-semibold text-white">Notification history</h2>
+        <h2 id="notification-history-title" className="mt-3 text-xl font-semibold text-white"><Localize>{"Notification history"}</Localize></h2>
       </div>
-      <button type="button" disabled={loading || confirming !== null} onClick={() => setAttempt(value => value + 1)} className="rounded-xl border border-cyan-300/30 px-4 py-3 text-sm font-medium text-cyan-200 disabled:opacity-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-cyan-300">{loading ? "Loading…" : "Refresh history"}</button>
+      <button type="button" disabled={loading || confirming !== null} onClick={() => setAttempt(value => value + 1)} className="rounded-xl border border-cyan-300/30 px-4 py-3 text-sm font-medium text-cyan-200 disabled:opacity-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-cyan-300"><Localize>{loading ? "Loading…" : "Refresh history"}</Localize></button>
     </div>
-    <p className="mt-3 text-sm leading-6 text-slate-400">Recent activity recorded for your participant profile. Times use your device’s local time. Sending, receipt, and reading are different outcomes.</p>
-    {receiptMessage && <p role="status" className="mt-5 text-sm text-cyan-200">{receiptMessage}</p>}
-    {loading && <p role="status" className="mt-5 text-sm text-slate-300">Loading your notification history…</p>}
-    {error && <p role="alert" className="mt-5 text-sm text-amber-200">We could not load your history. Use Refresh history to try again.</p>}
-    {visible && !visible.items.length && <p className="mt-5 text-sm text-slate-300">No notification activity is recorded here yet. This view includes participant-owned notification records and email rehearsals.</p>}
+    <p className="mt-3 text-sm leading-6 text-slate-400"><Localize>{"Recent activity recorded for your participant profile. Times use your device’s local time. Sending, receipt, and reading are different outcomes."}</Localize></p>
+    {receiptMessage && <p role="status" className="mt-5 text-sm text-cyan-200"><Localize>{receiptMessage}</Localize></p>}
+    {loading && <p role="status" className="mt-5 text-sm text-slate-300"><Localize>{"Loading your notification history…"}</Localize></p>}
+    {error && <p role="alert" className="mt-5 text-sm text-amber-200"><Localize>{"We could not load your history. Use Refresh history to try again."}</Localize></p>}
+    {visible && !visible.items.length && <p className="mt-5 text-sm text-slate-300"><Localize>{"No notification activity is recorded here yet. This view includes participant-owned notification records and email rehearsals."}</Localize></p>}
     {visible && visible.items.length > 0 && <ol className="mt-6 space-y-4">
       {visible.items.map(item => <li key={item.id} className="rounded-2xl border border-white/10 bg-white/[0.02] p-5">
         <div className="flex flex-wrap items-start justify-between gap-3">
-          <div><p className="text-xs font-medium text-cyan-200">{channels[item.channel] || "Other channel"}</p>
-            <h3 className="mt-2 font-medium text-white">{titles[item.kind]}</h3></div>
-          <span className="rounded-full border border-white/10 px-3 py-1 text-xs text-slate-200">{item.status_label}</span>
+          <div><p className="text-xs font-medium text-cyan-200"><Localize>{channels[item.channel] || "Other channel"}</Localize></p>
+            <h3 className="mt-2 font-medium text-white"><Localize>{titles[item.kind]}</Localize></h3></div>
+          <span className="rounded-full border border-white/10 px-3 py-1 text-xs text-slate-200"><Localize>{item.status_label}</Localize></span>
         </div>
-        <p className="mt-3 text-sm leading-6 text-slate-300">{item.explanation}</p>
+        <p className="mt-3 text-sm leading-6 text-slate-300"><Localize>{item.explanation}</Localize></p>
         <dl className="mt-4 flex flex-wrap gap-x-8 gap-y-3 text-xs text-slate-400">
-          <div><dt>Recorded</dt><dd className="mt-1"><time dateTime={item.recorded_at}>{time(item.recorded_at)}</time></dd></div>
-          {item.authorized_at && <div><dt>Send authorized</dt><dd className="mt-1"><time dateTime={item.authorized_at}>{time(item.authorized_at)}</time></dd></div>}
-          {item.finished_at && <div><dt>Outcome recorded</dt><dd className="mt-1"><time dateTime={item.finished_at}>{time(item.finished_at)}</time></dd></div>}
+          <div><dt><Localize>{"Recorded"}</Localize></dt><dd className="mt-1"><time dateTime={item.recorded_at}>{time(item.recorded_at)}</time></dd></div>
+          {item.authorized_at && <div><dt><Localize>{"Send authorized"}</Localize></dt><dd className="mt-1"><time dateTime={item.authorized_at}>{time(item.authorized_at)}</time></dd></div>}
+          {item.finished_at && <div><dt><Localize>{"Outcome recorded"}</Localize></dt><dd className="mt-1"><time dateTime={item.finished_at}>{time(item.finished_at)}</time></dd></div>}
         </dl>
-        {item.receipt_confirmed_at && <p className="mt-4 text-sm text-emerald-200">Receipt confirmed by participant · <time dateTime={item.receipt_confirmed_at}>{time(item.receipt_confirmed_at)}</time><span className="mt-1 block text-xs text-slate-400">Your report of receipt; it does not confirm protective action or water safety.</span></p>}
+        {item.receipt_confirmed_at && <p className="mt-4 text-sm text-emerald-200"><Localize>{"Receipt confirmed by participant · "}</Localize><time dateTime={item.receipt_confirmed_at}>{time(item.receipt_confirmed_at)}</time><span className="mt-1 block text-xs text-slate-400"><Localize>{"Your report of receipt; it does not confirm protective action or water safety."}</Localize></span></p>}
         {item.kind === "REHEARSAL" && item.can_confirm_receipt && !item.receipt_confirmed_at && (
           getParticipantSession()?.scopes.includes("participant:notifications:acknowledge") ? <div className="mt-5 border-t border-white/10 pt-4">
-            <label className="flex items-start gap-3 text-sm leading-6 text-slate-300"><input type="checkbox" className="mt-1" checked={selected === item.id} disabled={confirming !== null} onChange={event => setSelected(event.target.checked ? item.id : null)} />I received this demonstration email in my email account.</label>
-            <button type="button" disabled={selected !== item.id || confirming !== null || loading} onClick={() => void recordReceipt(item.id)} className="mt-3 rounded-xl border border-cyan-300/30 px-4 py-3 text-sm font-medium text-cyan-200 disabled:opacity-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-cyan-300">{confirming === item.id ? "Recording…" : "Confirm email receipt"}</button>
-          </div> : <p className="mt-4 text-sm text-slate-400">Sign in again to enable receipt confirmation.</p>
+            <label className="flex items-start gap-3 text-sm leading-6 text-slate-300"><input type="checkbox" className="mt-1" checked={selected === item.id} disabled={confirming !== null} onChange={event => setSelected(event.target.checked ? item.id : null)} /><Localize>{"I received this demonstration email in my email account."}</Localize></label>
+            <button type="button" disabled={selected !== item.id || confirming !== null || loading} onClick={() => void recordReceipt(item.id)} className="mt-3 rounded-xl border border-cyan-300/30 px-4 py-3 text-sm font-medium text-cyan-200 disabled:opacity-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-cyan-300"><Localize>{confirming === item.id ? "Recording…" : "Confirm email receipt"}</Localize></button>
+          </div> : <p className="mt-4 text-sm text-slate-400"><Localize>{"Sign in again to enable receipt confirmation."}</Localize></p>
         )}
-        <p className="mt-4 text-xs leading-5 text-slate-500">{item.kind === "REHEARSAL" ? "Communication rehearsal only. No real water-quality warning or protective action." : item.kind === "SIMULATION" ? "Recorded simulation. This does not establish a real water-quality condition." : "This activity summary does not verify whether the originating event was live or simulated."}</p>
+        <p className="mt-4 text-xs leading-5 text-slate-500"><Localize>{item.kind === "REHEARSAL" ? "Communication rehearsal only. No real water-quality warning or protective action." : item.kind === "SIMULATION" ? "Recorded simulation. This does not establish a real water-quality condition." : "This activity summary does not verify whether the originating event was live or simulated."}</Localize></p>
       </li>)}
     </ol>}
-    {visible?.has_more && <p className="mt-4 text-xs text-slate-400">Showing the 50 most recent records. Older records are not displayed in this view.</p>}
+    {visible?.has_more && <p className="mt-4 text-xs text-slate-400"><Localize>{"Showing the 50 most recent records. Older records are not displayed in this view."}</Localize></p>}
   </section>;
 }

@@ -1,3 +1,4 @@
+import { Localize } from "@/app/i18n/language";
 import { useEffect, useRef, useState } from "react";
 import { getParticipantSession } from "@/app/utils/participant-session";
 import { requestRehearsal } from "@/app/services/participant-email-rehearsal-api";
@@ -48,23 +49,24 @@ export function ParticipantEmailRehearsal() {
   const row = state?.rehearsal;
   const terminal = !!row && ["CLAIMED", "ACCEPTED", "UNKNOWN", "SKIPPED"].includes(row.status);
   return <section aria-labelledby="rehearsal-title" className="mt-6 rounded-3xl border border-cyan-300/15 bg-[#071b2a] p-6 text-slate-200">
-    <p className="text-xs uppercase tracking-[0.2em] text-cyan-300">Private communication rehearsal</p>
-    <h2 id="rehearsal-title" className="mt-3 text-xl font-semibold text-white">Try one demonstration email</h2>
-    <p className="mt-3 text-sm leading-6 text-slate-400">Review the message before sending it to your verified email. This is a communication check, with no real water-quality warning or protective action. Your saved preferences apply.</p>
-    {message && <p role="alert" className="mt-4 text-sm text-amber-200">{message}</p>}
-    {row && <div className="mt-5 rounded-2xl border border-white/10 p-5">
-      <p className="text-sm text-cyan-200">To: {row.destination_hint}</p>
+    <p className="text-xs uppercase tracking-[0.2em] text-cyan-300"><Localize>{"Private communication rehearsal"}</Localize></p>
+    <h2 id="rehearsal-title" className="mt-3 text-xl font-semibold text-white"><Localize>{"Try one demonstration email"}</Localize></h2>
+    <p className="mt-3 text-sm leading-6 text-slate-400"><Localize>{"Review the message before sending it to your verified email. This is a communication check, with no real water-quality warning or protective action. Your saved preferences apply."}</Localize></p>
+    {message && <p role="alert" className="mt-4 text-sm text-amber-200"><Localize>{message}</Localize></p>}
+    {row && <p className="mt-4 text-xs text-slate-400"><Localize>Email preview and sent message are in English.</Localize></p>}
+    {row && <div lang="en" className="mt-5 rounded-2xl border border-white/10 p-5">
+      <p className="text-sm text-cyan-200"><Localize>{"To: "}</Localize>{row.destination_hint}</p>
       <h3 className="mt-3 font-semibold">{row.subject}</h3>
       <p className="mt-3 whitespace-pre-wrap text-sm leading-6 text-slate-300">{row.body}</p>
     </div>}
-    {row?.status === "ACCEPTED" && <p role="status" className="mt-4 text-emerald-200">The sending mail server accepted the rehearsal message. Check your inbox and spam folder. Inbox delivery has not been independently confirmed.</p>}
-    {row && ["CLAIMED", "UNKNOWN"].includes(row.status) && <p role="status" className="mt-4 text-amber-200">The send was authorized, but its final outcome is not confirmed here. Check your inbox and status. Another send is blocked to prevent duplicates.</p>}
-    {row?.status === "SKIPPED" && <p role="status" className="mt-4 text-slate-300">Email sending was disabled. No further send is available for this rehearsal.</p>}
-    {!terminal && !uncertain && <button type="button" disabled={busy} onClick={() => void run("preview")} className={`${button} mt-5`}>{row ? "Prepare fresh preview" : "Preview demonstration email"}</button>}
+    {row?.status === "ACCEPTED" && <p role="status" className="mt-4 text-emerald-200"><Localize>{"The sending mail server accepted the rehearsal message. Check your inbox and spam folder. Inbox delivery has not been independently confirmed."}</Localize></p>}
+    {row && ["CLAIMED", "UNKNOWN"].includes(row.status) && <p role="status" className="mt-4 text-amber-200"><Localize>{"The send was authorized, but its final outcome is not confirmed here. Check your inbox and status. Another send is blocked to prevent duplicates."}</Localize></p>}
+    {row?.status === "SKIPPED" && <p role="status" className="mt-4 text-slate-300"><Localize>{"Email sending was disabled. No further send is available for this rehearsal."}</Localize></p>}
+    {!terminal && !uncertain && <button type="button" disabled={busy} onClick={() => void run("preview")} className={`${button} mt-5`}><Localize>{row ? "Prepare fresh preview" : "Preview demonstration email"}</Localize></button>}
     {row?.can_send && !terminal && !uncertain && <div className="mt-5">
-      <label className="flex items-start gap-3 text-sm leading-6"><input type="checkbox" checked={confirmed} disabled={busy} onChange={e => setConfirmed(e.target.checked)} className="mt-1" />I have reviewed this demonstration message and authorize one email to my verified address.</label>
-      <button type="button" disabled={busy || !confirmed} onClick={() => void run("send")} className={`${button} mt-4 bg-cyan-300 text-slate-950`}>Send this demonstration email</button>
+      <label className="flex items-start gap-3 text-sm leading-6"><input type="checkbox" checked={confirmed} disabled={busy} onChange={e => setConfirmed(e.target.checked)} className="mt-1" /><Localize>{"I have reviewed this demonstration message and authorize one email to my verified address."}</Localize></label>
+      <button type="button" disabled={busy || !confirmed} onClick={() => void run("send")} className={`${button} mt-4 bg-cyan-300 text-slate-950`}><Localize>{"Send this demonstration email"}</Localize></button>
     </div>}
-    <button type="button" disabled={busy} onClick={() => void run("status")} className={`${button} mt-5 ml-2`}>{busy ? "Checking…" : "Check status"}</button>
+    <button type="button" disabled={busy} onClick={() => void run("status")} className={`${button} mt-5 ml-2`}><Localize>{busy ? "Checking…" : "Check status"}</Localize></button>
   </section>;
 }

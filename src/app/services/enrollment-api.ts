@@ -169,10 +169,15 @@ export function verifyEnrollmentChannel(
   });
 }
 
-export function getEnrollmentConsentDocument(sessionPublicId: string) {
-  return enrollmentRequest<EnrollmentConsentDocument>(
-    sessionEndpoint(API_ENDPOINTS.ENROLLMENT_CONSENT_DOCUMENT, sessionPublicId),
-  );
+export async function getEnrollmentConsentDocument(sessionPublicId: string, locale = "en") {
+  const language = ["en", "es", "fr"].includes(locale) ? locale : "en";
+  const endpoint = sessionEndpoint(API_ENDPOINTS.ENROLLMENT_CONSENT_DOCUMENT, sessionPublicId);
+  try {
+    return await enrollmentRequest<EnrollmentConsentDocument>(`${endpoint}?locale=${language}`);
+  } catch (error) {
+    if (!(error instanceof EnrollmentApiError) || error.status !== 404 || language === "en") throw error;
+    return enrollmentRequest<EnrollmentConsentDocument>(`${endpoint}?locale=en`);
+  }
 }
 
 export function recordEnrollmentConsent(
