@@ -1,5 +1,15 @@
 // Display text only. Never use these labels as API or evidence values.
 export const operationalMessages: Record<string, { es: string; fr: string }> = {
+  "Plan expired": {"es": "Plan caducado", "fr": "Plan expiré"},
+  "Create fresh plan": {"es": "Crear un nuevo plan", "fr": "Créer un nouveau plan"},
+  "Expired actions cannot be approved or recorded as completed. Previous approvals do not carry over to a fresh plan.": {"es": "Las acciones caducadas no se pueden aprobar ni registrar como completadas. Las aprobaciones anteriores no se transfieren al nuevo plan.", "fr": "Les actions expirées ne peuvent être ni approuvées ni enregistrées comme terminées. Les approbations précédentes ne sont pas transférées au nouveau plan."},
+  "This plan has already progressed beyond approval. Review its execution history before choosing the next workflow step.": {"es": "Este plan ya ha superado la fase de aprobación. Revise su historial de ejecución antes de elegir el siguiente paso.", "fr": "Ce plan a déjà dépassé la phase d’approbation. Consultez son historique d’exécution avant de choisir l’étape suivante."},
+  "The action plan has expired. Create a fresh plan before approval or execution.": {"es": "El plan ha caducado. Cree un nuevo plan antes de aprobarlo o ejecutarlo.", "fr": "Le plan a expiré. Créez un nouveau plan avant toute approbation ou exécution."},
+  "Only an unstarted expired action plan can be replaced.": {"es": "Solo se puede reemplazar un plan caducado cuya ejecución no haya comenzado.", "fr": "Seul un plan expiré dont l’exécution n’a pas commencé peut être remplacé."},
+  "The current action plan has not expired.": {"es": "El plan actual no ha caducado.", "fr": "Le plan actuel n’a pas expiré."},
+  "A plan with started or completed actions cannot be replaced here.": {"es": "Aquí no se puede reemplazar un plan con acciones iniciadas o completadas.", "fr": "Un plan comportant des actions commencées ou terminées ne peut pas être remplacé ici."},
+  "A plan with execution history cannot be replaced here.": {"es": "Aquí no se puede reemplazar un plan con historial de ejecución.", "fr": "Un plan ayant un historique d’exécution ne peut pas être remplacé ici."},
+
   "Connected operations": {
     "es": "Operaciones conectadas",
     "fr": "Opérations connectées"
