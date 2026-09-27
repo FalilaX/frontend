@@ -1,3 +1,6 @@
+import { GeneratedText } from "@/app/i18n/generated-text";
+import { useOperationalText } from "@/app/i18n/operational-text";
+import { Localize, useLanguage } from "@/app/i18n/language";
 import { useEffect, useState } from "react";
 import {
   Activity,
@@ -35,7 +38,7 @@ type IngestionHealthItem = {
   health_status: HealthStatus;
 };
 
-function formatTime(value?: string | null) {
+function formatTime(value?: string | null, locale?: string) {
   if (!value) {
     return "—";
   }
@@ -44,7 +47,7 @@ function formatTime(value?: string | null) {
 
   return Number.isNaN(date.getTime())
     ? String(value)
-    : date.toLocaleString();
+    : date.toLocaleString(locale);
 }
 
 function HealthBadge({
@@ -57,39 +60,32 @@ function HealthBadge({
   if (normalizedStatus === "healthy") {
     return (
       <span className="inline-flex items-center gap-1 rounded-full border border-emerald-500/20 bg-emerald-500/10 px-2.5 py-1 text-xs text-emerald-400">
-        <CheckCircle2 className="h-3.5 w-3.5" />
-        Healthy
-      </span>
+        <CheckCircle2 className="h-3.5 w-3.5" /><Localize>{" Healthy "}</Localize></span>
     );
   }
 
   if (normalizedStatus === "warning") {
     return (
       <span className="inline-flex items-center gap-1 rounded-full border border-amber-500/20 bg-amber-500/10 px-2.5 py-1 text-xs text-amber-400">
-        <AlertTriangle className="h-3.5 w-3.5" />
-        Warning
-      </span>
+        <AlertTriangle className="h-3.5 w-3.5" /><Localize>{" Warning "}</Localize></span>
     );
   }
 
   if (normalizedStatus === "failed") {
     return (
       <span className="inline-flex items-center gap-1 rounded-full border border-red-500/20 bg-red-500/10 px-2.5 py-1 text-xs text-red-400">
-        <XCircle className="h-3.5 w-3.5" />
-        Failed
-      </span>
+        <XCircle className="h-3.5 w-3.5" /><Localize>{" Failed "}</Localize></span>
     );
   }
 
   return (
     <span className="inline-flex items-center gap-1 rounded-full border border-zinc-700 bg-zinc-800 px-2.5 py-1 text-xs text-zinc-300">
-      <Clock3 className="h-3.5 w-3.5" />
-      Inactive
-    </span>
+      <Clock3 className="h-3.5 w-3.5" /><Localize>{" Inactive "}</Localize></span>
   );
 }
 
 export default function IngestionHealthPanel() {
+  const { locale, labelText } = useOperationalText();
   const [items, setItems] = useState<IngestionHealthItem[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -138,24 +134,16 @@ export default function IngestionHealthPanel() {
         <div className="flex items-center gap-2">
           <Database className="h-4 w-4 text-amber-400" />
 
-          <h2 className="text-lg font-medium">
-            Ingestion Health
-          </h2>
+          <h2 className="text-lg font-medium"><Localize>{" Ingestion Health "}</Localize></h2>
         </div>
 
-        <div className="text-xs text-zinc-500">
-          Auto-refresh every 15s
-        </div>
+        <div className="text-xs text-zinc-500"><Localize>{" Auto-refresh every 15s "}</Localize></div>
       </div>
 
       {loading ? (
-        <div className="animate-pulse px-6 py-6 text-sm text-zinc-400">
-          Loading ingestion status...
-        </div>
+        <div className="animate-pulse px-6 py-6 text-sm text-zinc-400"><Localize>{" Loading ingestion status... "}</Localize></div>
       ) : items.length === 0 ? (
-        <div className="px-6 py-6 text-sm text-zinc-500">
-          No ingestion sources available
-        </div>
+        <div className="px-6 py-6 text-sm text-zinc-500"><Localize>{" No ingestion sources available "}</Localize></div>
       ) : (
         <div className="divide-y divide-zinc-800">
           {items.map((item) => (
@@ -176,72 +164,56 @@ export default function IngestionHealthPanel() {
 
                     {item.stale ? (
                       <span className="inline-flex items-center gap-1 rounded-full border border-amber-500/20 bg-amber-500/10 px-2.5 py-1 text-xs text-amber-400">
-                        <Activity className="h-3.5 w-3.5" />
-                        Stale
-                      </span>
+                        <Activity className="h-3.5 w-3.5" /><Localize>{" Stale "}</Localize></span>
                     ) : null}
                   </div>
 
                   <div className="mt-2 flex flex-wrap gap-4 text-xs text-zinc-400">
-                    <span>
-                      Type: {item.source_type || "—"}
+                    <span><Localize>{" Type: "}</Localize>{labelText(item.source_type) || "—"}
                     </span>
 
-                    <span>
-                      Parser: {item.parser_type || "—"}
+                    <span><Localize>{" Parser: "}</Localize>{labelText(item.parser_type) || "—"}
                     </span>
 
-                    <span>
-                      Polling:{" "}
-                      {item.polling_frequency_minutes
+                    <span><Localize>{" Polling:"}</Localize>{" "}
+                      <Localize>{item.polling_frequency_minutes
                         ? `${item.polling_frequency_minutes} min`
-                        : "—"}
+                        : "—"}</Localize>
                     </span>
 
-                    <span>
-                      Failures: {item.failed_pull_count}
+                    <span><Localize>{" Failures: "}</Localize>{item.failed_pull_count}
                     </span>
                   </div>
 
                   {item.stale_reason ? (
                     <p className="mt-2 text-xs text-amber-400">
-                      {item.stale_reason}
+                      <GeneratedText value={item.stale_reason} />
                     </p>
                   ) : null}
                 </div>
 
                 <div className="grid min-w-[320px] grid-cols-1 gap-3 text-xs sm:grid-cols-3">
                   <div className="rounded-lg border border-zinc-800 bg-zinc-950/50 p-3">
-                    <p className="mb-1 text-zinc-500">
-                      Last Success
-                    </p>
+                    <p className="mb-1 text-zinc-500"><Localize>{" Last Success "}</Localize></p>
 
                     <p className="text-zinc-200">
-                      {formatTime(
-                        item.last_successful_pull_at,
-                      )}
+                      {formatTime(item.last_successful_pull_at, locale)}
                     </p>
                   </div>
 
                   <div className="rounded-lg border border-zinc-800 bg-zinc-950/50 p-3">
-                    <p className="mb-1 text-zinc-500">
-                      Last Failure
-                    </p>
+                    <p className="mb-1 text-zinc-500"><Localize>{" Last Failure "}</Localize></p>
 
                     <p className="text-zinc-200">
-                      {formatTime(
-                        item.last_failed_pull_at,
-                      )}
+                      {formatTime(item.last_failed_pull_at, locale)}
                     </p>
                   </div>
 
                   <div className="rounded-lg border border-zinc-800 bg-zinc-950/50 p-3">
-                    <p className="mb-1 text-zinc-500">
-                      Last Run Status
-                    </p>
+                    <p className="mb-1 text-zinc-500"><Localize>{" Last Run Status "}</Localize></p>
 
                     <p className="text-zinc-200">
-                      {item.last_run_status || "—"}
+                      {labelText(item.last_run_status) || "—"}
                     </p>
                   </div>
                 </div>

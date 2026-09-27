@@ -1,4 +1,5 @@
-import { Localize, useLanguage } from "@/app/i18n/language";
+import { AccountLanguageProvider } from "@/app/i18n/account-language";
+import { Localize } from "@/app/i18n/language";
 import { createContext, useContext, useEffect, useRef, useState } from "react";
 import type { ReactNode } from "react";
 import { Link } from "react-router-dom";
@@ -14,7 +15,6 @@ export function useParticipantProfile(): ParticipantProfile {
 }
 
 export function ParticipantRoute({ children }: { children: ReactNode }) {
-  const { adopt } = useLanguage();
   const [profile, setProfile] = useState<ParticipantProfile | null>(null);
   const [message, setMessage] = useState("");
   const [ended, setEnded] = useState(false);
@@ -51,7 +51,6 @@ export function ParticipantRoute({ children }: { children: ReactNode }) {
           } else {
             verifiedToken.current = session.accessToken;
             setProfile(verified);
-            adopt(verified.language);
           }
         }
       } catch (error) {
@@ -78,9 +77,9 @@ export function ParticipantRoute({ children }: { children: ReactNode }) {
       clearInterval(timer);
       window.removeEventListener("focus", refresh);
     };
-  }, [attempt, adopt]);
+  }, [attempt]);
 
-  if (profile) return <ProfileContext.Provider value={profile}>{children}</ProfileContext.Provider>;
+  if (profile) return <AccountLanguageProvider account={{ kind: "participant", organizationId: profile.organization_id, subscriberId: profile.subscriber_id }} defaultLanguage={profile.language}><ProfileContext.Provider value={profile}>{children}</ProfileContext.Provider></AccountLanguageProvider>;
   return (
     <main className="fx-app-shell flex min-h-screen items-center justify-center px-6 text-slate-100">
       <section className="w-full max-w-lg rounded-3xl border border-cyan-300/15 bg-[#071b2a] p-8">

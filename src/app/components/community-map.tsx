@@ -1,3 +1,5 @@
+import { Localize } from "@/app/i18n/language";
+import { useOperationalText } from "@/app/i18n/operational-text";
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { useNavigate } from "react-router-dom";
 import {
@@ -31,7 +33,9 @@ type OperationalSite = {
   name: string;
   type: string;
   network: string;
+  networkFallback: boolean;
   serviceArea: string;
+  serviceAreaFallback: boolean;
   state: string;
   county: string;
   community: string;
@@ -92,7 +96,9 @@ const siteFromLocation = (record: RawRecord, index: number): OperationalSite => 
     id: locationId,
     name: textValue(record.location_name, record.name, record.label, record.location_label) || `Monitoring site ${index + 1}`,
     type: textValue(record.facility_type, record.location_type, record.site_type, record.type) || "Monitoring site",
+    networkFallback: !textValue(record.utility_name, record.network_name, record.organization_name, organization.name),
     network: textValue(record.utility_name, record.network_name, record.organization_name, organization.name) || "Connected water network",
+    serviceAreaFallback: !textValue(record.service_area_name, record.service_area, record.district_name),
     serviceArea: textValue(record.service_area_name, record.service_area, record.district_name) || "Primary service area",
     state: textValue(record.state_name, record.state, record.state_code, address.state),
     county: textValue(record.county_name, record.county, address.county),
@@ -121,6 +127,7 @@ const formatTime = (value?: string) => {
 };
 
 export default function CommunityMap() {
+  const { t, labelText, locale, dateText, numberText } = useOperationalText();
   const navigate = useNavigate();
   const [sites, setSites] = useState<OperationalSite[]>([]);
   const [loadState, setLoadState] = useState<LoadState>("loading");
@@ -219,33 +226,33 @@ export default function CommunityMap() {
       <header className="sticky top-0 z-20 border-b border-cyan-300/10 bg-[#03131f]/95 backdrop-blur">
         <div className="container mx-auto flex items-center justify-between px-6 py-4">
           <button type="button" onClick={() => navigate("/")}><img src={logoImage} alt="FalilaX" className="fx-brand-logo" /></button>
-          <Button variant="ghost" onClick={() => navigate("/dashboard")}><ArrowLeft className="mr-2 h-4 w-4" /> Back</Button>
+          <Button variant="ghost" onClick={() => navigate("/dashboard")}><ArrowLeft className="mr-2 h-4 w-4" /><Localize>{" Back"}</Localize></Button>
         </div>
       </header>
 
       <main className="container mx-auto max-w-[1440px] px-6 py-8">
         <div className="mb-7 flex flex-col justify-between gap-4 lg:flex-row lg:items-end">
           <div>
-            <p className="mb-2 text-[11px] uppercase tracking-[.24em] text-cyan-300">Connected operations</p>
-            <h1 className="flex items-center gap-3 text-3xl font-semibold"><Map className="h-7 w-7 text-cyan-300" /> Water Network Directory</h1>
-            <p className="mt-2 max-w-3xl text-zinc-400">Navigate from an authorized water network to its jurisdictions, communities, and monitored sites. Only backend-connected records are shown.</p>
+            <p className="mb-2 text-[11px] uppercase tracking-[.24em] text-cyan-300"><Localize>{"Connected operations"}</Localize></p>
+            <h1 className="flex items-center gap-3 text-3xl font-semibold"><Map className="h-7 w-7 text-cyan-300" /><Localize>{" Water Network Directory"}</Localize></h1>
+            <p className="mt-2 max-w-3xl text-zinc-400"><Localize>{"Navigate from an authorized water network to its jurisdictions, communities, and monitored sites. Only backend-connected records are shown."}</Localize></p>
           </div>
           <div className={`inline-flex w-fit items-center gap-2 rounded-full border px-3 py-2 text-xs ${loadState === "ready" ? "border-emerald-400/20 bg-emerald-400/5 text-emerald-300" : "border-zinc-700 bg-white/[.03] text-zinc-400"}`}>
             <span className={`h-2 w-2 rounded-full ${loadState === "ready" ? "bg-emerald-400 shadow-[0_0_12px_rgba(52,211,153,.8)]" : "bg-zinc-600"}`} />
-            {loadState === "ready" ? "Backend connected" : loadState === "loading" ? "Connecting" : loadState === "unauthenticated" ? "Sign in required" : "No live connection"}
+            {loadState === "ready" ? t("Backend connected") : loadState === "loading" ? t("Connecting") : loadState === "unauthenticated" ? t("Sign in required") : t("No live connection")}
           </div>
         </div>
 
         <section className="mb-6 grid overflow-hidden rounded-2xl border border-cyan-300/10 bg-cyan-300/10 sm:grid-cols-2 xl:grid-cols-4">
-          <Metric label="Connected networks" value={networks.length} icon={<Network />} />
-          <Metric label="Service areas" value={serviceAreas.length} icon={<Building2 />} />
-          <Metric label="Monitored sites" value={sites.length} icon={<MapPin />} />
-          <Metric label="Signals requiring attention" value={activeSignals} icon={<AlertTriangle />} />
+          <Metric label={t("Connected networks")} value={networks.length} icon={<Network />} />
+          <Metric label={t("Service areas")} value={serviceAreas.length} icon={<Building2 />} />
+          <Metric label={t("Monitored sites")} value={sites.length} icon={<MapPin />} />
+          <Metric label={t("Signals requiring attention")} value={activeSignals} icon={<AlertTriangle />} />
         </section>
 
         {loadState === "loading" && (
           <section className="flex min-h-[480px] items-center justify-center rounded-[28px] border border-cyan-300/15 bg-[#061a29]">
-            <div className="text-center text-zinc-400"><RefreshCw className="mx-auto mb-4 h-6 w-6 animate-spin text-cyan-300" />Loading connected networks and sites…</div>
+            <div className="text-center text-zinc-400"><RefreshCw className="mx-auto mb-4 h-6 w-6 animate-spin text-cyan-300" /><Localize>{"Loading connected networks and sites…"}</Localize></div>
           </section>
         )}
 
@@ -253,9 +260,9 @@ export default function CommunityMap() {
           <section className="rounded-[28px] border border-cyan-300/15 bg-[#061a29] p-8 lg:p-12">
             <div className="mx-auto max-w-2xl text-center">
               <Database className="mx-auto h-10 w-10 text-zinc-500" />
-              <h2 className="mt-5 text-2xl font-semibold">{loadState === "error" ? "Operational data is unavailable" : loadState === "unauthenticated" ? "Sign in to view authorized sites" : "No connected sites yet"}</h2>
-              <p className="mt-3 leading-relaxed text-zinc-400">{loadState === "error" ? errorMessage : loadState === "unauthenticated" ? "The water-network directory is protected. Sign in from the dashboard, then return here in the same browser tab." : "The FalilaX API responded successfully, but it did not return any authorized locations for this account."}</p>
-              <Button className="mt-6" variant="outline" onClick={() => loadState === "unauthenticated" ? navigate("/dashboard/utility") : setReloadKey((value) => value + 1)}>{loadState === "unauthenticated" ? <><ArrowLeft className="mr-2 h-4 w-4" /> Go to secure dashboard</> : <><RefreshCw className="mr-2 h-4 w-4" /> Try again</>}</Button>
+              <h2 className="mt-5 text-2xl font-semibold">{loadState === "error" ? t("Operational data is unavailable") : loadState === "unauthenticated" ? t("Sign in to view authorized sites") : t("No connected sites yet")}</h2>
+              <p className="mt-3 leading-relaxed text-zinc-400">{loadState === "error" ? errorMessage : loadState === "unauthenticated" ? t("The water-network directory is protected. Sign in from the dashboard, then return here in the same browser tab.") : t("The FalilaX API responded successfully, but it did not return any authorized locations for this account.")}</p>
+              <Button className="mt-6" variant="outline" onClick={() => loadState === "unauthenticated" ? navigate("/dashboard/utility") : setReloadKey((value) => value + 1)}>{loadState === "unauthenticated" ? <><ArrowLeft className="mr-2 h-4 w-4" /><Localize>{" Go to secure dashboard"}</Localize></> : <><RefreshCw className="mr-2 h-4 w-4" /><Localize>{" Try again"}</Localize></>}</Button>
             </div>
           </section>
         )}
@@ -263,24 +270,24 @@ export default function CommunityMap() {
         {loadState === "ready" && (
           <div className="grid gap-6 xl:grid-cols-[minmax(0,1.55fr)_minmax(340px,.72fr)]">
             <section className="overflow-hidden rounded-[28px] border border-cyan-300/15 bg-[#061a29] shadow-[0_30px_80px_rgba(0,0,0,.25)]">
-              <div className="border-b border-cyan-300/10 px-6 py-5"><h2 className="text-lg font-medium">Operational hierarchy</h2><p className="mt-1 text-sm text-zinc-500">Selectors are generated from records returned by the API.</p></div>
+              <div className="border-b border-cyan-300/10 px-6 py-5"><h2 className="text-lg font-medium"><Localize>{"Operational hierarchy"}</Localize></h2><p className="mt-1 text-sm text-zinc-500"><Localize>{"Selectors are generated from records returned by the API."}</Localize></p></div>
               <div className="grid gap-4 border-b border-cyan-300/10 px-6 py-5 md:grid-cols-2 xl:grid-cols-4">
-                <Selector label="Network / utility" value={network} options={networks} onChange={updateNetwork} icon={<Factory />} />
-                {states.length > 0 && <Selector label="State / jurisdiction" value={state} options={states} onChange={updateState} icon={<MapPin />} />}
-                {counties.length > 0 && <Selector label="County / region" value={county} options={counties} onChange={updateCounty} icon={<Building2 />} />}
-                {communities.length > 0 && <Selector label="City / community" value={community} options={communities} onChange={(value) => { setSelectedCommunity(value); setSelectedSiteId(""); }} icon={<Users />} />}
+                <Selector label={t("Network / utility")} value={network} options={networks} displayOption={(value) => sites.filter(site => site.network === value).every(site => site.networkFallback) ? t(value) : value} onChange={updateNetwork} icon={<Factory />} />
+                {states.length > 0 && <Selector label={t("State / jurisdiction")} value={state} options={states} onChange={updateState} icon={<MapPin />} />}
+                {counties.length > 0 && <Selector label={t("County / region")} value={county} options={counties} onChange={updateCounty} icon={<Building2 />} />}
+                {communities.length > 0 && <Selector label={t("City / community")} value={community} options={communities} onChange={(value) => { setSelectedCommunity(value); setSelectedSiteId(""); }} icon={<Users />} />}
               </div>
               <div className="relative overflow-hidden px-6 py-8">
                 <div className="pointer-events-none absolute inset-0 opacity-30 bg-[linear-gradient(to_right,rgba(103,232,249,.06)_1px,transparent_1px),linear-gradient(to_bottom,rgba(103,232,249,.06)_1px,transparent_1px)] bg-[size:64px_64px]" />
                 <div className="relative">
                   <div className="flex flex-wrap items-center gap-2 text-sm text-zinc-500">
-                    {[network, serviceAreas[0], state, county, community].filter(Boolean).map((item, index, values) => <span key={`${item}-${index}`} className="flex items-center gap-2"><span className={index === values.length - 1 ? "text-cyan-200" : ""}>{item}</span>{index < values.length - 1 && <ChevronRight className="h-3.5 w-3.5" />}</span>)}
+                    {[network, serviceAreas[0], state, county, community].filter(Boolean).map((item, index, values) => <span key={`${item}-${index}`} className="flex items-center gap-2"><span className={index === values.length - 1 ? "text-cyan-200" : ""}>{index === 0 && networkSites.every(site => site.networkFallback) ? t(item) : index === 1 && networkSites.filter(site => site.serviceArea === item).every(site => site.serviceAreaFallback) ? t(item) : item}</span>{index < values.length - 1 && <ChevronRight className="h-3.5 w-3.5" />}</span>)}
                   </div>
                   <div className="mt-6 grid gap-3 md:grid-cols-2">
                     {visibleSites.map((site) => (
                       <button key={site.id} type="button" onClick={() => setSelectedSiteId(site.id)} className={`rounded-2xl border p-5 text-left transition ${selectedSite?.id === site.id ? "border-cyan-300/45 bg-cyan-300/[.07] shadow-[0_0_30px_rgba(34,211,238,.08)]" : "border-cyan-300/10 bg-[#03131f]/90 hover:border-cyan-300/25"}`}>
-                        <div className="flex items-start justify-between gap-4"><div className="min-w-0"><p className="truncate font-medium">{site.name}</p><p className="mt-1 text-xs capitalize text-zinc-500">{site.type.replaceAll("_", " ")}</p></div><span className={`rounded-full border px-2.5 py-1 text-[11px] ${statusClass(site.status)}`}>{statusLabel(site.status)}</span></div>
-                        <p className="mt-4 text-xs text-zinc-500">Updated {formatTime(site.lastUpdated)}</p>
+                        <div className="flex items-start justify-between gap-4"><div className="min-w-0"><p className="truncate font-medium">{site.name}</p><p className="mt-1 text-xs capitalize text-zinc-500">{labelText(site.type.replaceAll("_", " "))}</p></div><span className={`rounded-full border px-2.5 py-1 text-[11px] ${statusClass(site.status)}`}>{labelText(statusLabel(site.status))}</span></div>
+                        <p className="mt-4 text-xs text-zinc-500"><Localize>{"Updated "}</Localize>{site.lastUpdated ? dateText(site.lastUpdated) : t("No timestamp supplied")}</p>
                       </button>
                     ))}
                   </div>
@@ -289,13 +296,13 @@ export default function CommunityMap() {
             </section>
 
             <aside className="rounded-[28px] border border-cyan-300/15 bg-[#061a29]">
-              <div className="border-b border-cyan-300/10 px-6 py-5"><p className="text-[11px] uppercase tracking-[.22em] text-cyan-300">Selected site</p><h2 className="mt-2 text-xl font-medium">{selectedSite?.name}</h2><p className="mt-1 text-sm capitalize text-zinc-500">{selectedSite?.type.replaceAll("_", " ")}</p></div>
+              <div className="border-b border-cyan-300/10 px-6 py-5"><p className="text-[11px] uppercase tracking-[.22em] text-cyan-300"><Localize>{"Selected site"}</Localize></p><h2 className="mt-2 text-xl font-medium">{selectedSite?.name}</h2><p className="mt-1 text-sm capitalize text-zinc-500">{labelText(selectedSite?.type.replaceAll("_", " "))}</p></div>
               {selectedSite && <div className="space-y-4 p-6">
-                <div className={`rounded-2xl border p-5 ${statusClass(selectedSite.status)}`}><p className="text-xs opacity-75">Current signal status</p><p className="mt-2 text-3xl font-semibold">{statusLabel(selectedSite.status)}</p>{selectedSite.parameter && <p className="mt-2 text-sm">{selectedSite.parameter}{selectedSite.measurement ? ` · ${selectedSite.measurement}` : ""}</p>}</div>
-                <Detail label="Network" value={selectedSite.network} /><Detail label="Service area" value={selectedSite.serviceArea} />
-                {selectedSite.county && <Detail label="County / region" value={selectedSite.county} />}
-                {selectedSite.community && <Detail label="City / community" value={selectedSite.community} />}
-                <Detail label="Last update" value={formatTime(selectedSite.lastUpdated)} />
+                <div className={`rounded-2xl border p-5 ${statusClass(selectedSite.status)}`}><p className="text-xs opacity-75"><Localize>{"Current signal status"}</Localize></p><p className="mt-2 text-3xl font-semibold">{labelText(statusLabel(selectedSite.status))}</p>{selectedSite.parameter && <p className="mt-2 text-sm">{selectedSite.parameter}{selectedSite.measurement ? ` · ${selectedSite.measurement}` : ""}</p>}</div>
+                <Detail label={t("Network")} value={selectedSite.networkFallback ? t(selectedSite.network) : selectedSite.network} /><Detail label={t("Service area")} value={selectedSite.serviceAreaFallback ? t(selectedSite.serviceArea) : selectedSite.serviceArea} />
+                {selectedSite.county && <Detail label={t("County / region")} value={selectedSite.county} />}
+                {selectedSite.community && <Detail label={t("City / community")} value={selectedSite.community} />}
+                <Detail label={t("Last update")} value={selectedSite.lastUpdated ? dateText(selectedSite.lastUpdated) : t("No timestamp supplied")} />
                 <Button
                   className="w-full"
                   onClick={() =>
@@ -303,9 +310,7 @@ export default function CommunityMap() {
                       `/attribution?siteId=${encodeURIComponent(selectedSite.id)}`,
                     )
                   }
-                >
-                  Open site intelligence
-                  <ChevronRight className="ml-2 h-4 w-4" />
+                ><Localize>{" Open site intelligence "}</Localize><ChevronRight className="ml-2 h-4 w-4" />
                 </Button>
               </div>}
             </aside>
@@ -313,23 +318,26 @@ export default function CommunityMap() {
         )}
 
         <div className="mt-6 grid gap-6 lg:grid-cols-2">
-          <section className="rounded-[24px] border border-cyan-300/15 bg-[#061a29] p-6"><div className="flex items-center gap-2"><Users className="h-4 w-4 text-cyan-300" /><h2 className="font-medium">How users connect</h2></div><p className="mt-3 text-sm leading-relaxed text-zinc-400">Access follows organization membership and explicit network, service-area, or site assignments. A user sees only the operational sites authorized for their account; states and counties remain location metadata, not access-control containers.</p></section>
-          <section className="rounded-[24px] border border-cyan-300/15 bg-[#061a29] p-6"><div className="flex items-center gap-2"><Activity className="h-4 w-4 text-cyan-300" /><h2 className="font-medium">Live posture</h2></div><div className="mt-4 grid grid-cols-2 gap-3"><Detail label="Signals requiring attention" value={String(activeSignals)} /><Detail label="Critical signals" value={String(criticalSignals)} /></div></section>
+          <section className="rounded-[24px] border border-cyan-300/15 bg-[#061a29] p-6"><div className="flex items-center gap-2"><Users className="h-4 w-4 text-cyan-300" /><h2 className="font-medium"><Localize>{"How users connect"}</Localize></h2></div><p className="mt-3 text-sm leading-relaxed text-zinc-400"><Localize>{"Access follows organization membership and explicit network, service-area, or site assignments. A user sees only the operational sites authorized for their account; states and counties remain location metadata, not access-control containers."}</Localize></p></section>
+          <section className="rounded-[24px] border border-cyan-300/15 bg-[#061a29] p-6"><div className="flex items-center gap-2"><Activity className="h-4 w-4 text-cyan-300" /><h2 className="font-medium"><Localize>{"Live posture"}</Localize></h2></div><div className="mt-4 grid grid-cols-2 gap-3"><Detail label={t("Signals requiring attention")} value={String(activeSignals)} /><Detail label={t("Critical signals")} value={String(criticalSignals)} /></div></section>
         </div>
-        <div className="mt-8 flex items-start gap-2 text-xs text-zinc-500"><ShieldAlert className="mt-0.5 h-4 w-4" /><p>FalilaX provides interpretive risk intelligence and does not replace official regulatory testing, emergency response, or public health advisories.</p></div>
+        <div className="mt-8 flex items-start gap-2 text-xs text-zinc-500"><ShieldAlert className="mt-0.5 h-4 w-4" /><p><Localize>{"FalilaX provides interpretive risk intelligence and does not replace official regulatory testing, emergency response, or public health advisories."}</Localize></p></div>
       </main>
     </div>
   );
 }
 
 function Metric({ label, value, icon }: { label: string; value: number; icon: ReactNode }) {
-  return <div className="bg-[#061a29] p-5"><div className="flex items-center gap-2 text-sm text-zinc-400"><span className="text-cyan-300 [&>svg]:h-4 [&>svg]:w-4">{icon}</span>{label}</div><p className="mt-2 text-2xl font-semibold">{value}</p></div>;
+  const { t, labelText, locale, dateText, numberText } = useOperationalText();
+  return <div className="bg-[#061a29] p-5"><div className="flex items-center gap-2 text-sm text-zinc-400"><span className="text-cyan-300 [&>svg]:h-4 [&>svg]:w-4">{icon}</span>{labelText(label)}</div><p className="mt-2 text-2xl font-semibold">{value}</p></div>;
 }
 
-function Selector({ label, value, options, onChange, icon }: { label: string; value: string; options: string[]; onChange: (value: string) => void; icon: ReactNode }) {
-  return <label className="block"><span className="flex items-center gap-2 text-[11px] uppercase tracking-[.16em] text-zinc-500"><span className="text-cyan-300 [&>svg]:h-3.5 [&>svg]:w-3.5">{icon}</span>{label}</span><select value={value} onChange={(event) => onChange(event.target.value)} className="mt-2 w-full rounded-xl border border-cyan-300/15 bg-[#03131f] px-4 py-3 text-sm text-zinc-100 outline-none transition focus:border-cyan-300/45">{options.map((option) => <option key={option} value={option}>{option}</option>)}</select></label>;
+function Selector({ label, value, options, onChange, icon, displayOption }: { label: string; value: string; options: string[]; displayOption?: (value: string) => string; onChange: (value: string) => void; icon: ReactNode }) {
+  const { t, labelText, locale, dateText, numberText } = useOperationalText();
+  return <label className="block"><span className="flex items-center gap-2 text-[11px] uppercase tracking-[.16em] text-zinc-500"><span className="text-cyan-300 [&>svg]:h-3.5 [&>svg]:w-3.5">{icon}</span>{labelText(label)}</span><select value={value} onChange={(event) => onChange(event.target.value)} className="mt-2 w-full rounded-xl border border-cyan-300/15 bg-[#03131f] px-4 py-3 text-sm text-zinc-100 outline-none transition focus:border-cyan-300/45">{options.map((option) => <option key={option} value={option}>{displayOption ? displayOption(option) : option}</option>)}</select></label>;
 }
 
 function Detail({ label, value }: { label: string; value: string }) {
-  return <div className="rounded-xl border border-cyan-300/10 bg-[#03131f] p-4"><p className="text-xs text-zinc-500">{label}</p><p className="mt-1 text-sm font-medium text-zinc-200">{value}</p></div>;
+  const { t, labelText, locale, dateText, numberText } = useOperationalText();
+  return <div className="rounded-xl border border-cyan-300/10 bg-[#03131f] p-4"><p className="text-xs text-zinc-500">{labelText(label)}</p><p className="mt-1 text-sm font-medium text-zinc-200">{value}</p></div>;
 }

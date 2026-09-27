@@ -1,3 +1,4 @@
+import { Localize } from "@/app/i18n/language";
 import { useEffect } from "react";
 import { LockKeyhole, ShieldCheck } from "lucide-react";
 import { useNavigate, useSearchParams } from "react-router-dom";
@@ -28,9 +29,7 @@ export function OperatorSignIn() {
         <div className="mx-auto flex max-w-6xl items-center justify-between px-5 py-3 sm:px-8">
           <img src={logoImage} alt="FalilaX" className="object-contain" />
           <div className="inline-flex items-center gap-2 rounded-full border border-cyan-300/15 bg-cyan-300/[0.06] px-3 py-1.5 text-xs text-cyan-100">
-            <ShieldCheck className="h-4 w-4 text-cyan-300" />
-            Authorized operations
-          </div>
+            <ShieldCheck className="h-4 w-4 text-cyan-300" /><Localize>{" Authorized operations "}</Localize></div>
         </div>
       </header>
 
@@ -39,9 +38,9 @@ export function OperatorSignIn() {
           <div className="grid h-14 w-14 place-items-center rounded-2xl border border-cyan-300/20 bg-cyan-300/[0.07]">
             <LockKeyhole className="h-7 w-7 text-cyan-300" />
           </div>
-          <p className="mt-7 text-xs font-semibold uppercase tracking-[0.22em] text-cyan-300">Operations access</p>
-          <h1 className="mt-3 text-3xl font-semibold text-white">Sign in to the FalilaX command workspace.</h1>
-          <p className="mt-4 text-sm leading-6 text-slate-400">This area is restricted to authorized utility, analyst, viewer, and administrative accounts.</p>
+          <p className="mt-7 text-xs font-semibold uppercase tracking-[0.22em] text-cyan-300"><Localize>{"Operations access"}</Localize></p>
+          <h1 className="mt-3 text-3xl font-semibold text-white"><Localize>{"Sign in to the FalilaX command workspace."}</Localize></h1>
+          <p className="mt-4 text-sm leading-6 text-slate-400"><Localize>{"This area is restricted to authorized utility, analyst, viewer, and administrative accounts."}</Localize></p>
 
           <OperatorAuthForm submitLabel="Enter operations workspace" onAuthenticated={() => navigate(destination, { replace: true })} />
         </section>

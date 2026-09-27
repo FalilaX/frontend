@@ -1,3 +1,4 @@
+import { Localize } from "@/app/i18n/language";
 import { useEffect, useId, useRef, useState, type FormEvent } from "react";
 import { API_ENDPOINTS, buildApiUrl } from "../config/api";
 import { storeAccessToken } from "../utils/auth-session";
@@ -113,29 +114,29 @@ export function OperatorAuthForm({ onAuthenticated, submitLabel = "Sign in" }: {
   }
 
   return <form onSubmit={submit} className="mt-6 space-y-5 rounded-2xl border border-cyan-300/15 bg-[#071b2a]/80 p-5 text-slate-100" aria-busy={busy}>
-    {notice && <p role="status" className="text-sm leading-6 text-cyan-100">{notice}</p>}
+    {notice && <p role="status" className="text-sm leading-6 text-cyan-100"><Localize>{notice}</Localize></p>}
     <fieldset disabled={busy} className="space-y-5">
       {stage.kind === "password" ? <>
-        <label htmlFor={`${id}-email`} className="block text-sm">FalilaX email<input id={`${id}-email`} className={inputStyle} type="email" autoComplete="username" required value={email} onChange={event => setEmail(event.target.value)} /></label>
-        <label htmlFor={`${id}-password`} className="block text-sm">Password<input id={`${id}-password`} className={inputStyle} type="password" autoComplete="current-password" required value={password} onChange={event => setPassword(event.target.value)} /></label>
+        <label htmlFor={`${id}-email`} className="block text-sm"><Localize>{"FalilaX email"}</Localize><input id={`${id}-email`} className={inputStyle} type="email" autoComplete="username" required value={email} onChange={event => setEmail(event.target.value)} /></label>
+        <label htmlFor={`${id}-password`} className="block text-sm"><Localize>{"Password"}</Localize><input id={`${id}-password`} className={inputStyle} type="password" autoComplete="current-password" required value={password} onChange={event => setPassword(event.target.value)} /></label>
       </> : <>
-        <h2 className="text-xl font-semibold">{stage.kind === "setup" ? "Set up your authenticator" : "Verify your identity"}</h2>
-        {stage.kind === "setup" && !stage.enrollment && <p className="text-sm leading-6 text-slate-300">Your password was accepted. Add FalilaX to your authenticator app to protect this administrative account. Setup expires after five minutes.</p>}
+        <h2 className="text-xl font-semibold"><Localize>{stage.kind === "setup" ? "Set up your authenticator" : "Verify your identity"}</Localize></h2>
+        {stage.kind === "setup" && !stage.enrollment && <p className="text-sm leading-6 text-slate-300"><Localize>{"Your password was accepted. Add FalilaX to your authenticator app to protect this administrative account. Setup expires after five minutes."}</Localize></p>}
         {stage.kind === "setup" && stage.enrollment && <>
-          <p className="text-sm leading-6 text-slate-300">In your authenticator app, add a time-based account named FalilaX using this setup key. Keep the key and recovery codes private.</p>
+          <p className="text-sm leading-6 text-slate-300"><Localize>{"In your authenticator app, add a time-based account named FalilaX using this setup key. Keep the key and recovery codes private."}</Localize></p>
           <code className="block break-all rounded-xl bg-black/30 p-4 font-mono text-cyan-100 select-all">{stage.enrollment.manual_secret}</code>
-          <h3 className="font-semibold">Save your recovery codes</h3>
-          <p className="text-sm text-slate-300">Store these in a password manager or another private, secure place. Each code works once if you lose access to your authenticator.</p>
+          <h3 className="font-semibold"><Localize>{"Save your recovery codes"}</Localize></h3>
+          <p className="text-sm text-slate-300"><Localize>{"Store these in a password manager or another private, secure place. Each code works once if you lose access to your authenticator."}</Localize></p>
           <ul className="grid grid-cols-2 gap-2 rounded-xl bg-black/30 p-4 font-mono text-sm select-all">{stage.enrollment.recovery_codes.map(value => <li key={value}>{value}</li>)}</ul>
-          <label className="flex items-start gap-3 text-sm"><input type="checkbox" className="mt-1" checked={saved} onChange={event => setSaved(event.target.checked)} required />I have saved my recovery codes securely.</label>
+          <label className="flex items-start gap-3 text-sm"><input type="checkbox" className="mt-1" checked={saved} onChange={event => setSaved(event.target.checked)} required /><Localize>{"I have saved my recovery codes securely."}</Localize></label>
         </>}
-        {stage.kind === "verify" && <p className="text-sm leading-6 text-slate-300">Enter a fresh six-digit authenticator code, or one unused recovery code.</p>}
-        {(stage.kind === "verify" || stage.enrollment) && <label htmlFor={`${id}-code`} className="block text-sm">{stage.kind === "setup" ? "Authenticator code" : "Authenticator or recovery code"}<input id={`${id}-code`} className={inputStyle} type="text" inputMode={stage.kind === "setup" ? "numeric" : "text"} autoComplete="one-time-code" autoCapitalize="characters" spellCheck={false} required minLength={6} maxLength={stage.kind === "setup" ? 6 : 64} pattern={stage.kind === "setup" ? "[0-9]{6}" : undefined} value={code} onChange={event => setCode(event.target.value)} /></label>}
+        {stage.kind === "verify" && <p className="text-sm leading-6 text-slate-300"><Localize>{"Enter a fresh six-digit authenticator code, or one unused recovery code."}</Localize></p>}
+        {(stage.kind === "verify" || stage.enrollment) && <label htmlFor={`${id}-code`} className="block text-sm"><Localize>{stage.kind === "setup" ? "Authenticator code" : "Authenticator or recovery code"}</Localize><input id={`${id}-code`} className={inputStyle} type="text" inputMode={stage.kind === "setup" ? "numeric" : "text"} autoComplete="one-time-code" autoCapitalize="characters" spellCheck={false} required minLength={6} maxLength={stage.kind === "setup" ? 6 : 64} pattern={stage.kind === "setup" ? "[0-9]{6}" : undefined} value={code} onChange={event => setCode(event.target.value)} /></label>}
       </>}
-      {error && <p role="alert" className="rounded-xl border border-rose-300/20 bg-rose-300/10 p-3 text-sm text-rose-100">{error}</p>}
-      <button type="submit" className={buttonStyle} disabled={busy || (stage.kind === "setup" && Boolean(stage.enrollment) && !saved)}>{busy ? "Please wait..." : stage.kind === "password" ? submitLabel : stage.kind === "verify" ? "Verify and sign in" : stage.enrollment ? "Enable authenticator" : "Begin authenticator setup"}</button>
+      {error && <p role="alert" className="rounded-xl border border-rose-300/20 bg-rose-300/10 p-3 text-sm text-rose-100"><Localize>{error}</Localize></p>}
+      <button type="submit" className={buttonStyle} disabled={busy || (stage.kind === "setup" && Boolean(stage.enrollment) && !saved)}><Localize>{busy ? "Please wait..." : stage.kind === "password" ? submitLabel : stage.kind === "verify" ? "Verify and sign in" : stage.enrollment ? "Enable authenticator" : "Begin authenticator setup"}</Localize></button>
     </fieldset>
-    {stage.kind !== "password" && <button type="button" onClick={() => reset()} className="block text-sm text-slate-300 underline underline-offset-4">Cancel and return to sign-in</button>}
-    <p className="text-xs leading-5 text-slate-400">Passwords and MFA setup details are not saved by this form. Your signed-in session stays in this browser tab.</p>
+    {stage.kind !== "password" && <button type="button" onClick={() => reset()} className="block text-sm text-slate-300 underline underline-offset-4"><Localize>{"Cancel and return to sign-in"}</Localize></button>}
+    <p className="text-xs leading-5 text-slate-400"><Localize>{"Passwords and MFA setup details are not saved by this form. Your signed-in session stays in this browser tab."}</Localize></p>
   </form>;
 }

@@ -1,3 +1,6 @@
+import { useOperationalText } from "@/app/i18n/operational-text";
+import { GeneratedText } from "@/app/i18n/generated-text";
+import { Localize, useLanguage } from "@/app/i18n/language";
 import {
   useCallback,
   useEffect,
@@ -102,7 +105,7 @@ function responseMessage(
   return fallback;
 }
 
-function formatTime(value?: string | null): string {
+function formatTime(value?: string | null, locale?: string): string {
   if (!value) {
     return "Not yet";
   }
@@ -111,7 +114,7 @@ function formatTime(value?: string | null): string {
 
   return Number.isNaN(date.getTime())
     ? value
-    : date.toLocaleString();
+    : date.toLocaleString(locale);
 }
 
 function displayList(value: unknown): string[] {
@@ -190,6 +193,7 @@ function severityStyles(severity: string) {
 }
 
 export default function AlertFeed() {
+  const { locale, t, labelText } = useOperationalText();
   const [token, setToken] = useState<string | null>(() => {
     if (typeof window === "undefined") {
       return null;
@@ -370,34 +374,23 @@ export default function AlertFeed() {
     >
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
-          <div className="text-xs font-semibold uppercase tracking-[0.22em] text-cyan-400">
-            Secure real-time alerting
-          </div>
+          <div className="text-xs font-semibold uppercase tracking-[0.22em] text-cyan-400"><Localize>{" Secure real-time alerting "}</Localize></div>
           <h3
             id="notification-center-title"
             className="mt-2 text-2xl font-semibold text-white"
-          >
-            Notification Center
-          </h3>
-          <p className="mt-2 max-w-3xl text-sm leading-6 text-zinc-400">
-            See why you were notified, the likely source,
-            supporting evidence, affected areas, recommended
-            actions, delivery state, escalation, and acknowledgement.
-          </p>
+          ><Localize>{" Notification Center "}</Localize></h3>
+          <p className="mt-2 max-w-3xl text-sm leading-6 text-zinc-400"><Localize>{" See why you were notified, the likely source, supporting evidence, affected areas, recommended actions, delivery state, escalation, and acknowledgement. "}</Localize></p>
         </div>
 
         {token ? (
           <div className="flex items-center gap-3">
             <span className="rounded-full border border-zinc-700 px-3 py-1 text-xs text-zinc-300">
-              {pendingAcknowledgements} awaiting acknowledgement
-            </span>
+              {pendingAcknowledgements}<Localize>{" awaiting acknowledgement "}</Localize></span>
             <button
               type="button"
               onClick={() => signOut()}
               className="rounded-lg border border-zinc-700 px-3 py-2 text-sm text-zinc-200 transition hover:border-zinc-500 hover:bg-zinc-900"
-            >
-              Sign out
-            </button>
+            ><Localize>{" Sign out "}</Localize></button>
           </div>
         ) : null}
       </div>
@@ -411,16 +404,14 @@ export default function AlertFeed() {
           className="mt-5 rounded-lg border border-red-700/60 bg-red-950/40 px-4 py-3 text-sm text-red-200"
           role="alert"
         >
-          {error}
+          <Localize>{error}</Localize>
         </div>
       ) : null}
 
       {token ? (
         <div className="mt-6">
           <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-            <div className="text-sm text-zinc-400">
-              Your authenticated, subscriber-linked notifications
-            </div>
+            <div className="text-sm text-zinc-400"><Localize>{" Your authenticated, subscriber-linked notifications "}</Localize></div>
             <button
               type="button"
               onClick={() => {
@@ -429,25 +420,18 @@ export default function AlertFeed() {
               disabled={refreshing}
               className="rounded-lg border border-zinc-700 px-3 py-2 text-sm text-zinc-200 transition hover:border-cyan-600 hover:text-white disabled:opacity-60"
             >
-              {refreshing ? "Refreshing..." : "Refresh now"}
+              <Localize>{refreshing ? "Refreshing..." : "Refresh now"}</Localize>
             </button>
           </div>
 
           {loading ? (
-            <div className="rounded-xl border border-zinc-800 bg-zinc-900/60 p-5 text-sm text-zinc-400">
-              Loading your secure notification inbox...
-            </div>
+            <div className="rounded-xl border border-zinc-800 bg-zinc-900/60 p-5 text-sm text-zinc-400"><Localize>{" Loading your secure notification inbox... "}</Localize></div>
           ) : null}
 
           {!loading && notifications.length === 0 ? (
             <div className="rounded-xl border border-emerald-900/60 bg-emerald-950/20 p-6">
-              <div className="font-semibold text-emerald-300">
-                No active notifications
-              </div>
-              <p className="mt-2 text-sm leading-6 text-zinc-400">
-                Your inbox is connected and monitoring. New eligible
-                FalilaX notifications will appear here automatically.
-              </p>
+              <div className="font-semibold text-emerald-300"><Localize>{" No active notifications "}</Localize></div>
+              <p className="mt-2 text-sm leading-6 text-zinc-400"><Localize>{" Your inbox is connected and monitoring. New eligible FalilaX notifications will appear here automatically. "}</Localize></p>
             </div>
           ) : null}
 
@@ -488,54 +472,44 @@ export default function AlertFeed() {
                   <div className="flex flex-wrap items-start justify-between gap-4">
                     <div className="min-w-0 flex-1">
                       <div className="flex flex-wrap items-center gap-2 text-xs text-zinc-400">
-                        <span>
-                          Incident{" "}
+                        <span><Localize>{" Incident"}</Localize>{" "}
                           {notification.incident_id ??
                             "not assigned"}
                         </span>
                         <span aria-hidden="true">/</span>
                         <span>
-                          {notification.channel
-                            .replace("_", " ")
-                            .toUpperCase()}
+                          {labelText(notification.channel)}
                         </span>
                         <span aria-hidden="true">/</span>
                         <span>
-                          {notification.status.toUpperCase()}
+                          {labelText(notification.status)}
                         </span>
                       </div>
 
                       <h4 className="mt-3 text-xl font-semibold text-white">
-                        {notification.subject ??
-                          notification.event_type ??
-                          "FalilaX water-system notification"}
+                        <GeneratedText value={notification.subject ?? notification.event_type ?? "FalilaX water-system notification"} />
                       </h4>
 
                       <p className="mt-3 text-sm leading-6 text-zinc-300">
-                        {notification.body ??
-                          context.notification_reason ??
-                          context.reason ??
-                          "FalilaX detected a condition requiring review."}
+                        <GeneratedText value={notification.body ?? context.notification_reason ?? context.reason ?? "FalilaX detected a condition requiring review."} />
                       </p>
                     </div>
 
                     <span
                       className={`rounded-full px-3 py-1 text-xs font-bold tracking-wide ${styles.badge}`}
                     >
-                      {notification.severity.toUpperCase()}
+                      {labelText(notification.severity)}
                     </span>
                   </div>
 
                   {simulated && (
-                    <p className="mt-4 rounded-lg border border-violet-500/30 bg-violet-950/30 p-3 text-sm text-violet-100">
-                      Simulation — synthetic measurements. This test does not establish a contamination source or real-world affected area.
-                    </p>
+                    <p className="mt-4 rounded-lg border border-violet-500/30 bg-violet-950/30 p-3 text-sm text-violet-100"><Localize>{" Simulation — synthetic measurements. This test does not establish a contamination source or real-world affected area. "}</Localize></p>
                   )}
 
                   <div className="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
                     <div className="rounded-lg border border-zinc-800 bg-black/20 p-3">
                       <div className="text-xs uppercase tracking-wide text-zinc-500">
-                        {simulated ? "Simulation location" : "Likely source"}
+                        <Localize>{simulated ? "Simulation location" : "Likely source"}</Localize>
                       </div>
                       <div className="mt-1 text-sm font-medium text-zinc-100">
                         {simulated ? location : String(likelySource)}
@@ -544,38 +518,32 @@ export default function AlertFeed() {
 
                     <div className="rounded-lg border border-zinc-800 bg-black/20 p-3">
                       <div className="text-xs uppercase tracking-wide text-zinc-500">
-                        {simulated ? "Source attribution" : "Confidence"}
+                        <Localize>{simulated ? "Source attribution" : "Confidence"}</Localize>
                       </div>
                       <div className="mt-1 text-sm font-medium text-zinc-100">
-                        {simulated ? "Not established" : formatConfidence(context)}
+                        <Localize>{simulated ? "Not established" : formatConfidence(context)}</Localize>
                       </div>
                     </div>
 
                     <div className="rounded-lg border border-zinc-800 bg-black/20 p-3">
-                      <div className="text-xs uppercase tracking-wide text-zinc-500">
-                        Parameter
-                      </div>
+                      <div className="text-xs uppercase tracking-wide text-zinc-500"><Localize>{" Parameter "}</Localize></div>
                       <div className="mt-1 text-sm font-medium text-zinc-100">
-                        {context.parameter ?? "Not specified"}
-                        {context.observed_value !== undefined
+                        {labelText(context.parameter ?? "Not specified")}
+                        <Localize>{context.observed_value !== undefined
                           ? `: ${context.observed_value}${
                               context.unit
                                 ? ` ${context.unit}`
                                 : ""
                             }`
-                          : ""}
+                          : ""}</Localize>
                       </div>
                     </div>
 
                     <div className="rounded-lg border border-zinc-800 bg-black/20 p-3">
-                      <div className="text-xs uppercase tracking-wide text-zinc-500">
-                        When
-                      </div>
+                      <div className="text-xs uppercase tracking-wide text-zinc-500"><Localize>{" When "}</Localize></div>
                       <div className="mt-1 text-sm font-medium text-zinc-100">
-                        {formatTime(
-                          notification.sent_at ??
-                            notification.created_at,
-                        )}
+                        {formatTime(notification.sent_at ??
+                            notification.created_at, locale)}
                       </div>
                     </div>
                   </div>
@@ -583,83 +551,59 @@ export default function AlertFeed() {
                   <div className="mt-5 grid gap-5 lg:grid-cols-2">
                     <div>
                       <h5 className="text-sm font-semibold text-zinc-100">
-                        {simulated ? "Simulation evidence and scope" : "Evidence and affected scope"}
+                        <Localize>{simulated ? "Simulation evidence and scope" : "Evidence and affected scope"}</Localize>
                       </h5>
                       <ul className="mt-2 space-y-1.5 text-sm text-zinc-400">
-                        {simulated && <li>Network impact was not evaluated.</li>}
+                        {simulated && <li><Localize>{"Network impact was not evaluated."}</Localize></li>}
                         {evidence.map((item) => (
-                          <li key={`evidence-${item}`}>
-                            Evidence: {item}
+                          <li key={`evidence-${item}`}><Localize>{" Evidence: "}</Localize><GeneratedText value={item} />
                           </li>
                         ))}
                         {affectedAreas.map((item) => (
                           <li key={`area-${item}`}>
-                            {simulated ? "Test location" : "Affected area"}: {item}
+                            <Localize>{simulated ? "Test location" : "Affected area"}</Localize>: {item}
                           </li>
                         ))}
                         {affectedAssets.map((item) => (
                           <li key={`asset-${item}`}>
-                            {simulated ? "Test asset" : "Affected asset"}: {item}
+                            <Localize>{simulated ? "Test asset" : "Affected asset"}</Localize>: {item}
                           </li>
                         ))}
                         {evidence.length === 0 &&
                         affectedAreas.length === 0 &&
                         affectedAssets.length === 0 ? (
-                          <li>
-                            Detailed scope evidence is being assessed.
-                          </li>
+                          <li><Localize>{" Detailed scope evidence is being assessed. "}</Localize></li>
                         ) : null}
                       </ul>
                     </div>
 
                     <div>
-                      <h5 className="text-sm font-semibold text-zinc-100">
-                        Recommended actions
-                      </h5>
+                      <h5 className="text-sm font-semibold text-zinc-100"><Localize>{" Recommended actions "}</Localize></h5>
                       {recommendedActions.length > 0 ? (
                         <ol className="mt-2 list-decimal space-y-1.5 pl-5 text-sm text-zinc-400">
                           {recommendedActions.map((item) => (
-                            <li key={`action-${item}`}>{item}</li>
+                            <li key={`action-${item}`}><GeneratedText value={item} /></li>
                           ))}
                         </ol>
                       ) : (
-                        <p className="mt-2 text-sm text-zinc-400">
-                          Review the incident details and follow the
-                          approved operational response procedure.
-                        </p>
+                        <p className="mt-2 text-sm text-zinc-400"><Localize>{" Review the incident details and follow the approved operational response procedure. "}</Localize></p>
                       )}
                     </div>
                   </div>
 
                   <div className="mt-5 flex flex-wrap items-center justify-between gap-4 border-t border-zinc-800 pt-4">
                     <div className="flex flex-wrap gap-x-5 gap-y-2 text-xs text-zinc-400">
-                      <span>
-                        Delivery:{" "}
-                        {notification.status.toUpperCase()}
+                      <span><Localize>{" Delivery:"}</Localize>{" "}
+                        {labelText(notification.status)}
                       </span>
-                      <span>
-                        Attempts: {notification.attempt_count}/
+                      <span><Localize>{" Attempts: "}</Localize>{notification.attempt_count}/
                         {notification.maximum_attempts}
                       </span>
-                      <span>
-                        Escalation:{" "}
-                        {notification.should_escalate
-                          ? `Level ${notification.escalation_level}; deadline ${formatTime(
-                              notification.escalation_deadline,
-                            )}`
-                          : "No active escalation"}
+                      <span><Localize>{" Escalation:"}</Localize>{" "}
+                        {notification.should_escalate ? t("Level {level}; deadline {date}", { level: notification.escalation_level, date: formatTime(notification.escalation_deadline, locale) }) : t("No active escalation")}
                       </span>
-                      <span>
-                        Acknowledgement:{" "}
-                        {notification.acknowledged_at
-                          ? `Completed ${formatTime(
-                              notification.acknowledged_at,
-                            )}`
-                          : notification.acknowledgement_required
-                            ? `Required by ${formatTime(
-                                notification.acknowledgement_deadline,
-                              )}`
-                            : "Not required"}
+                      <span><Localize>{" Acknowledgement:"}</Localize>{" "}
+                        {notification.acknowledged_at ? t("Completed {date}", { date: formatTime(notification.acknowledged_at, locale) }) : notification.acknowledgement_required ? t("Required by {date}", { date: formatTime(notification.acknowledgement_deadline, locale) }) : t("Not required")}
                       </span>
                     </div>
 
@@ -674,9 +618,9 @@ export default function AlertFeed() {
                         }
                         className="rounded-lg bg-cyan-500 px-4 py-2 text-sm font-semibold text-black transition hover:bg-cyan-400 disabled:cursor-not-allowed disabled:opacity-60"
                       >
-                        {acknowledgingId === notification.id
+                        <Localize>{acknowledgingId === notification.id
                           ? "Acknowledging..."
-                          : "Acknowledge"}
+                          : "Acknowledge"}</Localize>
                       </button>
                     ) : null}
                   </div>

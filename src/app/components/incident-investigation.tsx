@@ -1,3 +1,6 @@
+import { GeneratedText } from "@/app/i18n/generated-text";
+import { Localize } from "@/app/i18n/language";
+import { useOperationalText } from "@/app/i18n/operational-text";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import {
@@ -1703,6 +1706,13 @@ const executionOutcomeClasses = (outcome: string) => {
 };
 
 export function IncidentInvestigation() {
+  const { t, labelText, locale, dateText, numberText } = useOperationalText();
+  const confidenceText = (value: number | null | undefined) => typeof value === "number" && Number.isFinite(value)
+    ? `${numberText(Math.round(value * 100), 2)}%` : t("Not available");
+  const generationText = (counts: Record<string, number> | null | undefined) => {
+    const entries = Object.entries(counts ?? {}).sort(([a], [b]) => Number(a) - Number(b));
+    return entries.length ? entries.map(([generation, count]) => `${t("Generation")} ${generation}: ${numberText(count, 0)}`).join(" · ") : t("None");
+  };
   const navigate = useNavigate();
   const { incidentId: routeIncidentId } = useParams<{
     incidentId?: string;
@@ -2579,8 +2589,8 @@ export function IncidentInvestigation() {
     <div className="fx-app-shell min-h-screen bg-zinc-950 text-zinc-100">
       <header className="sticky top-0 z-20 border-b border-zinc-800 bg-zinc-950/90 backdrop-blur">
         <div className="container mx-auto px-6 py-4">
-          <div className="flex items-center justify-between gap-6">
-            <div className="flex items-center gap-8">
+          <div className="flex flex-wrap items-center justify-between gap-4">
+            <div className="flex flex-wrap items-center gap-4">
               <button
                 type="button"
                 onClick={() => navigate("/")}
@@ -2596,47 +2606,35 @@ export function IncidentInvestigation() {
                 </span>
               </button>
 
-              <nav className="hidden lg:flex items-center gap-6 text-sm">
+              <nav className="hidden lg:flex flex-wrap items-center gap-x-5 gap-y-2 text-sm">
                 <Link
                   to="/dashboard"
                   className="text-zinc-400 hover:text-zinc-100"
-                >
-                  Dashboard
-                </Link>
+                ><Localize>{" Dashboard "}</Localize></Link>
                 <Link
                   to="/map"
                   className="text-zinc-400 hover:text-zinc-100"
-                >
-                  Community Map
-                </Link>
+                ><Localize>{" Community Map "}</Localize></Link>
                 <Link
                   to="/map"
                   className="text-zinc-400 hover:text-zinc-100"
-                >
-                  Source Attribution
-                </Link>
+                ><Localize>{" Source Attribution "}</Localize></Link>
                 <Link
                   to="/incidents"
                   className="font-medium text-zinc-100"
-                >
-                  Investigation Workflow
-                </Link>
+                ><Localize>{" Investigation Workflow "}</Localize></Link>
               </nav>
             </div>
 
             <div className="flex items-center gap-3">
-              <span className="hidden md:inline-flex rounded-md border border-green-900 bg-green-950/30 px-3 py-1 text-xs text-green-300">
-                Live Incident Workflow
-              </span>
+              <span className="hidden md:inline-flex rounded-md border border-green-900 bg-green-950/30 px-3 py-1 text-xs text-green-300"><Localize>{" Live Incident Workflow "}</Localize></span>
 
-              <Button
+              <Button style={{ whiteSpace: "normal", height: "auto", minHeight: "2.5rem", overflowWrap: "anywhere", textAlign: "center" }}
                 variant="ghost"
                 onClick={() => navigate("/dashboard")}
                 className="text-zinc-400 hover:text-white"
               >
-                <ArrowLeft className="mr-2 h-4 w-4" />
-                Dashboard
-              </Button>
+                <ArrowLeft className="mr-2 h-4 w-4" /><Localize>{" Dashboard "}</Localize></Button>
             </div>
           </div>
         </div>
@@ -2646,24 +2644,16 @@ export function IncidentInvestigation() {
         <div className="mb-8 flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between">
           <div>
             <div className="mb-2 flex items-center gap-2 text-xs uppercase tracking-[0.22em] text-amber-400">
-              <ShieldCheck className="h-4 w-4" />
-              Operator Investigation Workspace
-            </div>
+              <ShieldCheck className="h-4 w-4" /><Localize>{" Operator Investigation Workspace "}</Localize></div>
 
-            <h1 className="text-3xl font-light">
-              Incident Investigation Workflow
-            </h1>
+            <h1 className="text-3xl font-light"><Localize>{" Incident Investigation Workflow "}</Localize></h1>
 
-            <p className="mt-2 max-w-3xl text-sm text-zinc-400">
-              Acknowledge incidents, assign responsibility, document
-              investigation findings, verify corrective outcomes, and close
-              incidents with a persistent audit trail.
-            </p>
+            <p className="mt-2 max-w-3xl text-sm text-zinc-400"><Localize>{" Acknowledge incidents, assign responsibility, document investigation findings, verify corrective outcomes, and close incidents with a persistent audit trail. "}</Localize></p>
           </div>
 
           <div className="flex flex-wrap items-center gap-3">
             <div className="rounded-lg border border-zinc-800 bg-zinc-900 px-4 py-2">
-              <p className="text-xs text-zinc-500">Operator</p>
+              <p className="text-xs text-zinc-500"><Localize>{"Operator"}</Localize></p>
               <Input
                 value={operatorName}
                 onChange={(event) => setOperatorName(event.target.value)}
@@ -2671,7 +2661,7 @@ export function IncidentInvestigation() {
               />
             </div>
 
-            <Button
+            <Button style={{ whiteSpace: "normal", height: "auto", minHeight: "2.5rem", overflowWrap: "anywhere", textAlign: "center" }}
               variant="outline"
               onClick={loadIncidents}
               disabled={loadingList}
@@ -2681,9 +2671,7 @@ export function IncidentInvestigation() {
                 className={`mr-2 h-4 w-4 ${
                   loadingList ? "animate-spin" : ""
                 }`}
-              />
-              Refresh
-            </Button>
+              /><Localize>{" Refresh "}</Localize></Button>
           </div>
         </div>
 
@@ -2691,8 +2679,8 @@ export function IncidentInvestigation() {
           <div className="mb-6 flex items-start gap-3 rounded-xl border border-red-800 bg-red-950/30 p-4 text-sm text-red-200">
             <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0" />
             <div>
-              <p className="font-medium">Workflow request failed</p>
-              <p className="mt-1 text-red-300/90">{error}</p>
+              <p className="font-medium"><Localize>{"Workflow request failed"}</Localize></p>
+              <p className="mt-1 text-red-300/90">{labelText(error)}</p>
             </div>
           </div>
         )}
@@ -2700,15 +2688,13 @@ export function IncidentInvestigation() {
         <div className="grid gap-6 xl:grid-cols-[380px_minmax(0,1fr)]">
           <aside className="rounded-2xl border border-zinc-800 bg-zinc-900/50">
             <div className="border-b border-zinc-800 p-5">
-              <div className="mb-4 flex items-center justify-between">
+              <div className="mb-4 flex flex-wrap items-center justify-between gap-4">
                 <div>
-                  <h2 className="font-semibold">Incident Queue</h2>
+                  <h2 className="font-semibold"><Localize>{"Incident Queue"}</Localize></h2>
                   <p className="text-xs text-zinc-500">
-                    {filteredIncidents.length} matching
-                    {selectedOutsideFilter ? " · 1 selected outside filter" : ""}
+                    {filteredIncidents.length}<Localize>{" matching "}</Localize>{selectedOutsideFilter ? t(" · 1 selected outside filter") : ""}
                     {" · "}
-                    {incidents.length} total
-                  </p>
+                    {incidents.length}<Localize>{" total "}</Localize></p>
                 </div>
 
                 <ClipboardList className="h-5 w-5 text-amber-400" />
@@ -2719,7 +2705,7 @@ export function IncidentInvestigation() {
                 <Input
                   value={search}
                   onChange={(event) => setSearch(event.target.value)}
-                  placeholder="Search incidents..."
+                  placeholder={t("Search incidents...")}
                   className="border-zinc-700 bg-zinc-950 pl-9"
                 />
               </div>
@@ -2736,7 +2722,7 @@ export function IncidentInvestigation() {
                         : "border-zinc-800 bg-zinc-950 text-zinc-400 hover:text-zinc-200"
                     }`}
                   >
-                    {filter}
+                    {labelText(filter)}
                   </button>
                 ))}
               </div>
@@ -2744,17 +2730,12 @@ export function IncidentInvestigation() {
 
             <div className="max-h-[760px] overflow-y-auto p-3">
               {loadingList ? (
-                <div className="p-8 text-center text-sm text-zinc-500">
-                  Loading incident queue...
-                </div>
+                <div className="p-8 text-center text-sm text-zinc-500"><Localize>{" Loading incident queue... "}</Localize></div>
               ) : queueIncidents.length === 0 ? (
                 <div className="p-8 text-center">
                   <CheckCircle2 className="mx-auto mb-3 h-8 w-8 text-green-500" />
-                  <p className="font-medium">No matching incidents</p>
-                  <p className="mt-1 text-xs text-zinc-500">
-                    FalilaX will place operational incidents here when they are
-                    persisted by the Digital Twin lifecycle.
-                  </p>
+                  <p className="font-medium"><Localize>{"No matching incidents"}</Localize></p>
+                  <p className="mt-1 text-xs text-zinc-500"><Localize>{" FalilaX will place operational incidents here when they are persisted by the Digital Twin lifecycle. "}</Localize></p>
                 </div>
               ) : (
                 <div className="space-y-2">
@@ -2779,7 +2760,7 @@ export function IncidentInvestigation() {
                       >
                         <div className="mb-2 flex items-start justify-between gap-3">
                           <p className="line-clamp-2 text-sm font-medium">
-                            {incident.title}
+                            <GeneratedText value={incident.title} />
                           </p>
 
                           <ChevronRight className="mt-0.5 h-4 w-4 shrink-0 text-zinc-600" />
@@ -2788,29 +2769,27 @@ export function IncidentInvestigation() {
                         <div className="mb-3 flex flex-wrap gap-2">
                           {active &&
                             selectedOutsideFilter?.id === incident.id && (
-                              <span className="rounded border border-orange-800 bg-orange-950/30 px-2 py-0.5 text-[11px] text-orange-300">
-                                Selected · outside {formatStatus(statusFilter)} filter
-                              </span>
+                              <span className="rounded border border-orange-800 bg-orange-950/30 px-2 py-0.5 text-[11px] text-orange-300"><Localize>{" Selected · outside "}</Localize>{labelText(formatStatus(statusFilter))}<Localize>{" filter "}</Localize></span>
                             )}
                           <span
                             className={`rounded border px-2 py-0.5 text-[11px] ${severityClasses(
                               incident.severity,
                             )}`}
                           >
-                            {formatStatus(incident.severity)}
+                            {labelText(formatStatus(incident.severity))}
                           </span>
                           <span
                             className={`rounded border px-2 py-0.5 text-[11px] ${statusClasses(
                               incident.status,
                             )}`}
                           >
-                            {formatStatus(incident.status)}
+                            {labelText(formatStatus(incident.status))}
                           </span>
                         </div>
 
                         <div className="space-y-1 text-xs text-zinc-500">
-                          <p>Node: {incident.source_node_id ?? "N/A"}</p>
-                          <p>{formatDate(incident.detected_at)}</p>
+                          <p><Localize>{"Node: "}</Localize>{incident.source_node_id ?? "N/A"}</p>
+                          <p>{dateText(incident.detected_at)}</p>
                         </div>
                       </button>
                     );
@@ -2825,21 +2804,14 @@ export function IncidentInvestigation() {
               <div className="flex min-h-[620px] items-center justify-center rounded-2xl border border-dashed border-zinc-800 bg-zinc-900/30 p-10 text-center">
                 <div className="max-w-md">
                   <ShieldCheck className="mx-auto mb-4 h-10 w-10 text-zinc-600" />
-                  <h2 className="text-xl font-medium">
-                    No incident selected
-                  </h2>
-                  <p className="mt-2 text-sm text-zinc-500">
-                    Select an incident from the queue to open the investigation
-                    workspace.
-                  </p>
+                  <h2 className="text-xl font-medium"><Localize>{" No incident selected "}</Localize></h2>
+                  <p className="mt-2 text-sm text-zinc-500"><Localize>{" Select an incident from the queue to open the investigation workspace. "}</Localize></p>
                 </div>
               </div>
-            ) : loadingDetail || !selected || !workflow ? (
+            ) : loadingDetail || !detail || !selected || !workflow ? (
               <div className="flex min-h-[620px] items-center justify-center rounded-2xl border border-zinc-800 bg-zinc-900/30">
                 <Activity className="mr-3 h-5 w-5 animate-pulse text-amber-400" />
-                <span className="text-zinc-400">
-                  Loading investigation workspace...
-                </span>
+                <span className="text-zinc-400"><Localize>{" Loading investigation workspace... "}</Localize></span>
               </div>
             ) : (
               <div className="space-y-6">
@@ -2852,47 +2824,45 @@ export function IncidentInvestigation() {
                             selected.severity,
                           )}`}
                         >
-                          {formatStatus(selected.severity)}
+                          {labelText(formatStatus(selected.severity))}
                         </span>
                         <span
                           className={`rounded-md border px-2.5 py-1 text-xs ${statusClasses(
                             workflow.status,
                           )}`}
                         >
-                          {formatStatus(workflow.status)}
+                          {labelText(formatStatus(workflow.status))}
                         </span>
                         {selected.is_emergency && (
-                          <span className="rounded-md border border-red-700 bg-red-950/50 px-2.5 py-1 text-xs text-red-200">
-                            Emergency
-                          </span>
+                          <span className="rounded-md border border-red-700 bg-red-950/50 px-2.5 py-1 text-xs text-red-200"><Localize>{" Emergency "}</Localize></span>
                         )}
                       </div>
 
                       <h2 className="text-2xl font-semibold">
-                        {selected.title}
+                        <GeneratedText value={selected.title} />
                       </h2>
 
                       <p className="mt-2 max-w-3xl text-sm text-zinc-400">
-                        {selected.description || "No incident description."}
+                        <GeneratedText value={selected.description || t("No incident description.")} />
                       </p>
 
                       <div className="mt-4 flex flex-wrap gap-x-5 gap-y-2 text-xs text-zinc-500">
-                        <span>Incident: {selected.id}</span>
-                        <span>Event: {selected.event_type ?? "N/A"}</span>
-                        <span>Node: {selected.source_node_id ?? "N/A"}</span>
-                        <span>Detected: {formatDate(selected.detected_at)}</span>
+                        <span><Localize>{"Incident: "}</Localize>{selected.id}</span>
+                        <span><Localize>{"Event: "}</Localize>{selected.event_type ?? "N/A"}</span>
+                        <span><Localize>{"Node: "}</Localize>{selected.source_node_id ?? "N/A"}</span>
+                        <span><Localize>{"Detected: "}</Localize>{dateText(selected.detected_at)}</span>
                       </div>
                     </div>
 
                     <div className="grid min-w-[280px] grid-cols-2 gap-3">
                       <div className="rounded-xl border border-zinc-800 bg-zinc-950 p-4">
-                        <p className="text-xs text-zinc-500">Affected assets</p>
+                        <p className="text-xs text-zinc-500"><Localize>{"Affected assets"}</Localize></p>
                         <p className="mt-1 text-2xl font-semibold">
                           {selected.affected_asset_count}
                         </p>
                       </div>
                       <div className="rounded-xl border border-zinc-800 bg-zinc-950 p-4">
-                        <p className="text-xs text-zinc-500">Audit events</p>
+                        <p className="text-xs text-zinc-500"><Localize>{"Audit events"}</Localize></p>
                         <p className="mt-1 text-2xl font-semibold">
                           {workflow.event_count}
                         </p>
@@ -2902,14 +2872,10 @@ export function IncidentInvestigation() {
                 </section>
 
                 <section className="rounded-2xl border border-zinc-800 bg-zinc-900/50 p-6">
-                  <div className="mb-5 flex items-center justify-between">
+                  <div className="mb-5 flex flex-wrap items-center justify-between gap-4">
                     <div>
-                      <h3 className="text-lg font-semibold">
-                        Investigation Progress
-                      </h3>
-                      <p className="text-sm text-zinc-500">
-                        Persistent workflow state from detection to closure.
-                      </p>
+                      <h3 className="text-lg font-semibold"><Localize>{" Investigation Progress "}</Localize></h3>
+                      <p className="text-sm text-zinc-500"><Localize>{" Persistent workflow state from detection to closure. "}</Localize></p>
                     </div>
 
                     <Clock3 className="h-5 w-5 text-amber-400" />
@@ -2962,17 +2928,17 @@ export function IncidentInvestigation() {
                                 : ""
                             }`}
                           >
-                            {formatStatus(step)}
+                            {labelText(formatStatus(step))}
                           </p>
 
                           <p className="mt-1 text-[10px] uppercase tracking-wide text-zinc-600">
                             {current
-                              ? "Current"
+                              ? t("Current")
                               : completed
-                                ? "Visited"
+                                ? t("Visited")
                                 : skipped
-                                  ? "Skipped"
-                                  : "Pending"}
+                                  ? t("Skipped")
+                                  : t("Pending")}
                           </p>
                         </div>
                       );
@@ -2980,16 +2946,15 @@ export function IncidentInvestigation() {
                   </div>
 
                   {!STATUS_ORDER.includes(currentStatus) && currentStatus && (
-                    <div className="mt-4 rounded-lg border border-orange-900 bg-orange-950/20 px-3 py-2 text-xs text-orange-300">
-                      Current workflow state: {formatStatus(currentStatus)}
+                    <div className="mt-4 rounded-lg border border-orange-900 bg-orange-950/20 px-3 py-2 text-xs text-orange-300"><Localize>{" Current workflow state: "}</Localize>{labelText(formatStatus(currentStatus))}
                     </div>
                   )}
 
                   <div className="mt-4 flex flex-wrap gap-x-5 gap-y-2 text-[11px] text-zinc-500">
-                    <span>Green = state actually visited</span>
-                    <span>Amber = current state</span>
-                    <span>Dashed = skipped state</span>
-                    <span>Dim = pending state</span>
+                    <span><Localize>{"Green = state actually visited"}</Localize></span>
+                    <span><Localize>{"Amber = current state"}</Localize></span>
+                    <span><Localize>{"Dashed = skipped state"}</Localize></span>
+                    <span><Localize>{"Dim = pending state"}</Localize></span>
                   </div>
                 </section>
 
@@ -2998,14 +2963,8 @@ export function IncidentInvestigation() {
                     <div className="flex items-start gap-3">
                       <Activity className="mt-0.5 h-5 w-5 shrink-0 text-cyan-400" />
                       <div>
-                        <h3 className="text-lg font-semibold">
-                          Source Intelligence
-                        </h3>
-                        <p className="mt-1 max-w-3xl text-sm text-zinc-500">
-                          Incident-linked upstream topology evidence from the
-                          explicit source asset. This investigation view does
-                          not infer a site identity from an asset or node ID.
-                        </p>
+                        <h3 className="text-lg font-semibold"><Localize>{" Source Intelligence "}</Localize></h3>
+                        <p className="mt-1 max-w-3xl text-sm text-zinc-500"><Localize>{" Incident-linked upstream topology evidence from the explicit source asset. This investigation view does not infer a site identity from an asset or node ID. "}</Localize></p>
                       </div>
                     </div>
 
@@ -3018,40 +2977,35 @@ export function IncidentInvestigation() {
                               : "border-zinc-700 bg-zinc-950 text-zinc-400"
                           }`}
                         >
-                          {formatStatus(sourceIntelligence.status)}
+                          {labelText(formatStatus(sourceIntelligence.status))}
                         </span>
-                        <span className="rounded-md border border-zinc-700 bg-zinc-950 px-2.5 py-1 text-xs text-zinc-400">
-                          Engine v{sourceIntelligence.engine_version}
+                        <span className="rounded-md border border-zinc-700 bg-zinc-950 px-2.5 py-1 text-xs text-zinc-400"><Localize>{" Engine v"}</Localize>{sourceIntelligence.engine_version}
                         </span>
                       </div>
                     )}
                   </div>
 
                   {!sourceIntelligence ? (
-                    <div className="rounded-xl border border-dashed border-zinc-800 bg-zinc-950/40 p-5 text-sm text-zinc-500">
-                      Source intelligence was not returned for this incident.
-                    </div>
+                    <div className="rounded-xl border border-dashed border-zinc-800 bg-zinc-950/40 p-5 text-sm text-zinc-500"><Localize>{" Source intelligence was not returned for this incident. "}</Localize></div>
                   ) : !sourceIntelligence.available ? (
                     <div className="rounded-xl border border-amber-900/70 bg-amber-950/20 p-5">
                       <div className="flex items-start gap-3">
                         <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-amber-400" />
                         <div>
                           <p className="font-medium text-amber-200">
-                            {sourceIntelligence.headline}
+                            <GeneratedText value={sourceIntelligence.headline} />
                           </p>
                           <p className="mt-2 text-sm text-zinc-400">
-                            {sourceIntelligence.summary}
+                            <GeneratedText value={sourceIntelligence.summary} />
                           </p>
                           <div className="mt-3 flex flex-wrap gap-x-5 gap-y-2 text-xs text-zinc-500">
-                            <span>
-                              Source asset ID:{" "}
+                            <span><Localize>{" Source asset ID:"}</Localize>{" "}
                               {sourceIntelligence.source_identity
-                                ?.source_asset_id ?? "Unavailable"}
+                                ?.source_asset_id ?? t("Unavailable")}
                             </span>
-                            <span>
-                              Digital Twin node ID:{" "}
+                            <span><Localize>{" Digital Twin node ID:"}</Localize>{" "}
                               {sourceIntelligence.source_identity
-                                ?.source_node_id ?? "Unavailable"}
+                                ?.source_node_id ?? t("Unavailable")}
                             </span>
                           </div>
                         </div>
@@ -3063,18 +3017,16 @@ export function IncidentInvestigation() {
                         <div className="flex flex-col gap-2 lg:flex-row lg:items-start lg:justify-between">
                           <div>
                             <p className="text-sm font-medium text-cyan-200">
-                              {sourceIntelligence.headline}
+                              <GeneratedText value={sourceIntelligence.headline} />
                             </p>
                             <p className="mt-1 max-w-4xl text-sm text-zinc-400">
-                              {sourceIntelligence.summary}
+                              <GeneratedText value={sourceIntelligence.summary} />
                             </p>
                           </div>
 
                           <div className="shrink-0 text-xs text-zinc-500">
                             {sourceIntelligence.generated_at
-                              ? `Updated ${formatDate(
-                                  sourceIntelligence.generated_at,
-                                )}`
+                              ? t("Updated {date}", { date: dateText(sourceIntelligence.generated_at) })
                               : ""}
                           </div>
                         </div>
@@ -3082,99 +3034,80 @@ export function IncidentInvestigation() {
 
                       <div className="grid gap-4 lg:grid-cols-3">
                         <div className="rounded-xl border border-zinc-800 bg-zinc-950 p-4">
-                          <p className="text-xs uppercase tracking-wide text-zinc-500">
-                            Explicit source asset
-                          </p>
+                          <p className="text-xs uppercase tracking-wide text-zinc-500"><Localize>{" Explicit source asset "}</Localize></p>
                           <p className="mt-2 text-base font-semibold">
                             {sourceIntelligence.target_asset?.asset_name ??
-                              "Not available"}
+                              t("Not available")}
                           </p>
                           <p className="mt-1 text-sm text-zinc-400">
-                            {sourceIntelligence.target_asset?.asset_type ??
-                              "Unknown asset type"}
+                            {labelText(sourceIntelligence.target_asset?.asset_type) ||
+                              t("Unknown asset type")}
                           </p>
                           <div className="mt-3 space-y-1 text-xs text-zinc-500">
-                            <p>
-                              Asset ID:{" "}
+                            <p><Localize>{" Asset ID:"}</Localize>{" "}
                               {sourceIntelligence.source_identity
                                 ?.source_asset_id ?? "N/A"}
                             </p>
-                            <p>
-                              Digital Twin node ID:{" "}
+                            <p><Localize>{" Digital Twin node ID:"}</Localize>{" "}
                               {sourceIntelligence.source_identity
                                 ?.source_node_id ?? "N/A"}
                             </p>
-                            <p>
-                              Identity:{" "}
-                              {formatStatus(
+                            <p><Localize>{" Identity:"}</Localize>{" "}
+                              {labelText(formatStatus(
                                 sourceIntelligence.source_identity
                                   ?.identity_resolution,
-                              )}
+                              ))}
                             </p>
                           </div>
                         </div>
 
                         <div className="rounded-xl border border-zinc-800 bg-zinc-950 p-4">
-                          <p className="text-xs uppercase tracking-wide text-zinc-500">
-                            Upstream topology
-                          </p>
+                          <p className="text-xs uppercase tracking-wide text-zinc-500"><Localize>{" Upstream topology "}</Localize></p>
                           <p className="mt-2 text-3xl font-semibold">
                             {
                               sourceIntelligence.topology
                                 .upstream_relationship_count
                             }
                           </p>
-                          <p className="mt-1 text-sm text-zinc-400">
-                            Active upstream relationship
-                            {sourceIntelligence.topology
-                              .upstream_relationship_count === 1
-                              ? ""
-                              : "s"}
+                          <p className="mt-1 text-sm text-zinc-400">{" "}{t(sourceIntelligence.topology
+                              .upstream_relationship_count === 1 ? "Active upstream relationship" : "Active upstream relationships")}{" "}
                           </p>
                           <div className="mt-3 text-xs text-zinc-500">
-                            <p>
-                              Topology used:{" "}
-                              {sourceIntelligence.topology.used ? "Yes" : "No"}
+                            <p><Localize>{" Topology used:"}</Localize>{" "}
+                              {sourceIntelligence.topology.used ? t("Yes") : t("No")}
                             </p>
-                            <p>
-                              Search depth:{" "}
+                            <p><Localize>{" Search depth:"}</Localize>{" "}
                               {sourceIntelligence.topology.max_depth}
                             </p>
                           </div>
                         </div>
 
                         <div className="rounded-xl border border-zinc-800 bg-zinc-950 p-4">
-                          <p className="text-xs uppercase tracking-wide text-zinc-500">
-                            Hydraulic evidence
-                          </p>
+                          <p className="text-xs uppercase tracking-wide text-zinc-500"><Localize>{" Hydraulic evidence "}</Localize></p>
                           <p className="mt-2 text-base font-semibold">
-                            {formatStatus(hydraulicEvidence?.status)}
+                            {labelText(formatStatus(hydraulicEvidence?.status))}
                           </p>
                           <div className="mt-3 space-y-1 text-xs text-zinc-500">
-                            <p>
-                              Relationship confidence:{" "}
+                            <p><Localize>{" Relationship confidence:"}</Localize>{" "}
                               {hydraulicEvidence
                                 ?.relationship_confidence_available
-                                ? "Available"
-                                : "Unavailable"}
+                                ? t("Available")
+                                : t("Unavailable")}
                             </p>
-                            <p>
-                              Distance metadata:{" "}
+                            <p><Localize>{" Distance metadata:"}</Localize>{" "}
                               {hydraulicEvidence?.distance_available
-                                ? "Available"
-                                : "Unavailable"}
+                                ? t("Available")
+                                : t("Unavailable")}
                             </p>
-                            <p>
-                              Travel-time metadata:{" "}
+                            <p><Localize>{" Travel-time metadata:"}</Localize>{" "}
                               {hydraulicEvidence?.travel_time_available
-                                ? "Available"
-                                : "Unavailable"}
+                                ? t("Available")
+                                : t("Unavailable")}
                             </p>
-                            <p>
-                              Hydraulic model ready:{" "}
+                            <p><Localize>{" Hydraulic model ready:"}</Localize>{" "}
                               {hydraulicEvidence?.hydraulic_model_ready
-                                ? "Yes"
-                                : "No"}
+                                ? t("Yes")
+                                : t("No")}
                             </p>
                           </div>
                         </div>
@@ -3184,24 +3117,16 @@ export function IncidentInvestigation() {
                         <div>
                           <div className="mb-3 flex items-center justify-between gap-3">
                             <div>
-                              <h4 className="font-medium">
-                                Probable Upstream Origin Assets
-                              </h4>
-                              <p className="text-xs text-zinc-500">
-                                Ranked topology candidates for operator
-                                investigation.
-                              </p>
+                              <h4 className="font-medium"><Localize>{" Probable Upstream Origin Assets "}</Localize></h4>
+                              <p className="text-xs text-zinc-500"><Localize>{" Ranked topology candidates for operator investigation. "}</Localize></p>
                             </div>
                             <span className="text-xs text-zinc-500">
-                              {probableOriginAssets.length} candidate
-                              {probableOriginAssets.length === 1 ? "" : "s"}
+                              {probableOriginAssets.length}{" "}{t(probableOriginAssets.length === 1 ? "candidate" : "candidates")}{" "}
                             </span>
                           </div>
 
                           {probableOriginAssets.length === 0 ? (
-                            <div className="rounded-xl border border-dashed border-zinc-800 bg-zinc-950/40 p-5 text-sm text-zinc-500">
-                              No upstream origin assets were resolved.
-                            </div>
+                            <div className="rounded-xl border border-dashed border-zinc-800 bg-zinc-950/40 p-5 text-sm text-zinc-500"><Localize>{" No upstream origin assets were resolved. "}</Localize></div>
                           ) : (
                             <div className="space-y-3">
                               {probableOriginAssets.map((candidate, index) => (
@@ -3219,46 +3144,37 @@ export function IncidentInvestigation() {
                                           {candidate.asset_name}
                                         </p>
                                         <span className="rounded border border-zinc-700 px-2 py-0.5 text-[11px] text-zinc-400">
-                                          {candidate.asset_type}
+                                          {labelText(candidate.asset_type)}
                                         </span>
                                       </div>
 
                                       <div className="mt-3 grid gap-2 text-xs text-zinc-500 sm:grid-cols-2 xl:grid-cols-3">
-                                        <p>
-                                          Asset ID: {candidate.asset_id}
+                                        <p><Localize>{" Asset ID: "}</Localize>{candidate.asset_id}
                                         </p>
-                                        <p>
-                                          Depth: {candidate.depth} step
-                                          {candidate.depth === 1 ? "" : "s"}{" "}
-                                          upstream
-                                        </p>
-                                        <p>
-                                          Relationship:{" "}
-                                          {formatStatus(
+                                        <p><Localize>{" Depth: "}</Localize>{candidate.depth}{" "}{t(candidate.depth === 1 ? "step" : "steps")}{" "}{" "}<Localize>{" upstream "}</Localize></p>
+                                        <p><Localize>{" Relationship:"}</Localize>{" "}
+                                          {labelText(formatStatus(
                                             candidate.relationship_type,
-                                          )}
+                                          ))}
                                         </p>
-                                        <p>
-                                          Confidence:{" "}
-                                          {formatConfidence(
+                                        <p><Localize>{" Confidence:"}</Localize>{" "}
+                                          {confidenceText(
                                             candidate.relationship_confidence,
                                           )}
                                         </p>
-                                        <p>
-                                          Distance:{" "}
+                                        <p><Localize>{" Distance:"}</Localize>{" "}
                                           {candidate.distance_meters === null
-                                            ? "Not available"
-                                            : `${formatNumber(
+                                            ? t("Not available")
+                                            : `${numberText(
                                                 candidate.distance_meters,
                                                 1,
                                               )} m`}
                                         </p>
-                                        <p>
-                                          Travel time:{" "}
+                                        <p><Localize>{" Travel time:"}</Localize>{" "}
                                           {candidate.estimated_travel_time_minutes ===
                                           null
-                                            ? "Not available"
-                                            : `${formatNumber(
+                                            ? t("Not available")
+                                            : `${numberText(
                                                 candidate.estimated_travel_time_minutes,
                                                 1,
                                               )} min`}
@@ -3274,7 +3190,7 @@ export function IncidentInvestigation() {
                                                 key={evidenceIndex}
                                                 className="text-xs text-zinc-400"
                                               >
-                                                • {item}
+                                                • <GeneratedText value={item} />
                                               </p>
                                             ))}
                                         </div>
@@ -3282,11 +3198,9 @@ export function IncidentInvestigation() {
                                     </div>
 
                                     <div className="shrink-0 rounded-lg border border-zinc-800 bg-zinc-900 px-3 py-2 text-right">
-                                      <p className="text-[10px] uppercase tracking-wide text-zinc-500">
-                                        Topology score
-                                      </p>
+                                      <p className="text-[10px] uppercase tracking-wide text-zinc-500"><Localize>{" Topology score "}</Localize></p>
                                       <p className="mt-1 text-lg font-semibold text-cyan-300">
-                                        {formatNumber(candidate.score, 3)}
+                                        {numberText(candidate.score, 3)}
                                       </p>
                                     </div>
                                   </div>
@@ -3298,11 +3212,8 @@ export function IncidentInvestigation() {
 
                         <div className="space-y-4">
                           <div className="rounded-xl border border-zinc-800 bg-zinc-950 p-4">
-                            <h4 className="font-medium">Evidence Support</h4>
-                            <p className="mt-1 text-xs text-zinc-500">
-                              Relative topology evidence by source class; these
-                              values are not site-level probabilities.
-                            </p>
+                            <h4 className="font-medium"><Localize>{"Evidence Support"}</Localize></h4>
+                            <p className="mt-1 text-xs text-zinc-500"><Localize>{" Relative topology evidence by source class; these values are not site-level probabilities. "}</Localize></p>
 
                             <div className="mt-4 space-y-3">
                               {(sourceIntelligence.source_type_support ?? [])
@@ -3311,7 +3222,7 @@ export function IncidentInvestigation() {
                                   <div key={item.source_type}>
                                     <div className="mb-1 flex items-center justify-between gap-3 text-xs">
                                       <span className="text-zinc-300">
-                                        {formatStatus(item.source_type)}
+                                        {labelText(formatStatus(item.source_type))}
                                       </span>
                                       <span className="text-zinc-500">
                                         {item.share_percent}%
@@ -3331,10 +3242,8 @@ export function IncidentInvestigation() {
                                         }}
                                       />
                                     </div>
-                                    <p className="mt-1 text-[10px] text-zinc-600">
-                                      Score {formatNumber(item.score, 3)} ·{" "}
-                                      {item.evidence_count} evidence item
-                                      {item.evidence_count === 1 ? "" : "s"}
+                                    <p className="mt-1 text-[10px] text-zinc-600"><Localize>{" Score "}</Localize>{numberText(item.score, 3)} ·{" "}
+                                      {item.evidence_count}{" "}{t(item.evidence_count === 1 ? "evidence item" : "evidence items")}{" "}
                                     </p>
                                   </div>
                                 ))}
@@ -3342,13 +3251,11 @@ export function IncidentInvestigation() {
                           </div>
 
                           <div className="rounded-xl border border-zinc-800 bg-zinc-950 p-4">
-                            <h4 className="font-medium">
-                              Hydraulic Readiness
-                            </h4>
+                            <h4 className="font-medium"><Localize>{" Hydraulic Readiness "}</Localize></h4>
 
                             <div className="mt-3 space-y-2 text-xs text-zinc-500">
                               <div className="flex items-center justify-between gap-3">
-                                <span>Relationship confidence coverage</span>
+                                <span><Localize>{"Relationship confidence coverage"}</Localize></span>
                                 <span className="text-zinc-300">
                                   {hydraulicEvidence
                                     ?.relationship_confidence_coverage
@@ -3357,7 +3264,7 @@ export function IncidentInvestigation() {
                                 </span>
                               </div>
                               <div className="flex items-center justify-between gap-3">
-                                <span>Distance coverage</span>
+                                <span><Localize>{"Distance coverage"}</Localize></span>
                                 <span className="text-zinc-300">
                                   {hydraulicEvidence?.distance_coverage
                                     ?.percent ?? 0}
@@ -3365,7 +3272,7 @@ export function IncidentInvestigation() {
                                 </span>
                               </div>
                               <div className="flex items-center justify-between gap-3">
-                                <span>Travel-time coverage</span>
+                                <span><Localize>{"Travel-time coverage"}</Localize></span>
                                 <span className="text-zinc-300">
                                   {hydraulicEvidence?.travel_time_coverage
                                     ?.percent ?? 0}
@@ -3389,9 +3296,7 @@ export function IncidentInvestigation() {
                           <div className="flex items-start gap-3">
                             <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-zinc-500" />
                             <div>
-                              <p className="text-xs font-medium uppercase tracking-wide text-zinc-500">
-                                Investigation limitations
-                              </p>
+                              <p className="text-xs font-medium uppercase tracking-wide text-zinc-500"><Localize>{" Investigation limitations "}</Localize></p>
                               <div className="mt-2 space-y-1">
                                 {sourceIntelligence.limitations
                                   .slice(0, 5)
@@ -3417,21 +3322,14 @@ export function IncidentInvestigation() {
                     <div className="flex items-start gap-3">
                       <ClipboardList className="mt-0.5 h-5 w-5 shrink-0 text-violet-400" />
                       <div>
-                        <h3 className="text-lg font-semibold">
-                          Operator Action Plan
-                        </h3>
-                        <p className="mt-1 max-w-3xl text-sm text-zinc-500">
-                          Durable incident actions generated from the current
-                          event, severity, impact, and explicit source asset.
-                          Approval gates are enforced before workflow execution.
-                        </p>
+                        <h3 className="text-lg font-semibold"><Localize>{" Operator Action Plan "}</Localize></h3>
+                        <p className="mt-1 max-w-3xl text-sm text-zinc-500"><Localize>{" Durable incident actions generated from the current event, severity, impact, and explicit source asset. Approval gates are enforced before workflow execution. "}</Localize></p>
                       </div>
                     </div>
 
                     <div className="flex flex-wrap gap-2">
                       <span className="rounded-md border border-zinc-700 bg-zinc-950 px-2.5 py-1 text-xs text-zinc-400">
-                        {actionPlan?.count ?? 0} persisted action
-                        {(actionPlan?.count ?? 0) === 1 ? "" : "s"}
+                        {actionPlan?.count ?? 0}{" "}{t((actionPlan?.count ?? 0) === 1 ? "persisted action" : "persisted actions")}{" "}
                       </span>
                       {hasActionPlan && (
                         <span
@@ -3444,7 +3342,7 @@ export function IncidentInvestigation() {
                                 : "border-cyan-800 bg-cyan-950/30 text-cyan-300"
                           }`}
                         >
-                          {actionPlanGateLabel}
+                          {labelText(actionPlanGateLabel)}
                         </span>
                       )}
                     </div>
@@ -3454,18 +3352,11 @@ export function IncidentInvestigation() {
                     <div className="rounded-xl border border-dashed border-zinc-800 bg-zinc-950/40 p-5">
                       <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
                         <div>
-                          <p className="font-medium text-zinc-200">
-                            No durable action plan has been created.
-                          </p>
-                          <p className="mt-1 max-w-3xl text-sm text-zinc-500">
-                            Start the investigation first, then let FalilaX
-                            generate the operator action plan. The plan is
-                            persisted and remains separate from physical utility
-                            control execution.
-                          </p>
+                          <p className="font-medium text-zinc-200"><Localize>{" No durable action plan has been created. "}</Localize></p>
+                          <p className="mt-1 max-w-3xl text-sm text-zinc-500"><Localize>{" Start the investigation first, then let FalilaX generate the operator action plan. The plan is persisted and remains separate from physical utility control execution. "}</Localize></p>
                         </div>
 
-                        <Button
+                        <Button style={{ whiteSpace: "normal", height: "auto", minHeight: "2.5rem", overflowWrap: "anywhere", textAlign: "center" }}
                           onClick={() =>
                             performMutation("actions/plan", {
                               actor: operatorName.trim() || DEFAULT_OPERATOR,
@@ -3475,36 +3366,30 @@ export function IncidentInvestigation() {
                           className="shrink-0 bg-violet-700 hover:bg-violet-600"
                         >
                           {mutating === "actions/plan"
-                            ? "Creating..."
-                            : "Create Action Plan"}
+                            ? t("Creating...")
+                            : t("Create Action Plan")}
                         </Button>
                       </div>
                     </div>
                   ) : (
                     <div className="space-y-5">
-                      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+                      <div className="grid gap-3 sm:grid-cols-2">
                         <div className="rounded-xl border border-zinc-800 bg-zinc-950 p-4">
-                          <p className="text-xs uppercase tracking-wide text-zinc-500">
-                            Total actions
-                          </p>
+                          <p className="text-xs uppercase tracking-wide text-zinc-500"><Localize>{" Total actions "}</Localize></p>
                           <p className="mt-2 text-2xl font-semibold">
                             {actionPlan?.count ?? 0}
                           </p>
                         </div>
 
                         <div className="rounded-xl border border-zinc-800 bg-zinc-950 p-4">
-                          <p className="text-xs uppercase tracking-wide text-zinc-500">
-                            Approval-gated
-                          </p>
+                          <p className="text-xs uppercase tracking-wide text-zinc-500"><Localize>{" Approval-gated "}</Localize></p>
                           <p className="mt-2 text-2xl font-semibold text-amber-300">
                             {actionPlan?.requires_approval_count ?? 0}
                           </p>
                         </div>
 
                         <div className="rounded-xl border border-zinc-800 bg-zinc-950 p-4">
-                          <p className="text-xs uppercase tracking-wide text-zinc-500">
-                            Pending approval
-                          </p>
+                          <p className="text-xs uppercase tracking-wide text-zinc-500"><Localize>{" Pending approval "}</Localize></p>
                           <p className="mt-2 text-2xl font-semibold text-amber-300">
                             {actionPlan?.pending_approval_count ?? 0}
                           </p>
@@ -3512,7 +3397,7 @@ export function IncidentInvestigation() {
 
                         <div className="rounded-xl border border-zinc-800 bg-zinc-950 p-4">
                           <p className="text-xs uppercase tracking-wide text-zinc-500">
-                            {currentPlanCompleted ? "Completed" : "Approved"}
+                            {currentPlanCompleted ? t("Completed") : t("Approved")}
                           </p>
                           <p className="mt-2 text-2xl font-semibold text-green-300">
                             {currentPlanCompleted
@@ -3524,36 +3409,30 @@ export function IncidentInvestigation() {
 
                       <div className="flex flex-col gap-3 rounded-xl border border-zinc-800 bg-zinc-950 p-4 lg:flex-row lg:items-center lg:justify-between">
                         <div>
-                          <p className="text-sm font-medium">
-                            Action-plan gate
-                          </p>
+                          <p className="text-sm font-medium"><Localize>{" Action-plan gate "}</Localize></p>
                           <p className="mt-1 max-w-3xl text-xs text-zinc-500">
                             {actionPlan?.safety_note ||
-                              "Workflow execution does not issue physical utility control commands."}
+                              t("Workflow execution does not issue physical utility control commands.")}
                           </p>
                         </div>
 
                         {currentStatus === "executing" &&
                         !currentPlanCompleted ? (
                           <div className="rounded-lg border border-cyan-900 bg-cyan-950/20 px-3 py-2 text-sm text-cyan-200">
-                            <p className="font-medium">
-                              Execution progress{" "}
+                            <p className="font-medium"><Localize>{" Execution progress"}</Localize>{" "}
                               {currentGenerationSummary?.executed_count ?? 0} /{" "}
                               {actionPlan?.count ?? incidentActions.length}
                             </p>
-                            <p className="mt-1 text-xs text-zinc-500">
-                              Record completion on each approved current-plan
-                              action before starting verification.
-                            </p>
+                            <p className="mt-1 text-xs text-zinc-500"><Localize>{" Record completion on each approved current-plan action before starting verification. "}</Localize></p>
                           </div>
                         ) : currentPlanCompleted ? (
                           <div className="flex items-center gap-2 rounded-lg border border-green-900 bg-green-950/20 px-3 py-2 text-sm text-green-300">
                             <CheckCircle2 className="h-4 w-4 shrink-0" />
-                            <span>All current-plan actions completed</span>
+                            <span><Localize>{"All current-plan actions completed"}</Localize></span>
                           </div>
                         ) : (
                           <div className="flex flex-wrap gap-3">
-                            <Button
+                            <Button style={{ whiteSpace: "normal", height: "auto", minHeight: "2.5rem", overflowWrap: "anywhere", textAlign: "center" }}
                               variant="outline"
                               onClick={() =>
                                 performMutation("actions/approve", {
@@ -3567,11 +3446,11 @@ export function IncidentInvestigation() {
                               className="border-amber-800 text-amber-300"
                             >
                               {mutating === "actions/approve"
-                                ? "Approving..."
-                                : "Approve Pending Actions"}
+                                ? t("Approving...")
+                                : t("Approve Pending Actions")}
                             </Button>
 
-                            <Button
+                            <Button style={{ whiteSpace: "normal", height: "auto", minHeight: "2.5rem", overflowWrap: "anywhere", textAlign: "center" }}
                               onClick={() =>
                                 performMutation("actions/start-execution", {
                                   actor:
@@ -3584,8 +3463,8 @@ export function IncidentInvestigation() {
                               className="bg-cyan-700 hover:bg-cyan-600"
                             >
                               {mutating === "actions/start-execution"
-                                ? "Starting..."
-                                : "Start Execution"}
+                                ? t("Starting...")
+                                : t("Start Execution")}
                             </Button>
                           </div>
                         )}
@@ -3594,14 +3473,11 @@ export function IncidentInvestigation() {
                       <div>
                         <div className="mb-3 flex items-center justify-between gap-3">
                           <div>
-                            <h4 className="font-medium">Persisted Actions</h4>
-                            <p className="text-xs text-zinc-500">
-                              Ranked operator actions for this incident.
-                            </p>
+                            <h4 className="font-medium"><Localize>{"Persisted Actions"}</Localize></h4>
+                            <p className="text-xs text-zinc-500"><Localize>{" Ranked operator actions for this incident. "}</Localize></p>
                           </div>
                           <span className="text-xs text-zinc-500">
-                            {incidentActions.length} action
-                            {incidentActions.length === 1 ? "" : "s"}
+                            {incidentActions.length}{" "}{t(incidentActions.length === 1 ? "action" : "actions")}{" "}
                           </span>
                         </div>
 
@@ -3646,18 +3522,16 @@ export function IncidentInvestigation() {
                                           action.risk,
                                         )}`}
                                       >
-                                        {formatStatus(action.risk)} risk
-                                      </span>
+                                        {labelText(formatStatus(action.risk))}<Localize>{" risk "}</Localize></span>
                                       <span
                                         className={`rounded border px-2 py-0.5 text-[11px] ${actionStatusClasses(
                                           action.status,
                                         )}`}
                                       >
-                                        {formatStatus(action.status)}
+                                        {labelText(formatStatus(action.status))}
                                       </span>
                                       {isCurrentGeneration && (
-                                        <span className="rounded border border-cyan-800 bg-cyan-950/20 px-2 py-0.5 text-[11px] text-cyan-300">
-                                          Generation {action.plan_generation}
+                                        <span className="rounded border border-cyan-800 bg-cyan-950/20 px-2 py-0.5 text-[11px] text-cyan-300"><Localize>{" Generation "}</Localize>{action.plan_generation}
                                         </span>
                                       )}
                                     </div>
@@ -3668,9 +3542,7 @@ export function IncidentInvestigation() {
                                   </div>
 
                                   <div className="shrink-0 rounded-lg border border-zinc-800 bg-zinc-900 px-3 py-2 text-right">
-                                    <p className="text-[10px] uppercase tracking-wide text-zinc-500">
-                                      Priority
-                                    </p>
+                                    <p className="text-[10px] uppercase tracking-wide text-zinc-500"><Localize>{" Priority "}</Localize></p>
                                     <p className="mt-1 text-lg font-semibold">
                                       {action.priority}
                                     </p>
@@ -3678,30 +3550,24 @@ export function IncidentInvestigation() {
                                 </div>
 
                                 <div className="mt-3 grid gap-2 text-xs text-zinc-500 sm:grid-cols-2 xl:grid-cols-3">
-                                  <p>
-                                    Type: {formatStatus(action.action_type)}
+                                  <p><Localize>{" Type: "}</Localize>{labelText(formatStatus(action.action_type))}
                                   </p>
-                                  <p>
-                                    Mode:{" "}
-                                    {formatStatus(action.execution_mode)}
+                                  <p><Localize>{" Mode:"}</Localize>{" "}
+                                    {labelText(formatStatus(action.execution_mode))}
                                   </p>
-                                  <p>
-                                    Target asset:{" "}
+                                  <p><Localize>{" Target asset:"}</Localize>{" "}
                                     {action.target_asset_id ?? "N/A"}
                                   </p>
-                                  <p>
-                                    Approval:{" "}
+                                  <p><Localize>{" Approval:"}</Localize>{" "}
                                     {action.requires_approval
                                       ? action.approval_role
-                                        ? `Required (${action.approval_role})`
-                                        : "Required"
-                                      : "Not required"}
+                                        ? t("Required ({role})", { role: labelText(action.approval_role) })
+                                        : t("Required")
+                                      : t("Not required")}
                                   </p>
-                                  <p>
-                                    Proposed: {formatDate(action.proposed_at)}
+                                  <p><Localize>{" Proposed: "}</Localize>{dateText(action.proposed_at)}
                                   </p>
-                                  <p>
-                                    Expires: {formatDate(action.expires_at)}
+                                  <p><Localize>{" Expires: "}</Localize>{dateText(action.expires_at)}
                                   </p>
                                 </div>
 
@@ -3714,14 +3580,12 @@ export function IncidentInvestigation() {
                                 {actionStatus === "completed" &&
                                   isCurrentGeneration && (
                                     <div className="mt-4 flex items-center gap-2 rounded-lg border border-green-900/70 bg-green-950/15 px-3 py-2 text-xs text-green-300">
-                                      <CheckCircle2 className="h-4 w-4 shrink-0" />
-                                      Execution recorded for the current plan.
-                                    </div>
+                                      <CheckCircle2 className="h-4 w-4 shrink-0" /><Localize>{" Execution recorded for the current plan. "}</Localize></div>
                                   )}
 
                                 {canRecordCompletion && !completionOpen && (
                                   <div className="mt-4 border-t border-zinc-900 pt-4">
-                                    <Button
+                                    <Button style={{ whiteSpace: "normal", height: "auto", minHeight: "2.5rem", overflowWrap: "anywhere", textAlign: "center" }}
                                       variant="outline"
                                       onClick={() =>
                                         setCompletionActionId(action.id)
@@ -3731,23 +3595,15 @@ export function IncidentInvestigation() {
                                         mutating !== null
                                       }
                                       className="w-full border-cyan-800 text-cyan-300 hover:bg-cyan-950/30"
-                                    >
-                                      Record Completion
-                                    </Button>
+                                    ><Localize>{" Record Completion "}</Localize></Button>
                                   </div>
                                 )}
 
                                 {canRecordCompletion && completionOpen && (
                                   <div className="mt-4 space-y-3 rounded-xl border border-cyan-900/60 bg-cyan-950/10 p-3">
                                     <div>
-                                      <p className="text-sm font-medium text-cyan-200">
-                                        Operator completion attestation
-                                      </p>
-                                      <p className="mt-1 text-xs text-zinc-500">
-                                        Describe what was completed and the
-                                        result observed. This creates a durable
-                                        non-physical execution record.
-                                      </p>
+                                      <p className="text-sm font-medium text-cyan-200"><Localize>{" Operator completion attestation "}</Localize></p>
+                                      <p className="mt-1 text-xs text-zinc-500"><Localize>{" Describe what was completed and the result observed. This creates a durable non-physical execution record. "}</Localize></p>
                                     </div>
 
                                     <Textarea
@@ -3758,23 +3614,18 @@ export function IncidentInvestigation() {
                                           [action.id]: event.target.value,
                                         }))
                                       }
-                                      placeholder="Completion note, observed result, sample reference, work-order reference, or other operator evidence..."
+                                      placeholder={t("Completion note, observed result, sample reference, work-order reference, or other operator evidence...")}
                                       className="min-h-24 border-zinc-700 bg-zinc-950"
                                     />
 
                                     <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                                       <div className="flex items-start gap-2 text-[11px] text-zinc-500">
                                         <ShieldCheck className="mt-0.5 h-3.5 w-3.5 shrink-0 text-green-400" />
-                                        <span>
-                                          Records operator attestation only.
-                                          No SCADA, valve, pump, chemical-dosing,
-                                          pressure-control, PLC, or RTU command
-                                          is issued.
-                                        </span>
+                                        <span><Localize>{" Records operator attestation only. No SCADA, valve, pump, chemical-dosing, pressure-control, PLC, or RTU command is issued. "}</Localize></span>
                                       </div>
 
                                       <div className="flex shrink-0 gap-2">
-                                        <Button
+                                        <Button style={{ whiteSpace: "normal", height: "auto", minHeight: "2.5rem", overflowWrap: "anywhere", textAlign: "center" }}
                                           type="button"
                                           variant="ghost"
                                           onClick={() =>
@@ -3782,10 +3633,8 @@ export function IncidentInvestigation() {
                                           }
                                           disabled={attesting}
                                           className="text-zinc-400"
-                                        >
-                                          Cancel
-                                        </Button>
-                                        <Button
+                                        ><Localize>{" Cancel "}</Localize></Button>
+                                        <Button style={{ whiteSpace: "normal", height: "auto", minHeight: "2.5rem", overflowWrap: "anywhere", textAlign: "center" }}
                                           type="button"
                                           onClick={() =>
                                             attestActionCompletion(action)
@@ -3798,8 +3647,8 @@ export function IncidentInvestigation() {
                                           className="bg-cyan-700 hover:bg-cyan-600"
                                         >
                                           {attesting
-                                            ? "Recording..."
-                                            : "Confirm Completion"}
+                                            ? t("Recording...")
+                                            : t("Confirm Completion")}
                                         </Button>
                                       </div>
                                     </div>
@@ -3819,39 +3668,27 @@ export function IncidentInvestigation() {
                     <div className="flex items-start gap-3">
                       <Activity className="mt-0.5 h-5 w-5 shrink-0 text-green-400" />
                       <div>
-                        <h3 className="text-lg font-semibold">
-                          Execution History
-                        </h3>
-                        <p className="mt-1 max-w-3xl text-sm text-zinc-500">
-                          Durable action execution records separated into the
-                          current action-plan generation, prior generations,
-                          and lifetime incident history.
-                        </p>
+                        <h3 className="text-lg font-semibold"><Localize>{" Execution History "}</Localize></h3>
+                        <p className="mt-1 max-w-3xl text-sm text-zinc-500"><Localize>{" Durable action execution records separated into the current action-plan generation, prior generations, and lifetime incident history. "}</Localize></p>
                       </div>
                     </div>
 
                     <div className="flex flex-wrap gap-2">
-                      <span className="rounded-md border border-cyan-800 bg-cyan-950/30 px-2.5 py-1 text-xs text-cyan-300">
-                        Current plan · Generation {currentPlanGeneration}
+                      <span className="rounded-md border border-cyan-800 bg-cyan-950/30 px-2.5 py-1 text-xs text-cyan-300"><Localize>{" Current plan · Generation "}</Localize>{currentPlanGeneration}
                       </span>
                       <span className="rounded-md border border-zinc-700 bg-zinc-950 px-2.5 py-1 text-xs text-zinc-400">
-                        {lifetimeExecutionSummary?.count ?? 0} lifetime record
-                        {(lifetimeExecutionSummary?.count ?? 0) === 1 ? "" : "s"}
+                        {lifetimeExecutionSummary?.count ?? 0}{" "}{t((lifetimeExecutionSummary?.count ?? 0) === 1 ? "lifetime record" : "lifetime records")}{" "}
                       </span>
                     </div>
                   </div>
 
                   {!executionSummary ? (
-                    <div className="rounded-xl border border-dashed border-zinc-800 bg-zinc-950/40 p-5 text-sm text-zinc-500">
-                      Execution history was not returned for this incident.
-                    </div>
+                    <div className="rounded-xl border border-dashed border-zinc-800 bg-zinc-950/40 p-5 text-sm text-zinc-500"><Localize>{" Execution history was not returned for this incident. "}</Localize></div>
                   ) : (
                     <div className="space-y-6">
-                      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+                      <div className="grid gap-3 sm:grid-cols-2">
                         <div className="rounded-xl border border-green-900/70 bg-green-950/10 p-4">
-                          <p className="text-xs uppercase tracking-wide text-zinc-500">
-                            Current Generation
-                          </p>
+                          <p className="text-xs uppercase tracking-wide text-zinc-500"><Localize>{" Current Generation "}</Localize></p>
                           <p className="mt-2 text-2xl font-semibold text-green-300">
                             {currentGenerationSummary?.executed_count ?? 0}
                             <span className="text-sm font-normal text-zinc-500">
@@ -3859,45 +3696,34 @@ export function IncidentInvestigation() {
                               / {actionPlan?.count ?? 0}
                             </span>
                           </p>
-                          <p className="mt-1 text-xs text-zinc-500">
-                            Actions executed in Generation {currentPlanGeneration}
+                          <p className="mt-1 text-xs text-zinc-500"><Localize>{" Actions executed in Generation "}</Localize>{currentPlanGeneration}
                           </p>
                           <p className="mt-2 text-[11px] text-zinc-600">
-                            {(currentGenerationSummary?.failed_count ?? 0)} failed
-                            {" · "}
-                            {(currentGenerationSummary?.blocked_count ?? 0)} blocked
-                          </p>
+                            {(currentGenerationSummary?.failed_count ?? 0)}<Localize>{" failed "}</Localize>{" · "}
+                            {(currentGenerationSummary?.blocked_count ?? 0)}<Localize>{" blocked "}</Localize></p>
                         </div>
 
                         <div className="rounded-xl border border-violet-900/60 bg-violet-950/10 p-4">
-                          <p className="text-xs uppercase tracking-wide text-zinc-500">
-                            Historical
-                          </p>
+                          <p className="text-xs uppercase tracking-wide text-zinc-500"><Localize>{" Historical "}</Localize></p>
                           <p className="mt-2 text-2xl font-semibold text-violet-300">
                             {historicalExecutionSummary?.executed_count ?? 0}
                           </p>
-                          <p className="mt-1 text-xs text-zinc-500">
-                            Successful prior-generation executions
-                          </p>
+                          <p className="mt-1 text-xs text-zinc-500"><Localize>{" Successful prior-generation executions "}</Localize></p>
                           <p className="mt-2 text-[11px] text-zinc-600">
-                            {formatGenerationCounts(
+                            {generationText(
                               historicalExecutionSummary?.generation_counts,
                             )}
                           </p>
                         </div>
 
                         <div className="rounded-xl border border-zinc-800 bg-zinc-950 p-4">
-                          <p className="text-xs uppercase tracking-wide text-zinc-500">
-                            Lifetime
-                          </p>
+                          <p className="text-xs uppercase tracking-wide text-zinc-500"><Localize>{" Lifetime "}</Localize></p>
                           <p className="mt-2 text-2xl font-semibold">
                             {lifetimeExecutionSummary?.count ?? 0}
                           </p>
-                          <p className="mt-1 text-xs text-zinc-500">
-                            Durable execution records
-                          </p>
+                          <p className="mt-1 text-xs text-zinc-500"><Localize>{" Durable execution records "}</Localize></p>
                           <p className="mt-2 text-[11px] text-zinc-600">
-                            {formatGenerationCounts(
+                            {generationText(
                               lifetimeExecutionSummary?.generation_counts,
                             )}
                           </p>
@@ -3910,9 +3736,7 @@ export function IncidentInvestigation() {
                               : "border-green-900/70 bg-green-950/10"
                           }`}
                         >
-                          <p className="text-xs uppercase tracking-wide text-zinc-500">
-                            Physical Control
-                          </p>
+                          <p className="text-xs uppercase tracking-wide text-zinc-500"><Localize>{" Physical Control "}</Localize></p>
                           <p
                             className={`mt-2 text-lg font-semibold ${
                               executionSummary.physical_control_command_issued
@@ -3921,18 +3745,15 @@ export function IncidentInvestigation() {
                             }`}
                           >
                             {executionSummary.physical_control_command_issued
-                              ? "Issued"
-                              : "Not issued"}
+                              ? t("Issued")
+                              : t("Not issued")}
                           </p>
-                          <p className="mt-1 text-xs text-zinc-500">
-                            Operator attestation safety boundary
-                          </p>
-                          <p className="mt-2 text-[11px] text-zinc-600">
-                            Counter scope:{" "}
-                            {formatStatus(
+                          <p className="mt-1 text-xs text-zinc-500"><Localize>{" Operator attestation safety boundary "}</Localize></p>
+                          <p className="mt-2 text-[11px] text-zinc-600"><Localize>{" Counter scope:"}</Localize>{" "}
+                            {labelText(formatStatus(
                               executionSummary.counter_scope ??
                                 workflow.execution_counter_scope,
-                            )}
+                            ))}
                           </p>
                         </div>
                       </div>
@@ -3941,20 +3762,12 @@ export function IncidentInvestigation() {
                         <div className="flex items-start gap-3 rounded-xl border border-red-800 bg-red-950/20 p-4 text-sm text-red-200">
                           <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
                           <div>
-                            <p className="font-medium">
-                              Future-generation execution anomaly
-                            </p>
+                            <p className="font-medium"><Localize>{" Future-generation execution anomaly "}</Localize></p>
                             <p className="mt-1 text-xs text-red-300/90">
                               {
                                 executionSummary.future_generation_anomaly.count
-                              }{" "}
-                              execution record
-                              {executionSummary.future_generation_anomaly.count ===
-                              1
-                                ? ""
-                                : "s"}{" "}
-                              belong to a generation newer than the current plan.
-                            </p>
+                              }{" "}{" "}{t(executionSummary.future_generation_anomaly.count ===
+                              1 ? "execution record" : "execution records")}{" "}{" "}<Localize>{" belong to a generation newer than the current plan. "}</Localize></p>
                           </div>
                         </div>
                       )}
@@ -3962,29 +3775,19 @@ export function IncidentInvestigation() {
                       <div>
                         <div className="mb-3 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
                           <div>
-                            <h4 className="font-medium">
-                              Current Plan — Generation {currentPlanGeneration}
+                            <h4 className="font-medium"><Localize>{" Current Plan — Generation "}</Localize>{currentPlanGeneration}
                             </h4>
-                            <p className="text-xs text-zinc-500">
-                              Execution attempts associated only with the current
-                              durable action plan.
-                            </p>
+                            <p className="text-xs text-zinc-500"><Localize>{" Execution attempts associated only with the current durable action plan. "}</Localize></p>
                           </div>
                           <span className="text-xs text-zinc-500">
-                            {currentGenerationExecutions.length} execution record
-                            {currentGenerationExecutions.length === 1 ? "" : "s"}
+                            {currentGenerationExecutions.length}{" "}{t(currentGenerationExecutions.length === 1 ? "execution record" : "execution records")}{" "}
                           </span>
                         </div>
 
                         {currentGenerationExecutions.length === 0 ? (
                           <div className="rounded-xl border border-dashed border-zinc-800 bg-zinc-950/40 p-5">
-                            <p className="text-sm font-medium text-zinc-300">
-                              No current-generation executions yet.
-                            </p>
-                            <p className="mt-1 text-xs text-zinc-500">
-                              Prior-generation audit history is preserved below and
-                              is not counted as current-plan work.
-                            </p>
+                            <p className="text-sm font-medium text-zinc-300"><Localize>{" No current-generation executions yet. "}</Localize></p>
+                            <p className="mt-1 text-xs text-zinc-500"><Localize>{" Prior-generation audit history is preserved below and is not counted as current-plan work. "}</Localize></p>
                           </div>
                         ) : (
                           <div className="grid gap-3 xl:grid-cols-2">
@@ -4008,30 +3811,27 @@ export function IncidentInvestigation() {
                                     <div className="min-w-0">
                                       <div className="flex flex-wrap items-center gap-2">
                                         <p className="font-medium">
-                                          {formatStatus(execution.action_type)}
+                                          {labelText(formatStatus(execution.action_type))}
                                         </p>
                                         <span
                                           className={`rounded border px-2 py-0.5 text-[11px] ${executionOutcomeClasses(
                                             execution.outcome,
                                           )}`}
                                         >
-                                          {formatStatus(execution.outcome)}
+                                          {labelText(formatStatus(execution.outcome))}
                                         </span>
-                                        <span className="rounded border border-cyan-900 bg-cyan-950/20 px-2 py-0.5 text-[11px] text-cyan-300">
-                                          Generation {execution.plan_generation}
+                                        <span className="rounded border border-cyan-900 bg-cyan-950/20 px-2 py-0.5 text-[11px] text-cyan-300"><Localize>{" Generation "}</Localize>{execution.plan_generation}
                                         </span>
                                       </div>
 
                                       <p className="mt-2 text-xs text-zinc-500">
                                         {execution.message ||
-                                          "No execution message was recorded."}
+                                          t("No execution message was recorded.")}
                                       </p>
                                     </div>
 
                                     <div className="shrink-0 rounded-lg border border-zinc-800 bg-zinc-900 px-3 py-2 text-right">
-                                      <p className="text-[10px] uppercase tracking-wide text-zinc-500">
-                                        Attempt
-                                      </p>
+                                      <p className="text-[10px] uppercase tracking-wide text-zinc-500"><Localize>{" Attempt "}</Localize></p>
                                       <p className="mt-1 text-lg font-semibold">
                                         {execution.attempt_number}
                                       </p>
@@ -4039,32 +3839,25 @@ export function IncidentInvestigation() {
                                   </div>
 
                                   <div className="mt-3 grid gap-2 text-xs text-zinc-500 sm:grid-cols-2 xl:grid-cols-3">
-                                    <p>
-                                      Operator: {execution.executor || "Not recorded"}
+                                    <p><Localize>{" Operator: "}</Localize>{execution.executor || t("Not recorded")}
                                     </p>
-                                    <p>
-                                      Mode: {formatStatus(execution.execution_mode)}
+                                    <p><Localize>{" Mode: "}</Localize>{labelText(formatStatus(execution.execution_mode))}
                                     </p>
-                                    <p>
-                                      Adapter: {execution.adapter_name || "N/A"}
+                                    <p><Localize>{" Adapter: "}</Localize>{execution.adapter_name || "N/A"}
                                     </p>
-                                    <p>
-                                      Started: {formatDate(execution.started_at)}
+                                    <p><Localize>{" Started: "}</Localize>{dateText(execution.started_at)}
                                     </p>
-                                    <p>
-                                      Finished: {formatDate(execution.finished_at)}
+                                    <p><Localize>{" Finished: "}</Localize>{dateText(execution.finished_at)}
                                     </p>
-                                    <p>
-                                      Duration:{" "}
+                                    <p><Localize>{" Duration:"}</Localize>{" "}
                                       {execution.duration_ms === null
-                                        ? "Not available"
+                                        ? t("Not available")
                                         : `${execution.duration_ms} ms`}
                                     </p>
                                   </div>
 
                                   <div className="mt-3 flex flex-wrap items-center justify-between gap-2 border-t border-zinc-900 pt-3 text-[11px] text-zinc-600">
-                                    <span className="break-all">
-                                      Action: {execution.action_id}
+                                    <span className="break-all"><Localize>{" Action: "}</Localize>{execution.action_id}
                                     </span>
                                     <span
                                       className={
@@ -4074,8 +3867,8 @@ export function IncidentInvestigation() {
                                       }
                                     >
                                       {execution.physical_control_command_issued
-                                        ? "Physical control issued"
-                                        : "Non-physical attestation"}
+                                        ? t("Physical control issued")
+                                        : t("Non-physical attestation")}
                                     </span>
                                   </div>
                                 </div>
@@ -4087,28 +3880,16 @@ export function IncidentInvestigation() {
                       <div>
                         <div className="mb-3 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
                           <div>
-                            <h4 className="font-medium">
-                              Historical Execution Audit
-                            </h4>
-                            <p className="text-xs text-zinc-500">
-                              Completed execution records from superseded
-                              action-plan generations.
-                            </p>
+                            <h4 className="font-medium"><Localize>{" Historical Execution Audit "}</Localize></h4>
+                            <p className="text-xs text-zinc-500"><Localize>{" Completed execution records from superseded action-plan generations. "}</Localize></p>
                           </div>
                           <span className="text-xs text-zinc-500">
-                            {historicalExecutionSummary?.count ?? 0} historical
-                            record
-                            {(historicalExecutionSummary?.count ?? 0) === 1
-                              ? ""
-                              : "s"}
+                            {historicalExecutionSummary?.count ?? 0}{" "}{t((historicalExecutionSummary?.count ?? 0) === 1 ? "historical record" : "historical records")}{" "}
                           </span>
                         </div>
 
                         {historicalExecutionGroups.length === 0 ? (
-                          <div className="rounded-xl border border-dashed border-zinc-800 bg-zinc-950/40 p-5 text-sm text-zinc-500">
-                            No prior-generation execution history exists for this
-                            incident.
-                          </div>
+                          <div className="rounded-xl border border-dashed border-zinc-800 bg-zinc-950/40 p-5 text-sm text-zinc-500"><Localize>{" No prior-generation execution history exists for this incident. "}</Localize></div>
                         ) : (
                           <div className="space-y-4">
                             {historicalExecutionGroups.map((group) => {
@@ -4129,17 +3910,14 @@ export function IncidentInvestigation() {
                                 >
                                   <div className="mb-3 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                                     <div>
-                                      <p className="font-medium text-violet-200">
-                                        Generation {group.generation}
+                                      <p className="font-medium text-violet-200"><Localize>{" Generation "}</Localize>{group.generation}
                                       </p>
                                       <p className="text-xs text-zinc-500">
-                                        {successful} executed · {failed} failed ·{" "}
-                                        {blocked} blocked
-                                      </p>
+                                        {successful}<Localize>{" executed · "}</Localize>{failed}<Localize>{" failed ·"}</Localize>{" "}
+                                        {blocked}<Localize>{" blocked "}</Localize></p>
                                     </div>
                                     <span className="rounded border border-zinc-700 bg-zinc-900 px-2 py-1 text-[11px] text-zinc-400">
-                                      {group.executions.length} durable record
-                                      {group.executions.length === 1 ? "" : "s"}
+                                      {group.executions.length}{" "}{t(group.executions.length === 1 ? "durable record" : "durable records")}{" "}
                                     </span>
                                   </div>
 
@@ -4153,28 +3931,28 @@ export function IncidentInvestigation() {
                                           <div className="min-w-0">
                                             <div className="flex flex-wrap items-center gap-2">
                                               <p className="text-sm font-medium">
-                                                {formatStatus(
+                                                {labelText(formatStatus(
                                                   execution.action_type,
-                                                )}
+                                                ))}
                                               </p>
                                               <span
                                                 className={`rounded border px-2 py-0.5 text-[10px] ${executionOutcomeClasses(
                                                   execution.outcome,
                                                 )}`}
                                               >
-                                                {formatStatus(execution.outcome)}
+                                                {labelText(formatStatus(execution.outcome))}
                                               </span>
                                             </div>
                                             <p className="mt-1 text-xs text-zinc-500">
-                                              {execution.executor || "Unknown operator"}
+                                              {execution.executor || t("Unknown operator")}
                                               {" · "}
-                                              {formatDate(execution.finished_at)}
-                                              {" · Attempt "}
+                                              {dateText(execution.finished_at)}
+                                              {t(" · Attempt ")}
                                               {execution.attempt_number}
                                             </p>
                                           </div>
                                           <span className="text-[10px] text-zinc-600">
-                                            {execution.adapter_name || "No adapter"}
+                                            {execution.adapter_name || t("No adapter")}
                                           </span>
                                         </div>
                                       </div>
@@ -4190,12 +3968,10 @@ export function IncidentInvestigation() {
                       <div className="flex items-start gap-3 rounded-xl border border-zinc-800 bg-zinc-950/70 p-4">
                         <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-green-400" />
                         <div>
-                          <p className="text-sm font-medium text-zinc-300">
-                            Execution safety boundary
-                          </p>
+                          <p className="text-sm font-medium text-zinc-300"><Localize>{" Execution safety boundary "}</Localize></p>
                           <p className="mt-1 text-xs text-zinc-500">
                             {executionSummary.safety_note ||
-                              "Operator attestation records non-physical operational work and does not issue physical utility-control commands."}
+                              t("Operator attestation records non-physical operational work and does not issue physical utility-control commands.")}
                           </p>
                         </div>
                       </div>
@@ -4204,14 +3980,13 @@ export function IncidentInvestigation() {
                 </section>
 
                 <section className="rounded-2xl border border-cyan-900/60 bg-cyan-950/10 p-6">
-                  <div className="flex flex-col gap-5 xl:flex-row xl:items-start xl:justify-between">
+                  <div className="flex flex-col gap-5">
                     <div className="flex items-start gap-3">
                       <FileText className="mt-0.5 h-5 w-5 shrink-0 text-cyan-300" />
                       <div>
                         <div className="flex flex-wrap items-center gap-2">
-                          <h3 className="text-lg font-semibold">
-                            Incident Reports & Evidence
-                          </h3>
+                          <h3 className="text-lg font-semibold"><Localize>{" Incident Reports & Evidence "}</Localize>
+                      {locale !== "en" && <span className="mt-2 block text-xs font-normal text-slate-400">{t("Reports are generated in English. Saved evidence and existing reports are preserved.")}</span>}</h3>
                           <span
                             className={`rounded-md border px-2 py-0.5 text-[11px] font-medium ${
                               reportUiStage === "Final"
@@ -4219,34 +3994,26 @@ export function IncidentInvestigation() {
                                 : "border-amber-800 bg-amber-950/30 text-amber-300"
                             }`}
                           >
-                            {reportUiStage}
+                            {labelText(reportUiStage)}
                           </span>
                           {(reportSyntheticDetected || reportSyntheticOverride) && (
-                            <span className="rounded-md border border-red-800 bg-red-950/30 px-2 py-0.5 text-[11px] font-medium text-red-300">
-                              Synthetic / Development
-                            </span>
+                            <span className="rounded-md border border-red-800 bg-red-950/30 px-2 py-0.5 text-[11px] font-medium text-red-300"><Localize>{" Synthetic / Development "}</Localize></span>
                           )}
                         </div>
-                        <p className="mt-1 max-w-3xl text-sm text-zinc-400">
-                          Generate a concise management summary, a detailed retained
-                          evidence report, or a machine-readable JSON package. Closed
-                          incidents are issued as FINAL only after Utility / Organization
-                          and System / Facility are configured.
-                        </p>
+                        <p className="mt-1 max-w-3xl text-sm text-zinc-400"><Localize>{" Generate a concise management summary, a detailed retained evidence report, or a machine-readable JSON package. Closed incidents are issued as FINAL only after Utility / Organization and System / Facility are configured. "}</Localize></p>
 
                         <div className="mt-3 flex flex-wrap gap-x-5 gap-y-1 text-xs text-zinc-500">
-                          <span>Generation {currentPlanGeneration}</span>
-                          <span>{detail?.events?.length ?? 0} audit events</span>
-                          <span>{lifetimeExecutionSummary?.count ?? 0} execution records</span>
-                          <span>
-                            Physical control: {executionSummary?.physical_control_command_issued ? "Issued" : "Not issued"}
+                          <span><Localize>{"Generation "}</Localize>{currentPlanGeneration}</span>
+                          <span>{detail?.events?.length ?? 0}<Localize>{" audit events"}</Localize></span>
+                          <span>{lifetimeExecutionSummary?.count ?? 0}<Localize>{" execution records"}</Localize></span>
+                          <span><Localize>{" Physical control: "}</Localize>{executionSummary?.physical_control_command_issued ? t("Issued") : t("Not issued")}
                           </span>
                         </div>
                       </div>
                     </div>
 
-                    <div className="flex shrink-0 flex-col gap-2 sm:flex-row sm:flex-wrap sm:justify-end">
-                      <Button
+                    <div className="flex shrink-0 flex-col gap-2 sm:flex-row sm:flex-wrap sm:justify-start">
+                      <Button style={{ whiteSpace: "normal", height: "auto", minHeight: "2.5rem", overflowWrap: "anywhere", textAlign: "center" }}
                         type="button"
                         onClick={() => persistHtmlReport("summary")}
                         disabled={!detail || reportMutation !== null}
@@ -4254,13 +4021,13 @@ export function IncidentInvestigation() {
                       >
                         <FileText className="mr-2 h-4 w-4" />
                         {reportMutation === "summary"
-                          ? "Persisting Summary..."
+                          ? t("Persisting Summary...")
                           : reportWillBeFinal
-                            ? "Summary Report / PDF"
-                            : "Summary Draft / PDF"}
+                            ? t("Summary Report / PDF")
+                            : t("Summary Draft / PDF")}
                       </Button>
 
-                      <Button
+                      <Button style={{ whiteSpace: "normal", height: "auto", minHeight: "2.5rem", overflowWrap: "anywhere", textAlign: "center" }}
                         type="button"
                         variant="outline"
                         onClick={() => persistHtmlReport("detailed")}
@@ -4269,13 +4036,13 @@ export function IncidentInvestigation() {
                       >
                         <Printer className="mr-2 h-4 w-4" />
                         {reportMutation === "detailed"
-                          ? "Persisting Detailed..."
+                          ? t("Persisting Detailed...")
                           : reportWillBeFinal
-                            ? "Detailed Report / PDF"
-                            : "Detailed Draft / PDF"}
+                            ? t("Detailed Report / PDF")
+                            : t("Detailed Draft / PDF")}
                       </Button>
 
-                      <Button
+                      <Button style={{ whiteSpace: "normal", height: "auto", minHeight: "2.5rem", overflowWrap: "anywhere", textAlign: "center" }}
                         type="button"
                         variant="outline"
                         onClick={persistEvidenceJson}
@@ -4284,8 +4051,8 @@ export function IncidentInvestigation() {
                       >
                         <Download className="mr-2 h-4 w-4" />
                         {reportMutation === "evidence_json"
-                          ? "Persisting Evidence..."
-                          : "Evidence JSON"}
+                          ? t("Persisting Evidence...")
+                          : t("Evidence JSON")}
                       </Button>
                     </div>
                   </div>
@@ -4295,14 +4062,8 @@ export function IncidentInvestigation() {
                       <div className="flex items-start gap-3">
                         <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-amber-400" />
                         <div>
-                          <p className="text-sm font-semibold text-amber-200">
-                            Organization profile incomplete
-                          </p>
-                          <p className="mt-1 text-xs leading-5 text-zinc-400">
-                            Reports can still be opened and saved as DRAFT, but FalilaX
-                            will not label a closed-incident report FINAL until both
-                            Utility / Organization and System / Facility are configured.
-                          </p>
+                          <p className="text-sm font-semibold text-amber-200"><Localize>{" Organization profile incomplete "}</Localize></p>
+                          <p className="mt-1 text-xs leading-5 text-zinc-400"><Localize>{" Reports can still be opened and saved as DRAFT, but FalilaX will not label a closed-incident report FINAL until both Utility / Organization and System / Facility are configured. "}</Localize></p>
                         </div>
                       </div>
                     </div>
@@ -4313,13 +4074,8 @@ export function IncidentInvestigation() {
                       <div className="flex items-start gap-3">
                         <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0 text-green-400" />
                         <div>
-                          <p className="text-sm font-semibold text-green-200">
-                            Organization profile complete
-                          </p>
-                          <p className="mt-1 text-xs leading-5 text-zinc-400">
-                            This closed incident is eligible to generate FINAL summary
-                            and detailed operational records.
-                          </p>
+                          <p className="text-sm font-semibold text-green-200"><Localize>{" Organization profile complete "}</Localize></p>
+                          <p className="mt-1 text-xs leading-5 text-zinc-400"><Localize>{" This closed incident is eligible to generate FINAL summary and detailed operational records. "}</Localize></p>
                         </div>
                       </div>
                     </div>
@@ -4327,9 +4083,7 @@ export function IncidentInvestigation() {
 
                   <div className="mt-5 grid gap-3 border-t border-cyan-950/70 pt-5 lg:grid-cols-2">
                     <label className="space-y-2">
-                      <span className="text-xs font-medium uppercase tracking-wide text-zinc-500">
-                        Utility / Organization
-                      </span>
+                      <span className="text-xs font-medium uppercase tracking-wide text-zinc-500"><Localize>{" Utility / Organization "}</Localize></span>
                       <Input
                         value={reportProfile.utilityName}
                         onChange={(event) =>
@@ -4338,15 +4092,13 @@ export function IncidentInvestigation() {
                             utilityName: event.target.value,
                           }))
                         }
-                        placeholder="e.g., Montgomery Water Works"
+                        placeholder={t("e.g., Montgomery Water Works")}
                         className="border-zinc-700 bg-zinc-950/80"
                       />
                     </label>
 
                     <label className="space-y-2">
-                      <span className="text-xs font-medium uppercase tracking-wide text-zinc-500">
-                        System / Facility
-                      </span>
+                      <span className="text-xs font-medium uppercase tracking-wide text-zinc-500"><Localize>{" System / Facility "}</Localize></span>
                       <Input
                         value={reportProfile.systemName}
                         onChange={(event) =>
@@ -4355,17 +4107,12 @@ export function IncidentInvestigation() {
                             systemName: event.target.value,
                           }))
                         }
-                        placeholder="e.g., Montgomery Central Water System"
+                        placeholder={t("e.g., Montgomery Central Water System")}
                         className="border-zinc-700 bg-zinc-950/80"
                       />
                     </label>
 
-                    <p className="lg:col-span-2 text-xs leading-5 text-zinc-500">
-                      FalilaX resolves the Utility / Organization and System / Facility from
-                      the incident's persisted infrastructure ownership when available.
-                      You may edit these values for reporting purposes. Report artifacts are
-                      persisted in the FalilaX Report Registry.
-                    </p>
+                    <p className="lg:col-span-2 text-xs leading-5 text-zinc-500"><Localize>{" FalilaX resolves the Utility / Organization and System / Facility from the incident's persisted infrastructure ownership when available. You may edit these values for reporting purposes. Report artifacts are persisted in the FalilaX Report Registry. "}</Localize></p>
 
                     <label className="lg:col-span-2 flex cursor-pointer items-start gap-3 rounded-xl border border-zinc-800 bg-zinc-950/60 p-4">
                       <input
@@ -4378,13 +4125,11 @@ export function IncidentInvestigation() {
                         className="mt-0.5 h-4 w-4 accent-red-500"
                       />
                       <div>
-                        <p className="text-sm font-medium text-zinc-300">
-                          Mark report as Development / Synthetic
-                        </p>
+                        <p className="text-sm font-medium text-zinc-300"><Localize>{" Mark report as Development / Synthetic "}</Localize></p>
                         <p className="mt-1 text-xs text-zinc-500">
                           {reportSyntheticDetected
-                            ? "FalilaX detected an explicit synthetic/development signal in the persisted incident evidence. Reports will be marked NOT FOR REGULATORY SUBMISSION."
-                            : "Use this for demos, acceptance tests, or synthetic incidents. This setting applies only to the currently selected incident in this browser session."}
+                            ? t("FalilaX detected an explicit synthetic/development signal in the persisted incident evidence. Reports will be marked NOT FOR REGULATORY SUBMISSION.")
+                            : t("Use this for demos, acceptance tests, or synthetic incidents. This setting applies only to the currently selected incident in this browser session.")}
                         </p>
                       </div>
                     </label>
@@ -4392,43 +4137,33 @@ export function IncidentInvestigation() {
                     <div className="lg:col-span-2 border-t border-cyan-950/70 pt-5">
                       <div className="flex flex-wrap items-center justify-between gap-3">
                         <div>
-                          <h4 className="text-sm font-semibold text-zinc-200">
-                            Persisted Report History
-                          </h4>
-                          <p className="mt-1 text-xs text-zinc-500">
-                            Immutable report artifacts retained in PostgreSQL for this incident.
-                          </p>
+                          <h4 className="text-sm font-semibold text-zinc-200"><Localize>{" Persisted Report History "}</Localize></h4>
+                          <p className="mt-1 text-xs text-zinc-500"><Localize>{" Immutable report artifacts retained in PostgreSQL for this incident. "}</Localize></p>
                         </div>
                         <div className="flex flex-wrap gap-2 text-[11px]">
                           <span className="rounded-md border border-zinc-700 px-2 py-1 text-zinc-300">
-                            {reportRegistrySummary?.count ?? reportHistory.length} records
-                          </span>
-                          <span className="rounded-md border border-cyan-800 px-2 py-1 text-cyan-300">
-                            Generation {currentPlanGeneration}
+                            {reportRegistrySummary?.count ?? reportHistory.length}<Localize>{" records "}</Localize></span>
+                          <span className="rounded-md border border-cyan-800 px-2 py-1 text-cyan-300"><Localize>{" Generation "}</Localize>{currentPlanGeneration}
                           </span>
                         </div>
                       </div>
 
                       {reportRegistryError && (
                         <div className="mt-3 rounded-lg border border-red-900/70 bg-red-950/20 px-3 py-2 text-xs text-red-300">
-                          {reportRegistryError}
+                          {labelText(reportRegistryError)}
                         </div>
                       )}
 
                       {reportRegistryMessage && (
                         <div className="mt-3 rounded-lg border border-green-900/70 bg-green-950/20 px-3 py-2 text-xs text-green-300">
-                          {reportRegistryMessage}
+                          {labelText(reportRegistryMessage)}
                         </div>
                       )}
 
                       {loadingReportHistory ? (
-                        <div className="mt-3 rounded-xl border border-zinc-800 bg-zinc-950/50 p-4 text-xs text-zinc-500">
-                          Loading retained report history...
-                        </div>
+                        <div className="mt-3 rounded-xl border border-zinc-800 bg-zinc-950/50 p-4 text-xs text-zinc-500"><Localize>{" Loading retained report history... "}</Localize></div>
                       ) : reportHistory.length === 0 ? (
-                        <div className="mt-3 rounded-xl border border-dashed border-zinc-800 bg-zinc-950/40 p-4 text-xs text-zinc-500">
-                          No persisted reports yet. The next Summary, Detailed, or Evidence JSON action will create the first durable registry record.
-                        </div>
+                        <div className="mt-3 rounded-xl border border-dashed border-zinc-800 bg-zinc-950/40 p-4 text-xs text-zinc-500"><Localize>{" No persisted reports yet. The next Summary, Detailed, or Evidence JSON action will create the first durable registry record. "}</Localize></div>
                       ) : (
                         <div className="mt-3 space-y-2">
                           {reportHistory.map((report) => (
@@ -4443,13 +4178,11 @@ export function IncidentInvestigation() {
                               <div className="min-w-0">
                                 <div className="flex flex-wrap items-center gap-2">
                                   <span className="text-sm font-medium text-zinc-200">
-                                    {formatStatus(report.report_type)}
+                                    {labelText(formatStatus(report.report_type))}
                                   </span>
-                                  <span className="rounded-md border border-cyan-800 px-2 py-0.5 text-[10px] text-cyan-300">
-                                    Generation {report.plan_generation}
+                                  <span className="rounded-md border border-cyan-800 px-2 py-0.5 text-[10px] text-cyan-300"><Localize>{" Generation "}</Localize>{report.plan_generation}
                                   </span>
-                                  <span className="rounded-md border border-zinc-700 px-2 py-0.5 text-[10px] text-zinc-300">
-                                    Revision {report.report_revision}
+                                  <span className="rounded-md border border-zinc-700 px-2 py-0.5 text-[10px] text-zinc-300"><Localize>{" Revision "}</Localize>{report.report_revision}
                                   </span>
                                   <span
                                     className={`rounded-md border px-2 py-0.5 text-[10px] ${
@@ -4458,33 +4191,31 @@ export function IncidentInvestigation() {
                                         : "border-amber-800 text-amber-300"
                                     }`}
                                   >
-                                    {formatStatus(report.report_stage)}
+                                    {labelText(formatStatus(report.report_stage))}
                                   </span>
                                   {report.is_superseded && (
-                                    <span className="rounded-md border border-zinc-700 px-2 py-0.5 text-[10px] text-zinc-500">
-                                      Superseded
-                                    </span>
+                                    <span className="rounded-md border border-zinc-700 px-2 py-0.5 text-[10px] text-zinc-500"><Localize>{" Superseded "}</Localize></span>
                                   )}
                                 </div>
                                 <p className="mt-1 truncate font-mono text-[11px] text-zinc-500">
                                   {report.report_number}
                                 </p>
                                 <p className="mt-1 text-[11px] text-zinc-500">
-                                  {formatDate(report.generated_at)} · {report.generated_by}
+                                  {dateText(report.generated_at)} · {report.generated_by}
                                   {report.content_hash
                                     ? ` · SHA-256 ${report.content_hash.slice(0, 12)}…`
                                     : ""}
                                 </p>
                               </div>
-                              <Button
+                              <Button style={{ whiteSpace: "normal", height: "auto", minHeight: "2.5rem", overflowWrap: "anywhere", textAlign: "center" }}
                                 type="button"
                                 variant="outline"
                                 onClick={() => openPersistedReport(report)}
                                 className="shrink-0 border-zinc-700"
                               >
                                 {String(report.content_type).toLowerCase().includes("json")
-                                  ? "Download retained"
-                                  : "Open retained"}
+                                  ? t("Download retained")
+                                  : t("Open retained")}
                               </Button>
                             </div>
                           ))}
@@ -4500,13 +4231,8 @@ export function IncidentInvestigation() {
                       <div className="mb-5 flex items-center gap-3">
                         <UserCheck className="h-5 w-5 text-amber-400" />
                         <div>
-                          <h3 className="font-semibold">
-                            Operator Controls
-                          </h3>
-                          <p className="text-xs text-zinc-500">
-                            Actions are validated by the backend workflow
-                            engine.
-                          </p>
+                          <h3 className="font-semibold"><Localize>{" Operator Controls "}</Localize></h3>
+                          <p className="text-xs text-zinc-500"><Localize>{" Actions are validated by the backend workflow engine. "}</Localize></p>
                         </div>
                       </div>
 
@@ -4517,30 +4243,24 @@ export function IncidentInvestigation() {
                             <div>
                               <p className="text-sm font-medium text-green-200">
                                 {currentStatus === "closed"
-                                  ? "Incident lifecycle closed"
-                                  : "Incident lifecycle cancelled"}
+                                  ? t("Incident lifecycle closed")
+                                  : t("Incident lifecycle cancelled")}
                               </p>
-                              <p className="mt-1 text-xs text-zinc-500">
-                                Primary lifecycle controls are complete. To
-                                resume investigation, provide a reopen reason in
-                                Resolution & Lifecycle.
-                              </p>
+                              <p className="mt-1 text-xs text-zinc-500"><Localize>{" Primary lifecycle controls are complete. To resume investigation, provide a reopen reason in Resolution & Lifecycle. "}</Localize></p>
                             </div>
                           </div>
 
                           {canReopen && (
-                            <Button
+                            <Button style={{ whiteSpace: "normal", height: "auto", minHeight: "2.5rem", overflowWrap: "anywhere", textAlign: "center" }}
                               variant="outline"
                               onClick={scrollToLifecycleControls}
                               className="shrink-0 border-orange-800 text-orange-300"
-                            >
-                              Reopen options
-                            </Button>
+                            ><Localize>{" Reopen options "}</Localize></Button>
                           )}
                         </div>
                       ) : (
-                        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-                          <Button
+                        <div className="grid gap-3 sm:grid-cols-2">
+                          <Button style={{ whiteSpace: "normal", height: "auto", minHeight: "2.5rem", overflowWrap: "anywhere", textAlign: "center" }}
                             onClick={() =>
                               performMutation("acknowledge", {
                                 acknowledged_by:
@@ -4549,11 +4269,9 @@ export function IncidentInvestigation() {
                             }
                             disabled={!canAcknowledge || mutating !== null}
                             className="bg-blue-700 hover:bg-blue-600"
-                          >
-                            Acknowledge
-                          </Button>
+                          ><Localize>{" Acknowledge "}</Localize></Button>
 
-                          <Button
+                          <Button style={{ whiteSpace: "normal", height: "auto", minHeight: "2.5rem", overflowWrap: "anywhere", textAlign: "center" }}
                             onClick={() =>
                               performMutation("investigate", {
                                 actor: operatorName.trim() || DEFAULT_OPERATOR,
@@ -4561,11 +4279,9 @@ export function IncidentInvestigation() {
                             }
                             disabled={!canInvestigate || mutating !== null}
                             className="bg-amber-700 hover:bg-amber-600"
-                          >
-                            Start Investigation
-                          </Button>
+                          ><Localize>{" Start Investigation "}</Localize></Button>
 
-                          <Button
+                          <Button style={{ whiteSpace: "normal", height: "auto", minHeight: "2.5rem", overflowWrap: "anywhere", textAlign: "center" }}
                             onClick={() =>
                               performMutation("verify", {
                                 actor: operatorName.trim() || DEFAULT_OPERATOR,
@@ -4573,11 +4289,9 @@ export function IncidentInvestigation() {
                             }
                             disabled={!canVerify || mutating !== null}
                             className="bg-cyan-700 hover:bg-cyan-600"
-                          >
-                            Start Verification
-                          </Button>
+                          ><Localize>{" Start Verification "}</Localize></Button>
 
-                          <Button
+                          <Button style={{ whiteSpace: "normal", height: "auto", minHeight: "2.5rem", overflowWrap: "anywhere", textAlign: "center" }}
                             onClick={() =>
                               performMutation("close", {
                                 actor: operatorName.trim() || DEFAULT_OPERATOR,
@@ -4585,9 +4299,7 @@ export function IncidentInvestigation() {
                             }
                             disabled={!canClose || mutating !== null}
                             className="bg-green-700 hover:bg-green-600"
-                          >
-                            Close Incident
-                          </Button>
+                          ><Localize>{" Close Incident "}</Localize></Button>
                         </div>
                       )}
 
@@ -4595,7 +4307,7 @@ export function IncidentInvestigation() {
                         <div className="rounded-xl border border-zinc-800 bg-zinc-950 p-4">
                           <div className="mb-3 flex items-center gap-2">
                             <Users className="h-4 w-4 text-zinc-400" />
-                            <p className="text-sm font-medium">Assignment</p>
+                            <p className="text-sm font-medium"><Localize>{"Assignment"}</Localize></p>
                           </div>
 
                           <div className="space-y-3">
@@ -4606,7 +4318,7 @@ export function IncidentInvestigation() {
                               }
                               readOnly={terminalOperatorControls}
                               aria-readonly={terminalOperatorControls}
-                              placeholder="Assigned investigator"
+                              placeholder={t("Assigned investigator")}
                               className={`border-zinc-700 bg-zinc-900 ${
                                 terminalOperatorControls
                                   ? "cursor-default text-zinc-300"
@@ -4620,7 +4332,7 @@ export function IncidentInvestigation() {
                               }
                               readOnly={terminalOperatorControls}
                               aria-readonly={terminalOperatorControls}
-                              placeholder="Assigned team"
+                              placeholder={t("Assigned team")}
                               className={`border-zinc-700 bg-zinc-900 ${
                                 terminalOperatorControls
                                   ? "cursor-default text-zinc-300"
@@ -4629,13 +4341,9 @@ export function IncidentInvestigation() {
                             />
 
                             {terminalOperatorControls ? (
-                              <div className="rounded-lg border border-zinc-800 bg-zinc-900/60 px-3 py-2 text-xs text-zinc-500">
-                                Assignment is read-only while the incident
-                                lifecycle is closed. Reopen the incident before
-                                changing ownership.
-                              </div>
+                              <div className="rounded-lg border border-zinc-800 bg-zinc-900/60 px-3 py-2 text-xs text-zinc-500"><Localize>{" Assignment is read-only while the incident lifecycle is closed. Reopen the incident before changing ownership. "}</Localize></div>
                             ) : (
-                              <Button
+                              <Button style={{ whiteSpace: "normal", height: "auto", minHeight: "2.5rem", overflowWrap: "anywhere", textAlign: "center" }}
                                 variant="outline"
                                 onClick={() =>
                                   performMutation("assign", {
@@ -4653,9 +4361,7 @@ export function IncidentInvestigation() {
                                   mutating !== null
                                 }
                                 className="w-full border-zinc-700"
-                              >
-                                Save Assignment
-                              </Button>
+                              ><Localize>{" Save Assignment "}</Localize></Button>
                             )}
                           </div>
                         </div>
@@ -4663,9 +4369,7 @@ export function IncidentInvestigation() {
                         <div className="rounded-xl border border-zinc-800 bg-zinc-950 p-4">
                           <div className="mb-3 flex items-center gap-2">
                             <FileText className="h-4 w-4 text-zinc-400" />
-                            <p className="text-sm font-medium">
-                              Investigation Finding
-                            </p>
+                            <p className="text-sm font-medium"><Localize>{" Investigation Finding "}</Localize></p>
                           </div>
 
                           <Textarea
@@ -4675,8 +4379,8 @@ export function IncidentInvestigation() {
                             aria-readonly={terminalOperatorControls}
                             placeholder={
                               terminalOperatorControls
-                                ? "Investigation findings are read-only while this incident is closed."
-                                : "Document sampling results, field observations, source-attribution findings, or operator notes..."
+                                ? t("Investigation findings are read-only while this incident is closed.")
+                                : t("Document sampling results, field observations, source-attribution findings, or operator notes...")
                             }
                             className={`min-h-28 border-zinc-700 bg-zinc-900 ${
                               terminalOperatorControls
@@ -4686,12 +4390,9 @@ export function IncidentInvestigation() {
                           />
 
                           {terminalOperatorControls ? (
-                            <div className="mt-3 rounded-lg border border-zinc-800 bg-zinc-900/60 px-3 py-2 text-xs text-zinc-500">
-                              New findings can be added after the incident is
-                              reopened.
-                            </div>
+                            <div className="mt-3 rounded-lg border border-zinc-800 bg-zinc-900/60 px-3 py-2 text-xs text-zinc-500"><Localize>{" New findings can be added after the incident is reopened. "}</Localize></div>
                           ) : (
-                            <Button
+                            <Button style={{ whiteSpace: "normal", height: "auto", minHeight: "2.5rem", overflowWrap: "anywhere", textAlign: "center" }}
                               variant="outline"
                               onClick={() =>
                                 performMutation("notes", {
@@ -4705,9 +4406,7 @@ export function IncidentInvestigation() {
                               }
                               disabled={!noteText.trim() || mutating !== null}
                               className="mt-3 w-full border-zinc-700"
-                            >
-                              Add Finding
-                            </Button>
+                            ><Localize>{" Add Finding "}</Localize></Button>
                           )}
                         </div>
                       </div>
@@ -4718,9 +4417,7 @@ export function IncidentInvestigation() {
                       >
                         <div className="mb-3 flex items-center gap-2">
                           <ShieldCheck className="h-4 w-4 text-zinc-400" />
-                          <p className="text-sm font-medium">
-                            Resolution & Lifecycle
-                          </p>
+                          <p className="text-sm font-medium"><Localize>{" Resolution & Lifecycle "}</Localize></p>
                         </div>
 
                         <Textarea
@@ -4729,7 +4426,7 @@ export function IncidentInvestigation() {
                             setResolutionSummary(event.target.value)
                           }
                           readOnly={terminalOperatorControls}
-                          placeholder="Resolution summary required before resolving an incident."
+                          placeholder={t("Resolution summary required before resolving an incident.")}
                           className={`min-h-24 border-zinc-700 bg-zinc-900 ${
                             terminalOperatorControls
                               ? "cursor-default text-zinc-300"
@@ -4739,7 +4436,7 @@ export function IncidentInvestigation() {
 
                         <div className="mt-3 flex flex-wrap gap-3">
                           {!terminalOperatorControls && (
-                            <Button
+                            <Button style={{ whiteSpace: "normal", height: "auto", minHeight: "2.5rem", overflowWrap: "anywhere", textAlign: "center" }}
                               onClick={() =>
                                 performMutation("resolve", {
                                   actor:
@@ -4753,9 +4450,7 @@ export function IncidentInvestigation() {
                                 mutating !== null
                               }
                               className="bg-green-700 hover:bg-green-600"
-                            >
-                              Resolve Incident
-                            </Button>
+                            ><Localize>{" Resolve Incident "}</Localize></Button>
                           )}
 
                           <Input
@@ -4765,13 +4460,13 @@ export function IncidentInvestigation() {
                             }
                             placeholder={
                               terminalOperatorControls
-                                ? "Reason for reopening"
-                                : "Reason for reopen/cancel"
+                                ? t("Reason for reopening")
+                                : t("Reason for reopen/cancel")
                             }
                             className="min-w-[240px] flex-1 border-zinc-700 bg-zinc-900"
                           />
 
-                          <Button
+                          <Button style={{ whiteSpace: "normal", height: "auto", minHeight: "2.5rem", overflowWrap: "anywhere", textAlign: "center" }}
                             variant="outline"
                             onClick={() =>
                               performMutation("reopen", {
@@ -4786,12 +4481,10 @@ export function IncidentInvestigation() {
                               mutating !== null
                             }
                             className="border-orange-800 text-orange-300"
-                          >
-                            Reopen
-                          </Button>
+                          ><Localize>{" Reopen "}</Localize></Button>
 
                           {!terminalOperatorControls && (
-                            <Button
+                            <Button style={{ whiteSpace: "normal", height: "auto", minHeight: "2.5rem", overflowWrap: "anywhere", textAlign: "center" }}
                               variant="outline"
                               onClick={() =>
                                 performMutation("cancel", {
@@ -4807,25 +4500,18 @@ export function IncidentInvestigation() {
                               }
                               className="border-red-900 text-red-300"
                             >
-                              <XCircle className="mr-2 h-4 w-4" />
-                              Cancel
-                            </Button>
+                              <XCircle className="mr-2 h-4 w-4" /><Localize>{" Cancel "}</Localize></Button>
                           )}
                         </div>
                       </div>
                     </section>
 
                     <section className="rounded-2xl border border-zinc-800 bg-zinc-900/50 p-6">
-                      <h3 className="font-semibold">Investigation Notes</h3>
-                      <p className="mb-4 text-xs text-zinc-500">
-                        Durable operator findings associated with this
-                        workflow.
-                      </p>
+                      <h3 className="font-semibold"><Localize>{"Investigation Notes"}</Localize></h3>
+                      <p className="mb-4 text-xs text-zinc-500"><Localize>{" Durable operator findings associated with this workflow. "}</Localize></p>
 
                       {detail.notes.length === 0 ? (
-                        <div className="rounded-xl border border-dashed border-zinc-800 p-6 text-sm text-zinc-500">
-                          No investigation findings have been recorded yet.
-                        </div>
+                        <div className="rounded-xl border border-dashed border-zinc-800 p-6 text-sm text-zinc-500"><Localize>{" No investigation findings have been recorded yet. "}</Localize></div>
                       ) : (
                         <div className="space-y-3">
                           {[...detail.notes]
@@ -4840,7 +4526,7 @@ export function IncidentInvestigation() {
                                     {note.author}
                                   </p>
                                   <p className="text-xs text-zinc-500">
-                                    {formatDate(note.authored_at)}
+                                    {dateText(note.authored_at)}
                                   </p>
                                 </div>
                                 <p className="whitespace-pre-wrap text-sm text-zinc-300">
@@ -4855,43 +4541,38 @@ export function IncidentInvestigation() {
 
                   <div className="space-y-6">
                     <section className="rounded-2xl border border-zinc-800 bg-zinc-900/50 p-6">
-                      <h3 className="font-semibold">Current Ownership</h3>
+                      <h3 className="font-semibold"><Localize>{"Current Ownership"}</Localize></h3>
 
                       <div className="mt-4 space-y-4 text-sm">
                         <div>
-                          <p className="text-xs text-zinc-500">
-                            Acknowledged by
-                          </p>
+                          <p className="text-xs text-zinc-500"><Localize>{" Acknowledged by "}</Localize></p>
                           <p className="mt-1">
-                            {workflow.acknowledged_by || "Unacknowledged"}
+                            {workflow.acknowledged_by || t("Unacknowledged")}
                           </p>
                         </div>
 
                         <div>
-                          <p className="text-xs text-zinc-500">
-                            Assigned investigator
-                          </p>
+                          <p className="text-xs text-zinc-500"><Localize>{" Assigned investigator "}</Localize></p>
                           <p className="mt-1">
-                            {workflow.assigned_to || "Not assigned"}
+                            {workflow.assigned_to || t("Not assigned")}
                           </p>
                         </div>
 
                         <div>
-                          <p className="text-xs text-zinc-500">Assigned team</p>
+                          <p className="text-xs text-zinc-500"><Localize>{"Assigned team"}</Localize></p>
                           <p className="mt-1">
-                            {workflow.assigned_team || "Not assigned"}
+                            {workflow.assigned_team || t("Not assigned")}
                           </p>
                         </div>
                       </div>
                     </section>
 
                     <section className="rounded-2xl border border-zinc-800 bg-zinc-900/50 p-6">
-                      <div className="mb-4 flex items-center justify-between">
+                      <div className="mb-4 flex flex-wrap items-center justify-between gap-4">
                         <div>
-                          <h3 className="font-semibold">Audit Timeline</h3>
+                          <h3 className="font-semibold"><Localize>{"Audit Timeline"}</Localize></h3>
                           <p className="text-xs text-zinc-500">
-                            {detail.events.length} persisted events
-                          </p>
+                            {detail.events.length}<Localize>{" persisted events "}</Localize></p>
                         </div>
 
                         <Clock3 className="h-5 w-5 text-zinc-500" />
@@ -4912,14 +4593,14 @@ export function IncidentInvestigation() {
                               <div className="absolute left-0 top-1 h-3.5 w-3.5 rounded-full border border-amber-600 bg-zinc-950" />
 
                               <p className="text-sm font-medium">
-                                {formatStatus(event.event_type)}
+                                {labelText(formatStatus(event.event_type))}
                               </p>
                               <p className="mt-1 text-xs text-zinc-500">
-                                {formatDate(event.occurred_at)}
+                                {dateText(event.occurred_at)}
                                 {event.actor ? ` · ${event.actor}` : ""}
                               </p>
                               <p className="mt-1 text-xs text-zinc-400">
-                                {event.message}
+                                <GeneratedText value={event.message} />
                               </p>
                             </div>
                           ))}
@@ -4929,39 +4610,31 @@ export function IncidentInvestigation() {
                     <section className="rounded-2xl border border-zinc-800 bg-zinc-900/50 p-6">
                       <div className="mb-4 flex items-center gap-2">
                         <Siren className="h-5 w-5 text-amber-400" />
-                        <h3 className="font-semibold">Response Deadlines</h3>
+                        <h3 className="font-semibold"><Localize>{"Response Deadlines"}</Localize></h3>
                       </div>
 
                       <div className="space-y-4 text-sm">
                         <div>
-                          <p className="text-xs text-zinc-500">
-                            Acknowledgement due
-                          </p>
+                          <p className="text-xs text-zinc-500"><Localize>{" Acknowledgement due "}</Localize></p>
                           <p className="mt-1">
-                            {formatDate(workflow.acknowledgement_due_at)}
+                            {dateText(workflow.acknowledgement_due_at)}
                           </p>
                         </div>
                         <div>
-                          <p className="text-xs text-zinc-500">
-                            Investigation due
-                          </p>
+                          <p className="text-xs text-zinc-500"><Localize>{" Investigation due "}</Localize></p>
                           <p className="mt-1">
-                            {formatDate(workflow.investigation_due_at)}
+                            {dateText(workflow.investigation_due_at)}
                           </p>
                         </div>
                         <div>
-                          <p className="text-xs text-zinc-500">
-                            Resolution due
-                          </p>
+                          <p className="text-xs text-zinc-500"><Localize>{" Resolution due "}</Localize></p>
                           <p className="mt-1">
-                            {formatDate(workflow.resolution_due_at)}
+                            {dateText(workflow.resolution_due_at)}
                           </p>
                         </div>
 
                         {workflow.has_sla_breach && (
-                          <div className="rounded-lg border border-red-800 bg-red-950/30 p-3 text-red-300">
-                            SLA breach detected.
-                          </div>
+                          <div className="rounded-lg border border-red-800 bg-red-950/30 p-3 text-red-300"><Localize>{" SLA breach detected. "}</Localize></div>
                         )}
                       </div>
                     </section>
@@ -4974,12 +4647,7 @@ export function IncidentInvestigation() {
 
         <div className="mt-8 flex items-start gap-2 border-t border-zinc-900 pt-6 text-xs text-zinc-500">
           <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
-          <p>
-            FalilaX provides operational decision support. Incident workflow
-            actions and source-attribution intelligence do not replace official
-            regulatory testing, emergency response procedures, or public-health
-            directives.
-          </p>
+          <p><Localize>{" FalilaX provides operational decision support. Incident workflow actions and source-attribution intelligence do not replace official regulatory testing, emergency response procedures, or public-health directives. "}</Localize></p>
         </div>
       </main>
     </div>

@@ -1,3 +1,5 @@
+import { Localize } from "@/app/i18n/language";
+import { useOperationalText } from "@/app/i18n/operational-text";
 import { useEffect, useRef, useState } from "react";
 import L from "leaflet";
 import {
@@ -6,6 +8,7 @@ import {
   Marker,
   Popup,
   Polyline,
+  useMap,
 } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 
@@ -62,6 +65,9 @@ const isSimulation = (id, report) =>
   report?.simulation?.simulation === true;
 
 export default function FalilaXIncidentMap() {
+  const { t, labelText, locale, dateText, numberText } = useOperationalText();
+  const confidenceText = (value) => typeof value === "number" && Number.isFinite(value)
+    ? `${numberText(Math.round(value * 10000) / 100, 2)}%` : t("Not Established");
   const reportRef = useRef(null);
   const [openingIncidentId, setOpeningIncidentId] = useState(null);
   const [closingIncidentId, setClosingIncidentId] = useState(null);
@@ -104,7 +110,7 @@ export default function FalilaXIncidentMap() {
 
   const runUnsafeTurbiditySafetyTest = async () => {
     const confirmed = window.confirm(
-      "SIMULATION ONLY: Generate a deterministic unsafe turbidity reading of 10.0 NTU? No email or SMS will be sent."
+      t("SIMULATION ONLY: Generate a deterministic unsafe turbidity reading of 10.0 NTU? No email or SMS will be sent.")
     );
 
     if (!confirmed) return;
@@ -240,13 +246,9 @@ export default function FalilaXIncidentMap() {
           fontSize: "14px",
         }}
       >
-        <h2 style={{ marginTop: 0, color: "#f6f9fc" }}>
-          FalilaX Incident Operations Center
-        </h2>
+        <h2 style={{ marginTop: 0, color: "#f6f9fc" }}><Localize>{" FalilaX Incident Operations Center "}</Localize></h2>
 
-        <p style={{ color: "#cbd5e1", fontSize: "12px" }}>
-          Illustrative demo network. Coordinates and connections are not verified infrastructure or predicted impact.
-        </p>
+        <p style={{ color: "#cbd5e1", fontSize: "12px" }}><Localize>{" Illustrative demo network. Coordinates and connections are not verified infrastructure or predicted impact. "}</Localize></p>
         <button
           onClick={runDigitalTwinSimulation}
           disabled={incidentBusy}
@@ -262,8 +264,8 @@ export default function FalilaXIncidentMap() {
           }}
         >
           {digitalTwinLoading
-            ? "Running & Saving Incident..."
-            : "Run and Save Incident Simulation"}
+            ? t("Running & Saving Incident...")
+            : t("Run and Save Incident Simulation")}
         </button>
 
         <div
@@ -275,9 +277,7 @@ export default function FalilaXIncidentMap() {
             background: "rgba(245, 158, 11, 0.10)",
           }}
         >
-          <div style={{ color: "#fbbf24", fontWeight: "bold" }}>
-            Controlled Safety Simulation
-          </div>
+          <div style={{ color: "#fbbf24", fontWeight: "bold" }}><Localize>{" Controlled Safety Simulation "}</Localize></div>
           <div
             style={{
               marginTop: "5px",
@@ -285,10 +285,7 @@ export default function FalilaXIncidentMap() {
               color: "#d1d5db",
               fontSize: "12px",
             }}
-          >
-            Admin-only deterministic test. External email and SMS delivery
-            remain disabled.
-          </div>
+          ><Localize>{" Admin-only deterministic test. External email and SMS delivery remain disabled. "}</Localize></div>
 
           <button
             onClick={runUnsafeTurbiditySafetyTest}
@@ -305,8 +302,8 @@ export default function FalilaXIncidentMap() {
             }}
           >
             {safetyTestLoading
-              ? "Running Safety Test..."
-              : "Run Unsafe Turbidity Safety Test"}
+              ? t("Running Safety Test...")
+              : t("Run Unsafe Turbidity Safety Test")}
           </button>
 
           {safetyTestResult && (
@@ -319,22 +316,17 @@ export default function FalilaXIncidentMap() {
                 color: "#fde68a",
               }}
             >
-              <strong>SIMULATION ONLY</strong>
-              <div>
-                Generated:{" "}
+              <strong><Localize>{"SIMULATION ONLY"}</Localize></strong>
+              <div><Localize>{" Generated:"}</Localize>{" "}
                 {safetyTestResult.measurements?.[0]?.value ?? "?"}{" "}
                 {safetyTestResult.measurements?.[0]?.unit ?? ""}
               </div>
-              <div>
-                Parameter:{" "}
+              <div><Localize>{" Parameter:"}</Localize>{" "}
                 {safetyTestResult.measurements?.[0]?.parameter_code ?? "?"}
               </div>
-              <div>
-                Location: {safetyTestResult.location_label ?? "?"}
+              <div><Localize>{" Location: "}</Localize>{safetyTestResult.location_label ?? "?"}
               </div>
-              <div style={{ marginTop: "5px", fontSize: "12px" }}>
-                The resulting alert is restricted to the in-app channel.
-              </div>
+              <div style={{ marginTop: "5px", fontSize: "12px" }}><Localize>{" The resulting alert is restricted to the in-app channel. "}</Localize></div>
             </div>
           )}
 
@@ -348,15 +340,15 @@ export default function FalilaXIncidentMap() {
                 color: "#fecaca",
               }}
             >
-              {safetyTestError}
+              {labelText(safetyTestError)}
             </div>
           )}
         </div>
 
         <hr />
 
-        <section ref={reportRef} tabIndex={-1} aria-label="Selected incident report" aria-busy={reportBusy}>
-          {reportBusy && <p role="status">{openingIncidentId ? `Opening report: ${openingIncidentId}` : "Running and saving simulation..."}</p>}
+        <section ref={reportRef} tabIndex={-1} aria-label={t("Selected incident report")} aria-busy={reportBusy}>
+          {reportBusy && <p role="status">{openingIncidentId ? t("Opening report: {id}", { id: openingIncidentId }) : t("Running and saving simulation...")}</p>}
         {savedIncidentId && (
           <div
             style={{
@@ -367,8 +359,7 @@ export default function FalilaXIncidentMap() {
               color: "#0f5132",
               fontWeight: "bold",
             }}
-          >
-            Selected incident: {savedIncidentId}
+          ><Localize>{" Selected incident: "}</Localize>{savedIncidentId}
           </div>
         )}
 
@@ -382,7 +373,7 @@ export default function FalilaXIncidentMap() {
               borderRadius: "6px",
             }}
           >
-            {digitalTwinError}
+            {labelText(digitalTwinError)}
           </div>
         )}
 
@@ -390,53 +381,53 @@ export default function FalilaXIncidentMap() {
           <>
             <hr />
 
-            <h3>Incident Summary</h3>
+            <h3><Localize>{"Incident Summary"}</Localize></h3>
             {simulationSelected && (
               <div style={{ padding: "10px", background: "#312447", color: "#f3e8ff", borderRadius: "6px" }}>
-                <strong>SIMULATION — synthetic measurements</strong>
-                <p>This report does not establish real-world exposure or a contamination source.</p>
+                <strong><Localize>{"SIMULATION — synthetic measurements"}</Localize></strong>
+                <p><Localize>{"This report does not establish real-world exposure or a contamination source."}</Localize></p>
                 {digitalTwinResult.simulation?.external_delivery_authorized === false &&
-                  <div>External delivery: not authorized</div>}
+                  <div><Localize>{"External delivery: not authorized"}</Localize></div>}
                 {digitalTwinResult.simulation?.notification_dispatch_enabled === false &&
-                  <div>Notification dispatch: disabled for this run</div>}
+                  <div><Localize>{"Notification dispatch: disabled for this run"}</Localize></div>}
               </div>
             )}
-            <div><strong>Detection confidence:</strong> {formatConfidence(digitalTwinResult.detection?.confidence ?? digitalTwinResult.decision?.detection_confidence)}</div>
+            <div><strong><Localize>{"Detection confidence:"}</Localize></strong> {confidenceText(digitalTwinResult.detection?.confidence ?? digitalTwinResult.decision?.detection_confidence)}</div>
             <div>
-              <strong>Event:</strong> {digitalTwinResult.summary?.event}
+              <strong><Localize>{"Event:"}</Localize></strong> {digitalTwinResult.summary?.event}
             </div>
             <div>
-              <strong>Severity:</strong> {digitalTwinResult.summary?.severity}
+              <strong><Localize>{"Severity:"}</Localize></strong> {labelText(digitalTwinResult.summary?.severity)}
             </div>
             <div>
-              <strong>Status:</strong> {digitalTwinResult.summary?.status}
+              <strong><Localize>{"Status:"}</Localize></strong> {labelText(digitalTwinResult.summary?.status)}
             </div>
             <div>
-              <strong>Node:</strong> {digitalTwinResult.summary?.node_id}
-            </div>
-
-            <hr />
-
-            <h3>Measurements</h3>
-            <div>
-              <strong>Chlorine:</strong>{" "}
-              {digitalTwinResult.measurements?.chlorine_mg_l ?? "Not recorded"} mg/L
-            </div>
-            <div>
-              <strong>Pressure:</strong>{" "}
-              {digitalTwinResult.measurements?.pressure_psi ?? "Not recorded"} psi
+              <strong><Localize>{"Node:"}</Localize></strong> {digitalTwinResult.summary?.node_id}
             </div>
 
             <hr />
 
-            <h3>Root Cause Intelligence</h3>
+            <h3><Localize>{"Measurements"}</Localize></h3>
             <div>
-              <strong>Most Likely Cause:</strong>{" "}
+              <strong><Localize>{"Chlorine:"}</Localize></strong>{" "}
+              {digitalTwinResult.measurements?.chlorine_mg_l ?? t("Not recorded")} mg/L
+            </div>
+            <div>
+              <strong><Localize>{"Pressure:"}</Localize></strong>{" "}
+              {digitalTwinResult.measurements?.pressure_psi ?? t("Not recorded")} psi
+            </div>
+
+            <hr />
+
+            <h3><Localize>{"Root Cause Intelligence"}</Localize></h3>
+            <div>
+              <strong><Localize>{"Most Likely Cause:"}</Localize></strong>{" "}
               {rootCause?.most_likely_cause}
             </div>
             <div>
-              <strong>Source-attribution confidence:</strong>{" "}
-              {formatConfidence(rootCause?.confidence)}
+              <strong><Localize>{"Source-attribution confidence:"}</Localize></strong>{" "}
+              {confidenceText(rootCause?.confidence)}
             </div>
             <p>{rootCause?.explanation}</p>
 
@@ -453,8 +444,7 @@ export default function FalilaXIncidentMap() {
                 }}
               >
                 <strong>{hypothesis.cause}</strong>
-                <br />
-                Probability: {formatConfidence(hypothesis.probability)}
+                <br /><Localize>{" Probability: "}</Localize>{confidenceText(hypothesis.probability)}
                 <ul style={{ marginTop: "6px" }}>
                   {hypothesis.evidence?.map((item, i) => (
                     <li key={i}>{item}</li>
@@ -465,9 +455,9 @@ export default function FalilaXIncidentMap() {
 
             <hr />
 
-            <h3>Impact</h3>
+            <h3><Localize>{"Impact"}</Localize></h3>
             <div>
-              <strong>Affected Assets:</strong> {impactNotEvaluated ? "Not evaluated" : affectedAssetsCount}
+              <strong><Localize>{"Affected Assets:"}</Localize></strong> {impactNotEvaluated ? t("Not evaluated") : affectedAssetsCount}
             </div>
 
             {isolation && (
@@ -480,25 +470,20 @@ export default function FalilaXIncidentMap() {
                   borderRadius: "6px",
                 }}
               >
-                <strong>Recommended Isolation</strong>
-                <br />
-                Close pipe: {String(isolation.closed_edge)}
-                <br />
-                From: {isolation.from_node}
-                <br />
-                To: {isolation.to_node}
-                <br />
-                Critical Protected: {isolation.critical_protected_count}
-                <br />
-                Service Disruption: {isolation.service_disruption_count}
+                <strong><Localize>{"Recommended Isolation"}</Localize></strong>
+                <br /><Localize>{" Close pipe: "}</Localize>{String(isolation.closed_edge)}
+                <br /><Localize>{" From: "}</Localize>{isolation.from_node}
+                <br /><Localize>{" To: "}</Localize>{isolation.to_node}
+                <br /><Localize>{" Critical Protected: "}</Localize>{isolation.critical_protected_count}
+                <br /><Localize>{" Service Disruption: "}</Localize>{isolation.service_disruption_count}
               </div>
             )}
 
             <hr />
 
-            <h3>Response Recommendations</h3>
-            {simulationSelected && <p>Simulation guidance for review; no operational action has been executed.</p>}
-            {recommendations.length === 0 && <p>No recommendations recorded.</p>}
+            <h3><Localize>{"Response Recommendations"}</Localize></h3>
+            {simulationSelected && <p><Localize>{"Simulation guidance for review; no operational action has been executed."}</Localize></p>}
+            {recommendations.length === 0 && <p><Localize>{"No recommendations recorded."}</Localize></p>}
             {recommendations.map((rec, idx) => (
               <div
                 key={idx}
@@ -512,22 +497,21 @@ export default function FalilaXIncidentMap() {
                   color: "#172b3a",
                 }}
               >
-                <strong>{rec.priority}</strong>
+                <strong>{labelText(rec.priority)}</strong>
                 <br />
                 {rec.action}
                 <br />
-                {rec.source === "event_response_rule" && <small>Source: event response rule</small>}
+                {rec.source === "event_response_rule" && <small><Localize>{"Source: event response rule"}</Localize></small>}
                 <small>{rec.reason}</small>
                 <br />
                 {typeof rec.confidence === "number" && (
-                  <small>
-                    Confidence: {formatConfidence(rec.confidence)}
+                  <small><Localize>{" Confidence: "}</Localize>{confidenceText(rec.confidence)}
                   </small>
                 )}
                 {rec.expected_outcome && (
                   <>
                     <br />
-                    <small>Expected outcome: {rec.expected_outcome}</small>
+                    <small><Localize>{"Expected outcome: "}</Localize>{rec.expected_outcome}</small>
                   </>
                 )}
               </div>
@@ -535,9 +519,9 @@ export default function FalilaXIncidentMap() {
 
             <hr />
 
-            <h3>Prediction Timeline</h3>
-            {predictionNotEvaluated ? <p>Hydraulic arrival times were not evaluated.</p>
-              : predictionTimeline.length === 0 && <p>No prediction timeline recorded.</p>}
+            <h3><Localize>{"Prediction Timeline"}</Localize></h3>
+            {predictionNotEvaluated ? <p><Localize>{"Hydraulic arrival times were not evaluated."}</Localize></p>
+              : predictionTimeline.length === 0 && <p><Localize>{"No prediction timeline recorded."}</Localize></p>}
             {predictionTimeline.map((item) => (
               <div
                 key={`${item.rank}-${item.asset}`}
@@ -558,20 +542,17 @@ export default function FalilaXIncidentMap() {
                 <strong>
                   #{item.rank} {item.asset}
                 </strong>
-                <br />
-                Risk: {item.risk}
-                <br />
-                ETA: {item.eta_minutes} min
-                <br />
-                Action: {item.recommended_action}
+                <br /><Localize>{" Risk: "}</Localize>{labelText(item.risk)}
+                <br /><Localize>{" ETA: "}</Localize>{item.eta_minutes} min
+                <br /><Localize>{" Action: "}</Localize>{item.recommended_action}
               </div>
             ))}
 
             <hr />
 
-            <h3>Affected Assets</h3>
-            {impactNotEvaluated ? <p>Network impact was not evaluated. A zero count does not establish that no assets are affected.</p>
-              : affectedAssets.length === 0 && <p>No asset details recorded.</p>}
+            <h3><Localize>{"Affected Assets"}</Localize></h3>
+            {impactNotEvaluated ? <p><Localize>{"Network impact was not evaluated. A zero count does not establish that no assets are affected."}</Localize></p>
+              : affectedAssets.length === 0 && <p><Localize>{"No asset details recorded."}</Localize></p>}
             {!impactNotEvaluated && affectedAssets.map((asset, index) => (
               <div
                 key={`${asset.node_id ?? asset.name}-${index}`}
@@ -590,22 +571,19 @@ export default function FalilaXIncidentMap() {
                 }}
               >
                 <strong>{asset.name}</strong>
-                <br />
-                Risk: {asset.risk}
-                <br />
-                ETA: {asset.arrival_time_minutes} min
-                <br />
-                Distance: {asset.network_distance}
+                <br /><Localize>{" Risk: "}</Localize>{labelText(asset.risk)}
+                <br /><Localize>{" ETA: "}</Localize>{asset.arrival_time_minutes} min
+                <br /><Localize>{" Distance: "}</Localize>{asset.network_distance}
               </div>
             ))}
             {digitalTwinResult.limitations?.length > 0 && (
-              <><h3>Report Limitations</h3><ul>{digitalTwinResult.limitations.map((item, index) => <li key={index}>{item}</li>)}</ul></>
+              <><h3><Localize>{"Report Limitations"}</Localize></h3><ul>{digitalTwinResult.limitations.map((item, index) => <li key={index}>{item}</li>)}</ul></>
             )}
           </>
         )}
         </section>
 
-        <h3>Saved Incident History</h3>
+        <h3><Localize>{"Saved Incident History"}</Localize></h3>
 
         <button
           onClick={loadIncidents}
@@ -621,7 +599,7 @@ export default function FalilaXIncidentMap() {
             cursor: incidentHistoryLoading ? "not-allowed" : "pointer",
           }}
         >
-          {incidentHistoryLoading ? "Loading incidents..." : "Refresh Saved Incidents"}
+          {incidentHistoryLoading ? t("Loading incidents...") : t("Refresh Saved Incidents")}
         </button>
 
         {incidentHistoryError && (
@@ -634,13 +612,13 @@ export default function FalilaXIncidentMap() {
               borderRadius: "6px",
             }}
           >
-            {incidentHistoryError}
+            {labelText(incidentHistoryError)}
           </div>
         )}
 
         <div style={{ marginTop: "10px" }}>
           {incidents.length === 0 && (
-            <div style={{ color: "#6b7280" }}>No saved incidents yet.</div>
+            <div style={{ color: "#6b7280" }}><Localize>{"No saved incidents yet."}</Localize></div>
           )}
 
           {incidents.slice(0, 8).map((incident) => (
@@ -656,21 +634,16 @@ export default function FalilaXIncidentMap() {
                   color: "#172b3a",
               }}
             >
-              {isSimulation(incident.incident_id) && <div><strong>SIMULATION</strong></div>}
+              {isSimulation(incident.incident_id) && <div><strong><Localize>{"SIMULATION"}</Localize></strong></div>}
               <strong>{incident.incident_id}</strong>
+              <br /><Localize>{" Event: "}</Localize>{incident.event_type}
+              <br /><Localize>{" Severity: "}</Localize>{labelText(incident.severity)}
+              <br /><Localize>{" Status: "}</Localize>{labelText(incident.status)}
+              <br /><Localize>{" Cause: "}</Localize>{incident.most_likely_cause || "N/A"}
               <br />
-              Event: {incident.event_type}
-              <br />
-              Severity: {incident.severity}
-              <br />
-              Status: {incident.status}
-              <br />
-              Cause: {incident.most_likely_cause || "N/A"}
-              <br />
-              <small>
-                Created:{" "}
+              <small><Localize>{" Created:"}</Localize>{" "}
                 {incident.created_at
-                  ? new Date(incident.created_at).toLocaleString()
+                  ? dateText(incident.created_at)
                   : "N/A"}
               </small>
 
@@ -689,7 +662,7 @@ export default function FalilaXIncidentMap() {
                     cursor: "pointer",
                   }}
                 >
-                  {openingIncidentId === incident.incident_id ? "Opening report..." : "Open report"}
+                  {openingIncidentId === incident.incident_id ? t("Opening report...") : t("Open report")}
                 </button>
 
                 {String(incident.status).toLowerCase() !== "closed" && (
@@ -707,7 +680,7 @@ export default function FalilaXIncidentMap() {
                       cursor: "pointer",
                     }}
                   >
-                    {closingIncidentId === incident.incident_id ? "Closing..." : "Close"}
+                    {closingIncidentId === incident.incident_id ? t("Closing...") : t("Close")}
                   </button>
                 )}
               </div>
@@ -716,9 +689,7 @@ export default function FalilaXIncidentMap() {
         </div>
 
         {!digitalTwinResult && (
-          <p style={{ marginTop: "14px" }}>
-            Open a saved report, or run a separate low-chlorine simulation at Node 1.
-          </p>
+          <p style={{ marginTop: "14px" }}><Localize>{" Open a saved report, or run a separate low-chlorine simulation at Node 1. "}</Localize></p>
         )}
 
 
@@ -728,7 +699,9 @@ export default function FalilaXIncidentMap() {
         center={incidentCenter}
         zoom={13}
         style={{ height: "100%", width: "100%" }}
+        zoomControl={false}
       >
+        <LocalizedZoomControl locale={locale} />
         <TileLayer
           attribution="OpenStreetMap"
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
@@ -749,12 +722,21 @@ export default function FalilaXIncidentMap() {
         {Object.entries(nodeCoordinates).map(([nodeId, position]) => (
           <Marker key={nodeId} position={position} icon={defaultIcon}>
             <Popup>
-              <strong>Illustrative Network Node {nodeId}</strong>
-              <br />Demo coordinates; not verified asset geography.
-            </Popup>
+              <strong><Localize>{"Illustrative Network Node "}</Localize>{nodeId}</strong>
+              <br /><Localize>{"Demo coordinates; not verified asset geography. "}</Localize></Popup>
           </Marker>
         ))}
       </MapContainer>
     </div>
   );
+}
+
+function LocalizedZoomControl({ locale }) {
+  const map = useMap();
+  useEffect(() => {
+    const labels = locale === 'es' ? ['Acercar', 'Alejar'] : locale === 'fr' ? ['Zoom avant', 'Zoom arrière'] : ['Zoom in', 'Zoom out'];
+    const control = L.control.zoom({ zoomInTitle: labels[0], zoomOutTitle: labels[1] }).addTo(map);
+    return () => { control.remove(); };
+  }, [map, locale]);
+  return null;
 }
