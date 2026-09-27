@@ -1,3 +1,4 @@
+import { Localize, useLanguage, translate } from "@/app/i18n/language";
 import { useNavigate } from "react-router-dom";
 import {
   Activity,
@@ -76,16 +77,17 @@ function SignalNode({
             active ? "bg-cyan-300 shadow-[0_0_12px_#67e8f9]" : "bg-emerald-400"
           }`}
         />
-        {label}
+        <Localize>{label}</Localize>
       </div>
       <p className="mt-1 text-[10px] uppercase tracking-[0.18em] text-slate-500">
-        {status}
+        <Localize>{status}</Localize>
       </p>
     </div>
   );
 }
 
 export function LandingPage() {
+  const { locale } = useLanguage();
   const navigate = useNavigate();
   const enterPlatform = () => navigate("/dashboard/utility");
 
@@ -103,24 +105,22 @@ export function LandingPage() {
             type="button"
             onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
             className="rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300"
-            aria-label="FalilaX home"
+            aria-label={translate("FalilaX home", locale)}
           >
             <img src={logoImage} alt="FalilaX" className="h-16 w-auto object-contain" />
           </button>
 
           <nav className="hidden items-center gap-8 text-sm text-slate-400 md:flex">
-            <a href="#intelligence" className="transition hover:text-white">Intelligence</a>
-            <a href="#capabilities" className="transition hover:text-white">Capabilities</a>
-            <a href="#operations" className="transition hover:text-white">Operations</a>
+            <a href="#intelligence" className="transition hover:text-white"><Localize>{"Intelligence"}</Localize></a>
+            <a href="#capabilities" className="transition hover:text-white"><Localize>{"Capabilities"}</Localize></a>
+            <a href="#operations" className="transition hover:text-white"><Localize>{"Operations"}</Localize></a>
           </nav>
 
           <button
             type="button"
             onClick={enterPlatform}
             className="group inline-flex items-center gap-2 rounded-xl border border-cyan-300/20 bg-white/[0.045] px-4 py-2.5 text-sm font-semibold text-white transition hover:border-cyan-300/40 hover:bg-cyan-300/10"
-          >
-            Enter platform
-            <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
+          ><Localize>{" Enter platform "}</Localize><ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
           </button>
         </div>
       </header>
@@ -132,43 +132,31 @@ export function LandingPage() {
         >
           <div className="max-w-2xl">
             <div className="mb-7 inline-flex items-center gap-2 rounded-full border border-cyan-300/20 bg-cyan-300/[0.07] px-4 py-2 text-xs font-bold uppercase tracking-[0.2em] text-cyan-200">
-              <Radio className="h-3.5 w-3.5 animate-pulse" />
-              Live predictive water intelligence
-            </div>
+              <Radio className="h-3.5 w-3.5 animate-pulse" /><Localize>{" Live predictive water intelligence "}</Localize></div>
 
-            <h1 className="text-balance text-5xl font-semibold leading-[0.98] tracking-[-0.055em] text-white sm:text-6xl lg:text-[5.35rem]">
-              See risk sooner.
-              <span className="mt-2 block bg-gradient-to-r from-cyan-200 via-sky-400 to-blue-500 bg-clip-text text-transparent">
-                Know what happens next.
-              </span>
+            <h1 className="text-balance text-5xl font-semibold leading-[0.98] tracking-[-0.055em] text-white sm:text-6xl lg:text-[5.35rem]"><Localize>{" See risk sooner. "}</Localize><span className="mt-2 block bg-gradient-to-r from-cyan-200 via-sky-400 to-blue-500 bg-clip-text text-transparent"><Localize>{" Know what happens next. "}</Localize></span>
             </h1>
 
-            <p className="mt-8 max-w-xl text-lg leading-8 text-slate-300 sm:text-xl">
-              FalilaX turns fragmented water, infrastructure, and public-health signals into one clear operating picture—so teams can detect, trace, and respond with confidence.
-            </p>
+            <p className="mt-8 max-w-xl text-lg leading-8 text-slate-300 sm:text-xl"><Localize>{" FalilaX turns fragmented water, infrastructure, and public-health signals into one clear operating picture—so teams can detect, trace, and respond with confidence. "}</Localize></p>
 
             <div className="mt-10 flex flex-col gap-3 sm:flex-row">
               <button
                 type="button"
                 onClick={enterPlatform}
                 className="group inline-flex items-center justify-center gap-3 rounded-xl bg-gradient-to-r from-[#2187f3] to-[#20bce5] px-6 py-4 text-base font-bold text-white shadow-[0_18px_55px_rgba(37,153,238,0.28)] transition hover:-translate-y-0.5 hover:shadow-[0_22px_65px_rgba(37,153,238,0.38)]"
-              >
-                Open intelligence platform
-                <ArrowRight className="h-5 w-5 transition-transform group-hover:translate-x-1" />
+              ><Localize>{" Open intelligence platform "}</Localize><ArrowRight className="h-5 w-5 transition-transform group-hover:translate-x-1" />
               </button>
 
               <a
                 href="#capabilities"
                 className="inline-flex items-center justify-center gap-2 rounded-xl border border-white/10 bg-white/[0.035] px-6 py-4 font-semibold text-slate-200 transition hover:border-cyan-300/25 hover:bg-white/[0.065]"
-              >
-                See what FalilaX does
-              </a>
+              ><Localize>{" See what FalilaX does "}</Localize></a>
             </div>
 
             <div className="mt-10 flex flex-wrap gap-x-7 gap-y-3 text-sm text-slate-400">
-              <span className="flex items-center gap-2"><CheckCircle2 className="h-4 w-4 text-emerald-400" /> Continuous monitoring</span>
-              <span className="flex items-center gap-2"><CheckCircle2 className="h-4 w-4 text-emerald-400" /> Source attribution</span>
-              <span className="flex items-center gap-2"><CheckCircle2 className="h-4 w-4 text-emerald-400" /> Coordinated response</span>
+              <span className="flex items-center gap-2"><CheckCircle2 className="h-4 w-4 text-emerald-400" /><Localize>{" Continuous monitoring"}</Localize></span>
+              <span className="flex items-center gap-2"><CheckCircle2 className="h-4 w-4 text-emerald-400" /><Localize>{" Source attribution"}</Localize></span>
+              <span className="flex items-center gap-2"><CheckCircle2 className="h-4 w-4 text-emerald-400" /><Localize>{" Coordinated response"}</Localize></span>
             </div>
           </div>
 
@@ -183,17 +171,17 @@ export function LandingPage() {
                     className="h-10 w-auto rounded-lg object-contain"
                   />
                   <div>
-                    <p className="text-sm font-bold text-white">FalilaX Network Intelligence</p>
-                    <p className="mt-0.5 text-xs text-slate-500">City water system · Live operating picture</p>
+                    <p className="text-sm font-bold text-white"><Localize>{"FalilaX Network Intelligence"}</Localize></p>
+                    <p className="mt-0.5 text-xs text-slate-500"><Localize>{"City water system · Live operating picture"}</Localize></p>
                   </div>
                 </div>
                 <span className="hidden items-center gap-2 rounded-full border border-emerald-400/20 bg-emerald-400/[0.07] px-3 py-1.5 text-[10px] font-bold uppercase tracking-[0.16em] text-emerald-300 sm:flex">
-                  <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 shadow-[0_0_10px_#34d399]" /> Live network
-                </span>
+                  <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 shadow-[0_0_10px_#34d399]" /><Localize>{" Live network "}</Localize></span>
               </div>
 
               <div className="grid lg:grid-cols-[1fr_210px]">
-                <div className="relative min-h-[460px] overflow-hidden border-cyan-300/10 bg-[#04131d] lg:border-r">
+                <div className="flex flex-col overflow-hidden border-cyan-300/10 bg-[#04131d] lg:border-r">
+                  <div className="relative min-h-[460px] flex-1 overflow-hidden">
                   <div className="absolute inset-0 bg-[radial-gradient(circle_at_45%_45%,rgba(14,165,233,0.12),transparent_45%)]" />
                   <svg className="absolute inset-0 h-full w-full opacity-80" viewBox="0 0 560 460" fill="none" aria-hidden="true">
                     <path d="M-20 108C76 75 126 92 191 135C270 187 337 154 409 112C460 82 510 75 590 45" stroke="#12364c" strokeWidth="12" />
@@ -208,36 +196,36 @@ export function LandingPage() {
                   <SignalNode className="right-[6%] top-[28%]" label="Hospital District" status="Protected" />
                   <SignalNode className="bottom-[12%] right-[10%]" label="East School Zone" status="Monitoring" />
 
-                  <div className="absolute bottom-5 left-5 right-5 flex items-center gap-3 rounded-2xl border border-cyan-300/15 bg-[#061827]/90 p-4 backdrop-blur-xl">
+                  </div>
+                  <div className="m-5 flex flex-wrap items-center gap-3 rounded-2xl border border-cyan-300/15 bg-[#061827]/90 p-4 backdrop-blur-xl">
                     <div className="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-cyan-300/10">
                       <Sparkles className="h-4 w-4 text-cyan-300" />
                     </div>
-                    <p className="text-xs leading-5 text-slate-300">Signals correlate with an upstream change near Junction J-17.</p>
-                    <span className="ml-auto whitespace-nowrap text-xs font-bold text-emerald-300">87% confidence</span>
+                    <p className="text-xs leading-5 text-slate-300"><Localize>{"Signals correlate with an upstream change near Junction J-17."}</Localize></p>
+                    <span className="ml-auto whitespace-nowrap text-xs font-bold text-emerald-300"><Localize>{"87% confidence"}</Localize></span>
                   </div>
                 </div>
 
                 <aside className="space-y-5 p-5">
                   <div>
-                    <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-cyan-300">Current assessment</p>
-                    <h2 className="mt-2 text-lg font-bold text-white">Network stable</h2>
-                    <p className="mt-2 text-xs leading-5 text-slate-400">No active public-health incident. One signal under observation.</p>
+                    <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-cyan-300"><Localize>{"Current assessment"}</Localize></p>
+                    <h2 className="mt-2 text-lg font-bold text-white"><Localize>{"Network stable"}</Localize></h2>
+                    <p className="mt-2 text-xs leading-5 text-slate-400"><Localize>{"No active public-health incident. One signal under observation."}</Localize></p>
                   </div>
 
                   <div className="space-y-3 border-y border-white/[0.07] py-5">
                     {intelligenceSignals.map((signal) => (
                       <div key={signal.label} className="flex items-center justify-between gap-3">
-                        <span className="text-xs text-slate-500">{signal.label}</span>
-                        <span className={`text-xs font-bold ${signal.tone}`}>{signal.value}</span>
+                        <span className="text-xs text-slate-500"><Localize>{signal.label}</Localize></span>
+                        <span className={`text-xs font-bold ${signal.tone}`}><Localize>{signal.value}</Localize></span>
                       </div>
                     ))}
                   </div>
 
                   <div className="rounded-2xl border border-blue-400/15 bg-blue-400/[0.06] p-4">
                     <div className="flex items-center gap-2 text-xs font-bold text-blue-200">
-                      <Activity className="h-4 w-4" /> Recommended action
-                    </div>
-                    <p className="mt-3 text-xs leading-5 text-slate-300">Continue monitoring and verify the upstream residual trend.</p>
+                      <Activity className="h-4 w-4" /><Localize>{" Recommended action "}</Localize></div>
+                    <p className="mt-3 text-xs leading-5 text-slate-300"><Localize>{"Continue monitoring and verify the upstream residual trend."}</Localize></p>
                   </div>
                 </aside>
               </div>
@@ -248,9 +236,9 @@ export function LandingPage() {
         <section id="capabilities" className="border-y border-cyan-300/10 bg-[#061421]/65">
           <div className="mx-auto max-w-[1500px] px-6 py-24 lg:px-10">
             <div className="max-w-3xl">
-              <p className="text-xs font-bold uppercase tracking-[0.22em] text-cyan-300">One intelligence platform</p>
-              <h2 className="mt-5 text-4xl font-semibold tracking-[-0.04em] text-white sm:text-5xl">From detection to decision.</h2>
-              <p className="mt-5 text-lg leading-8 text-slate-400">Everything needed to understand a water event and coordinate the next response—without unnecessary layers.</p>
+              <p className="text-xs font-bold uppercase tracking-[0.22em] text-cyan-300"><Localize>{"One intelligence platform"}</Localize></p>
+              <h2 className="mt-5 text-4xl font-semibold tracking-[-0.04em] text-white sm:text-5xl"><Localize>{"From detection to decision."}</Localize></h2>
+              <p className="mt-5 text-lg leading-8 text-slate-400"><Localize>{"Everything needed to understand a water event and coordinate the next response—without unnecessary layers."}</Localize></p>
             </div>
 
             <div className="mt-14 grid gap-5 lg:grid-cols-3">
@@ -262,10 +250,10 @@ export function LandingPage() {
                       <div className="grid h-12 w-12 place-items-center rounded-2xl border border-white/10 bg-[#071c2d]">
                         <Icon className={`h-5 w-5 ${iconColor}`} />
                       </div>
-                      <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-600">{eyebrow}</span>
+                      <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-600"><Localize>{eyebrow}</Localize></span>
                     </div>
-                    <h3 className="mt-8 text-2xl font-bold text-white">{title}</h3>
-                    <p className="mt-4 leading-7 text-slate-400">{description}</p>
+                    <h3 className="mt-8 text-2xl font-bold text-white"><Localize>{title}</Localize></h3>
+                    <p className="mt-4 leading-7 text-slate-400"><Localize>{description}</Localize></p>
                   </div>
                 </article>
               ))}
@@ -279,18 +267,16 @@ export function LandingPage() {
             <div className="relative max-w-2xl">
               <div className="flex items-center gap-3 text-cyan-300">
                 <Droplets className="h-5 w-5" />
-                <span className="text-xs font-bold uppercase tracking-[0.2em]">FalilaX operations</span>
+                <span className="text-xs font-bold uppercase tracking-[0.2em]"><Localize>{"FalilaX operations"}</Localize></span>
               </div>
-              <h2 className="mt-5 text-4xl font-semibold tracking-[-0.04em] text-white">A clearer view of water risk starts here.</h2>
-              <p className="mt-5 text-lg leading-8 text-slate-400">Enter the live demonstration workspace directly. No context selection, no duplicate paths.</p>
+              <h2 className="mt-5 text-4xl font-semibold tracking-[-0.04em] text-white"><Localize>{"A clearer view of water risk starts here."}</Localize></h2>
+              <p className="mt-5 text-lg leading-8 text-slate-400"><Localize>{"Enter the live demonstration workspace directly. No context selection, no duplicate paths."}</Localize></p>
             </div>
             <button
               type="button"
               onClick={enterPlatform}
               className="group relative mt-9 inline-flex shrink-0 items-center gap-3 rounded-xl bg-white px-6 py-4 font-bold text-[#061321] transition hover:-translate-y-0.5 hover:bg-cyan-50 lg:ml-10 lg:mt-0"
-            >
-              Launch dashboard
-              <ArrowRight className="h-5 w-5 transition-transform group-hover:translate-x-1" />
+            ><Localize>{" Launch dashboard "}</Localize><ArrowRight className="h-5 w-5 transition-transform group-hover:translate-x-1" />
             </button>
           </div>
         </section>
@@ -298,8 +284,8 @@ export function LandingPage() {
 
       <footer className="relative z-10 border-t border-cyan-300/10">
         <div className="mx-auto flex max-w-[1500px] flex-col gap-5 px-6 py-8 text-sm text-slate-500 sm:flex-row sm:items-center sm:justify-between lg:px-10">
-          <div className="flex items-center gap-2"><MapPinned className="h-4 w-4 text-cyan-400" /> Source-to-tap water intelligence</div>
-          <p>© 2026 FalilaX™ · Demonstration environment</p>
+          <div className="flex items-center gap-2"><MapPinned className="h-4 w-4 text-cyan-400" /><Localize>{" Source-to-tap water intelligence"}</Localize></div>
+          <p><Localize>{"© 2026 FalilaX™ · Demonstration environment"}</Localize></p>
         </div>
       </footer>
     </div>

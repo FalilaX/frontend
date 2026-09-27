@@ -1,3 +1,4 @@
+import { Localize, useLanguage } from "@/app/i18n/language";
 import { createContext, useContext, useEffect, useRef, useState } from "react";
 import type { ReactNode } from "react";
 import { Link } from "react-router-dom";
@@ -13,6 +14,7 @@ export function useParticipantProfile(): ParticipantProfile {
 }
 
 export function ParticipantRoute({ children }: { children: ReactNode }) {
+  const { adopt } = useLanguage();
   const [profile, setProfile] = useState<ParticipantProfile | null>(null);
   const [message, setMessage] = useState("");
   const [ended, setEnded] = useState(false);
@@ -49,6 +51,7 @@ export function ParticipantRoute({ children }: { children: ReactNode }) {
           } else {
             verifiedToken.current = session.accessToken;
             setProfile(verified);
+            adopt(verified.language);
           }
         }
       } catch (error) {
@@ -75,18 +78,18 @@ export function ParticipantRoute({ children }: { children: ReactNode }) {
       clearInterval(timer);
       window.removeEventListener("focus", refresh);
     };
-  }, [attempt]);
+  }, [attempt, adopt]);
 
   if (profile) return <ProfileContext.Provider value={profile}>{children}</ProfileContext.Provider>;
   return (
     <main className="fx-app-shell flex min-h-screen items-center justify-center px-6 text-slate-100">
       <section className="w-full max-w-lg rounded-3xl border border-cyan-300/15 bg-[#071b2a] p-8">
-        <p className="text-xs uppercase tracking-[0.22em] text-cyan-300">FalilaX participant workspace</p>
-        <h1 className="mt-4 text-2xl font-semibold">{ended ? "Session ended" : message ? "Connection unavailable" : "Checking your secure connection"}</h1>
-        <p role="status" className="mt-4 text-sm leading-6 text-slate-300">{message || "Please wait while we verify access to your profile."}</p>
-        {message && !ended && <button type="button" onClick={() => setAttempt(value => value + 1)} className="mt-6 rounded-xl bg-cyan-300 px-5 py-3 font-medium text-slate-950">Try again</button>}
-        {ended && <Link className="mt-6 inline-block rounded-xl bg-cyan-300 px-5 py-3 font-medium text-slate-950" to="/participant/sign-in">Sign in to your workspace</Link>}
-        {message && <Link className="mt-6 block text-sm text-cyan-300 underline" to="/">Return to FalilaX</Link>}
+        <p className="text-xs uppercase tracking-[0.22em] text-cyan-300"><Localize>{"FalilaX participant workspace"}</Localize></p>
+        <h1 className="mt-4 text-2xl font-semibold"><Localize>{ended ? "Session ended" : message ? "Connection unavailable" : "Checking your secure connection"}</Localize></h1>
+        <p role="status" className="mt-4 text-sm leading-6 text-slate-300"><Localize>{message || "Please wait while we verify access to your profile."}</Localize></p>
+        {message && !ended && <button type="button" onClick={() => setAttempt(value => value + 1)} className="mt-6 rounded-xl bg-cyan-300 px-5 py-3 font-medium text-slate-950"><Localize>{"Try again"}</Localize></button>}
+        {ended && <Link className="mt-6 inline-block rounded-xl bg-cyan-300 px-5 py-3 font-medium text-slate-950" to="/participant/sign-in"><Localize>{"Sign in to your workspace"}</Localize></Link>}
+        {message && <Link className="mt-6 block text-sm text-cyan-300 underline" to="/"><Localize>{"Return to FalilaX"}</Localize></Link>}
       </section>
     </main>
   );

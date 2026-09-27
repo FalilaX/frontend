@@ -74,6 +74,7 @@ export interface EnrollmentVerificationResponse {
 }
 
 export interface EnrollmentConsentDocument {
+  locale: string;
   consent_document_id: number;
   title?: string;
   version?: string;

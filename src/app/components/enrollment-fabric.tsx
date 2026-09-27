@@ -1,7 +1,9 @@
+import { Localize, useLanguage, translate } from "@/app/i18n/language";
 import {
   type FormEvent,
   type ReactNode,
   useCallback,
+  useRef,
   useEffect,
   useMemo,
   useState,
@@ -127,7 +129,7 @@ function ErrorNotice({ message }: { message: string | null }) {
       className="flex items-start gap-3 rounded-2xl border border-rose-300/20 bg-rose-300/[0.07] px-4 py-3 text-sm leading-6 text-rose-100"
     >
       <TriangleAlert className="mt-1 h-4 w-4 shrink-0" />
-      <span>{message}</span>
+      <span><Localize>{message}</Localize></span>
     </div>
   );
 }
@@ -164,9 +166,10 @@ function PrimaryButton({
 }
 
 function StepRail({ stage }: { stage: EnrollmentStage }) {
+  const { locale } = useLanguage();
   const activeIndex = stageIndex(stage);
   return (
-    <ol aria-label="Enrollment progress" className="space-y-2">
+    <ol aria-label={translate("Enrollment progress", locale)} className="space-y-2">
       {journey.map((item, index) => {
         const complete = index < activeIndex || stage === "COMPLETE";
         const active = index === activeIndex && stage !== "COMPLETE";
@@ -190,9 +193,9 @@ function StepRail({ stage }: { stage: EnrollmentStage }) {
             </span>
             <span>
               <span className={`block text-sm font-medium ${active ? "text-white" : complete ? "text-slate-300" : "text-slate-600"}`}>
-                {item.label}
+                <Localize>{item.label}</Localize>
               </span>
-              <span className="mt-0.5 block text-xs text-slate-600">{item.description}</span>
+              <span className="mt-0.5 block text-xs text-slate-600"><Localize>{item.description}</Localize></span>
             </span>
           </li>
         );
@@ -205,10 +208,7 @@ function SecurityNote() {
   return (
     <div className="flex items-start gap-3 rounded-2xl border border-white/[0.07] bg-white/[0.025] p-4">
       <LockKeyhole className="mt-0.5 h-4 w-4 shrink-0 text-cyan-300" />
-      <p className="text-xs leading-5 text-slate-400">
-        Your activation capability is encrypted in transit and kept only in this browser session.
-        Invitation and verification secrets are never displayed again after use.
-      </p>
+      <p className="text-xs leading-5 text-slate-400"><Localize>{" Your activation capability is encrypted in transit and kept only in this browser session. Invitation and verification secrets are never displayed again after use. "}</Localize></p>
     </div>
   );
 }
@@ -223,6 +223,11 @@ function FieldShell({ icon, children }: { icon: ReactNode; children: ReactNode }
 }
 
 export function EnrollmentFabric() {
+  const { locale } = useLanguage();
+  const localeRef = useRef(locale);
+  localeRef.current = locale;
+  const consentRequest = useRef(0);
+  const [consentRequestedLocale, setConsentRequestedLocale] = useState<string | null>(null);
   const { invitationToken } = useParams<{ invitationToken?: string }>();
   const navigate = useNavigate();
   const browserContext = useMemo(() => getEnrollmentBrowserContext(), []);
@@ -240,7 +245,7 @@ export function EnrollmentFabric() {
     email: browserContext.email ?? "",
     phone: browserContext.phone ?? null,
     subscriber_type: "RESIDENT",
-    language: "en",
+    language: locale,
     timezone: Intl.DateTimeFormat().resolvedOptions().timeZone || "America/Chicago",
     is_emergency_contact: false,
   });
@@ -272,9 +277,27 @@ export function EnrollmentFabric() {
   });
 
   const loadConsent = useCallback(async (id: string) => {
-    const document = await getEnrollmentConsentDocument(id);
+    const request = ++consentRequest.current;
+    const requestedLocale = localeRef.current;
+    setConsentDocument(null);
+    setConsentRequestedLocale(null);
+    setConsentAccepted(false);
+    const document = await getEnrollmentConsentDocument(id, requestedLocale);
+    if (request !== consentRequest.current || requestedLocale !== localeRef.current) return;
+    if (!["en", "es", "fr"].includes(document.locale) || (document.locale !== requestedLocale && document.locale !== "en")) {
+      throw new Error("Unexpected consent document language.");
+    }
     setConsentDocument(document);
+    setConsentRequestedLocale(requestedLocale);
   }, []);
+
+  useEffect(() => {
+    if (stage !== "CONSENT" || !sessionPublicId) return;
+    let active = true;
+    setError(null);
+    void loadConsent(sessionPublicId).catch(caught => { if (active) setError(normalizeError(caught)); });
+    return () => { active = false; consentRequest.current += 1; };
+  }, [locale, stage, sessionPublicId, loadConsent]);
 
   useEffect(() => {
     if (!invitationToken) return;
@@ -296,7 +319,6 @@ export function EnrollmentFabric() {
         if (cancelled) return;
         const resumedStage = stageFromCurrentStep(current.current_step);
         setStage(resumedStage);
-        if (resumedStage === "CONSENT") await loadConsent(resumeSessionId);
         if (resumedStage === "PREFERENCES") {
           try {
             await getEnrollmentNotificationPreferences(resumeSessionId);
@@ -386,6 +408,7 @@ export function EnrollmentFabric() {
     try {
       await recordEnrollmentIdentity(sessionPublicId, {
         ...identity,
+        language: locale,
         full_name: identity.full_name.trim(),
         email,
         phone,
@@ -448,7 +471,6 @@ export function EnrollmentFabric() {
     setError(null);
     try {
       await verifyEnrollmentChannel(sessionPublicId, challenge.verification_id, verificationCode);
-      await loadConsent(sessionPublicId);
       setVerificationCode("");
       setStage("CONSENT");
     } catch (caught) {
@@ -460,7 +482,7 @@ export function EnrollmentFabric() {
 
   async function submitConsent(event: FormEvent) {
     event.preventDefault();
-    if (!sessionPublicId || !consentDocument || !consentAccepted) return;
+    if (!sessionPublicId || !consentDocument || !consentAccepted || consentRequestedLocale !== locale) return;
     setBusy(true);
     setError(null);
     try {
@@ -528,12 +550,12 @@ export function EnrollmentFabric() {
     <div className="fx-app-shell min-h-screen">
       <header className="border-b border-white/10">
         <div className="mx-auto flex max-w-7xl items-center justify-between px-5 py-3 sm:px-8">
-          <Link to="/" aria-label="Return to FalilaX" className="inline-flex items-center">
+          <Link to="/" aria-label={translate("Return to FalilaX", locale)} className="inline-flex items-center">
             <img src={logoImage} alt="FalilaX" className="object-contain" />
           </Link>
           <div className="flex items-center gap-2 rounded-full border border-emerald-300/15 bg-emerald-300/[0.06] px-3 py-1.5">
             <ShieldCheck className="h-3.5 w-3.5 text-emerald-300" />
-            <span className="text-[11px] font-medium tracking-wide text-emerald-100">Secure activation</span>
+            <span className="text-[11px] font-medium tracking-wide text-emerald-100"><Localize>{"Secure activation"}</Localize></span>
           </div>
         </div>
       </header>
@@ -545,19 +567,14 @@ export function EnrollmentFabric() {
               <div className="mb-4 grid h-12 w-12 place-items-center rounded-2xl border border-cyan-300/20 bg-cyan-300/[0.07]">
                 <Fingerprint className="h-6 w-6 text-cyan-300" />
               </div>
-              <p className="text-xs font-semibold uppercase tracking-[0.22em] text-cyan-300">Enrollment Fabric</p>
-              <h2 className="mt-3 text-xl font-semibold text-white">Activate your trusted water-safety identity.</h2>
-              <p className="mt-3 text-sm leading-6 text-slate-400">
-                A calm, secure connection between you, your service area, and the alerts that matter to you.
-              </p>
+              <p className="text-xs font-semibold uppercase tracking-[0.22em] text-cyan-300"><Localize>{"Enrollment Fabric"}</Localize></p>
+              <h2 className="mt-3 text-xl font-semibold text-white"><Localize>{"Activate your trusted water-safety identity."}</Localize></h2>
+              <p className="mt-3 text-sm leading-6 text-slate-400"><Localize>{" A calm, secure connection between you, your service area, and the alerts that matter to you. "}</Localize></p>
             </div>
             <StepRail stage={stage} />
             <div className="mt-8 flex items-start gap-3 border-t border-white/[0.07] pt-6">
               <Waves className="mt-0.5 h-4 w-4 shrink-0 text-sky-300" />
-              <p className="text-xs leading-5 text-slate-500">
-                FalilaX interprets water-safety information. It does not replace official utility,
-                regulatory, or public-health instructions.
-              </p>
+              <p className="text-xs leading-5 text-slate-500"><Localize>{" FalilaX interprets water-safety information. It does not replace official utility, regulatory, or public-health instructions. "}</Localize></p>
             </div>
           </div>
         </aside>
@@ -568,31 +585,28 @@ export function EnrollmentFabric() {
             <div className="h-px bg-gradient-to-r from-transparent via-cyan-300/70 to-transparent" />
             <div className="p-6 sm:p-9 lg:p-11">
               <div className="mb-8 flex items-center justify-between lg:hidden">
-                <p className="text-xs font-semibold uppercase tracking-[0.2em] text-cyan-300">Enrollment Fabric</p>
-                <span className="text-xs text-slate-500">Step {Math.min(stageIndex(stage) + 1, 5)} of 5</span>
+                <p className="text-xs font-semibold uppercase tracking-[0.2em] text-cyan-300"><Localize>{"Enrollment Fabric"}</Localize></p>
+                <span className="text-xs text-slate-500"><Localize>{"Step "}</Localize>{Math.min(stageIndex(stage) + 1, 5)}<Localize>{" of 5"}</Localize></span>
               </div>
 
               {stage === "INVITATION" && (
                 <div>
                   <div className="mb-8">
                     <div className="mb-5 inline-flex items-center gap-2 rounded-full border border-cyan-300/15 bg-cyan-300/[0.06] px-3 py-1.5 text-xs text-cyan-100">
-                      <Sparkles className="h-3.5 w-3.5" /> Your water intelligence connection
-                    </div>
-                    <h1 className="max-w-xl text-3xl font-semibold leading-tight text-white sm:text-4xl">Your invitation is the beginning of a safer connection.</h1>
-                    <p className="mt-4 max-w-xl text-sm leading-7 text-slate-400 sm:text-base">
-                      Connect your identity, notification choices, and service context so relevant water-safety information reaches you clearly and responsibly.
-                    </p>
+                      <Sparkles className="h-3.5 w-3.5" /><Localize>{" Your water intelligence connection "}</Localize></div>
+                    <h1 className="max-w-xl text-3xl font-semibold leading-tight text-white sm:text-4xl"><Localize>{"Your invitation is the beginning of a safer connection."}</Localize></h1>
+                    <p className="mt-4 max-w-xl text-sm leading-7 text-slate-400 sm:text-base"><Localize>{" Connect your identity, notification choices, and service context so relevant water-safety information reaches you clearly and responsibly. "}</Localize></p>
                   </div>
                   <form onSubmit={acceptInvitation} className="space-y-5">
                     <div>
-                      <label htmlFor="invitation-token" className="mb-2 block text-sm font-medium text-slate-200">Secure invitation code</label>
+                      <label htmlFor="invitation-token" className="mb-2 block text-sm font-medium text-slate-200"><Localize>{"Secure invitation code"}</Localize></label>
                       <FieldShell icon={<LockKeyhole className="h-4 w-4" />}>
-                        <input id="invitation-token" type="password" value={token} onChange={(event) => setToken(event.target.value)} autoComplete="off" spellCheck={false} required minLength={32} maxLength={512} placeholder="Invitation code" className="w-full rounded-2xl border border-white/10 bg-black/20 py-3.5 pl-11 pr-4 text-sm text-white outline-none placeholder:text-slate-600" />
+                        <input id="invitation-token" type="password" value={token} onChange={(event) => setToken(event.target.value)} autoComplete="off" spellCheck={false} required minLength={32} maxLength={512} placeholder={translate("Invitation code", locale)} className="w-full rounded-2xl border border-white/10 bg-black/20 py-3.5 pl-11 pr-4 text-sm text-white outline-none placeholder:text-slate-600" />
                       </FieldShell>
-                      <p className="mt-2 text-xs leading-5 text-slate-500">Personal invitation links fill this securely and remove the secret from the address after acceptance.</p>
+                      <p className="mt-2 text-xs leading-5 text-slate-500"><Localize>{"Personal invitation links fill this securely and remove the secret from the address after acceptance."}</Localize></p>
                     </div>
                     <ErrorNotice message={error} />
-                    <PrimaryButton busy={busy} disabled={token.trim().length < 32}>Verify invitation</PrimaryButton>
+                    <PrimaryButton busy={busy} disabled={token.trim().length < 32}><Localize>{"Verify invitation"}</Localize></PrimaryButton>
                     <SecurityNote />
                   </form>
                 </div>
@@ -601,43 +615,43 @@ export function EnrollmentFabric() {
               {stage === "IDENTITY" && (
                 <div>
                   <div className="mb-8">
-                    <p className="text-xs font-semibold uppercase tracking-[0.2em] text-cyan-300">Identity connection</p>
-                    <h1 className="mt-3 text-3xl font-semibold text-white">Let’s make the experience yours.</h1>
-                    <p className="mt-3 text-sm leading-7 text-slate-400">We collect only what is needed to identify you and verify at least one notification channel.</p>
+                    <p className="text-xs font-semibold uppercase tracking-[0.2em] text-cyan-300"><Localize>{"Identity connection"}</Localize></p>
+                    <h1 className="mt-3 text-3xl font-semibold text-white"><Localize>{"Let’s make the experience yours."}</Localize></h1>
+                    <p className="mt-3 text-sm leading-7 text-slate-400"><Localize>{"We collect only what is needed to identify you and verify at least one notification channel."}</Localize></p>
                   </div>
                   <form onSubmit={submitIdentity} className="space-y-5">
                     <div>
-                      <label htmlFor="full-name" className="mb-2 block text-sm font-medium text-slate-200">Full name</label>
+                      <label htmlFor="full-name" className="mb-2 block text-sm font-medium text-slate-200"><Localize>{"Full name"}</Localize></label>
                       <FieldShell icon={<UserRound className="h-4 w-4" />}>
-                        <input id="full-name" value={identity.full_name} onChange={(event) => setIdentity((current) => ({ ...current, full_name: event.target.value }))} autoComplete="name" required maxLength={255} placeholder="Your name" className="w-full rounded-2xl border border-white/10 bg-black/20 py-3.5 pl-11 pr-4 text-sm text-white outline-none placeholder:text-slate-600" />
+                        <input id="full-name" value={identity.full_name} onChange={(event) => setIdentity((current) => ({ ...current, full_name: event.target.value }))} autoComplete="name" required maxLength={255} placeholder={translate("Your name", locale)} className="w-full rounded-2xl border border-white/10 bg-black/20 py-3.5 pl-11 pr-4 text-sm text-white outline-none placeholder:text-slate-600" />
                       </FieldShell>
                     </div>
                     <div className="grid gap-5 sm:grid-cols-2">
                       <div>
-                        <label htmlFor="email" className="mb-2 block text-sm font-medium text-slate-200">Email</label>
+                        <label htmlFor="email" className="mb-2 block text-sm font-medium text-slate-200"><Localize>{"Email"}</Localize></label>
                         <FieldShell icon={<Mail className="h-4 w-4" />}>
                           <input id="email" type="email" value={identity.email ?? ""} onChange={(event) => setIdentity((current) => ({ ...current, email: event.target.value }))} autoComplete="email" maxLength={255} placeholder="you@example.com" className="w-full rounded-2xl border border-white/10 bg-black/20 py-3.5 pl-11 pr-4 text-sm text-white outline-none placeholder:text-slate-600" />
                         </FieldShell>
                       </div>
                       <div>
-                        <label htmlFor="phone" className="mb-2 block text-sm font-medium text-slate-200">Phone</label>
+                        <label htmlFor="phone" className="mb-2 block text-sm font-medium text-slate-200"><Localize>{"Phone"}</Localize></label>
                         <FieldShell icon={<Phone className="h-4 w-4" />}>
                           <input id="phone" type="tel" value={identity.phone ?? ""} onChange={(event) => setIdentity((current) => ({ ...current, phone: event.target.value }))} autoComplete="tel" maxLength={50} placeholder="+1 334 555 0100" className="w-full rounded-2xl border border-white/10 bg-black/20 py-3.5 pl-11 pr-4 text-sm text-white outline-none placeholder:text-slate-600" />
                         </FieldShell>
                       </div>
                     </div>
                     <div>
-                      <label htmlFor="subscriber-type" className="mb-2 block text-sm font-medium text-slate-200">How are you joining FalilaX?</label>
+                      <label htmlFor="subscriber-type" className="mb-2 block text-sm font-medium text-slate-200"><Localize>{"How are you joining FalilaX?"}</Localize></label>
                       <select id="subscriber-type" value={identity.subscriber_type} onChange={(event) => setIdentity((current) => ({ ...current, subscriber_type: event.target.value as EnrollmentSubscriberType }))} className="w-full rounded-2xl border border-white/10 bg-black/20 px-4 py-3.5 text-sm text-white outline-none">
-                        {subscriberOptions.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
+                        {subscriberOptions.map((option) => <option key={option.value} value={option.value}><Localize>{option.label}</Localize></option>)}
                       </select>
                     </div>
                     <label className="flex cursor-pointer items-start gap-3 rounded-2xl border border-white/[0.07] bg-white/[0.025] p-4">
                       <input type="checkbox" checked={identity.is_emergency_contact} onChange={(event) => setIdentity((current) => ({ ...current, is_emergency_contact: event.target.checked }))} className="mt-0.5 h-4 w-4 accent-cyan-400" />
-                      <span><span className="block text-sm font-medium text-slate-200">Emergency contact</span><span className="mt-1 block text-xs leading-5 text-slate-500">Eligible for urgent water-safety communication.</span></span>
+                      <span><span className="block text-sm font-medium text-slate-200"><Localize>{"Emergency contact"}</Localize></span><span className="mt-1 block text-xs leading-5 text-slate-500"><Localize>{"Eligible for urgent water-safety communication."}</Localize></span></span>
                     </label>
                     <ErrorNotice message={error} />
-                    <PrimaryButton busy={busy} disabled={!identity.full_name.trim() || (!identity.email?.trim() && !identity.phone?.trim())}>Continue securely</PrimaryButton>
+                    <PrimaryButton busy={busy} disabled={!identity.full_name.trim() || (!identity.email?.trim() && !identity.phone?.trim())}><Localize>{"Continue securely"}</Localize></PrimaryButton>
                   </form>
                 </div>
               )}
@@ -645,9 +659,9 @@ export function EnrollmentFabric() {
               {stage === "VERIFICATION" && (
                 <div>
                   <div className="mb-8">
-                    <p className="text-xs font-semibold uppercase tracking-[0.2em] text-cyan-300">Contact verification</p>
-                    <h1 className="mt-3 text-3xl font-semibold text-white">Confirm it’s really you.</h1>
-                    <p className="mt-3 text-sm leading-7 text-slate-400">We’ll send a short-lived code to a contact channel you provided. Attempts are limited for your protection.</p>
+                    <p className="text-xs font-semibold uppercase tracking-[0.2em] text-cyan-300"><Localize>{"Contact verification"}</Localize></p>
+                    <h1 className="mt-3 text-3xl font-semibold text-white"><Localize>{"Confirm it’s really you."}</Localize></h1>
+                    <p className="mt-3 text-sm leading-7 text-slate-400"><Localize>{"We’ll send a short-lived code to a contact channel you provided. Attempts are limited for your protection."}</Localize></p>
                   </div>
                   {!challenge ? (
                     <div className="space-y-5">
@@ -655,25 +669,24 @@ export function EnrollmentFabric() {
                         {availableChannels.map((channel) => (
                           <button key={channel} type="button" onClick={() => setVerificationChannel(channel)} className={`flex items-center gap-3 rounded-2xl border p-4 text-left transition ${verificationChannel === channel ? "border-cyan-300/35 bg-cyan-300/[0.08]" : "border-white/[0.08] bg-white/[0.025]"}`}>
                             {channel === "EMAIL" ? <Mail className="h-5 w-5 text-cyan-300" /> : <Phone className="h-5 w-5 text-cyan-300" />}
-                            <span><span className="block text-sm font-medium text-white">{channel === "EMAIL" ? "Email" : "Text message"}</span><span className="mt-1 block text-xs text-slate-500">{destinationFor(channel)}</span></span>
+                            <span><span className="block text-sm font-medium text-white"><Localize>{channel === "EMAIL" ? "Email" : "Text message"}</Localize></span><span className="mt-1 block text-xs text-slate-500">{destinationFor(channel)}</span></span>
                           </button>
                         ))}
                       </div>
                       <ErrorNotice message={error} />
-                      <PrimaryButton type="button" onClick={() => void sendChallenge()} busy={busy} disabled={!destinationFor(verificationChannel)}>Send secure code</PrimaryButton>
+                      <PrimaryButton type="button" onClick={() => void sendChallenge()} busy={busy} disabled={!destinationFor(verificationChannel)}><Localize>{"Send secure code"}</Localize></PrimaryButton>
                     </div>
                   ) : (
                     <form onSubmit={submitVerification} className="space-y-5">
-                      <div className="rounded-2xl border border-emerald-300/15 bg-emerald-300/[0.055] p-4 text-sm text-emerald-100">
-                        Code sent via {verificationChannel === "EMAIL" ? "email" : "text message"}{challenge.destination_hint ? ` to ${challenge.destination_hint}` : ""}.
+                      <div className="rounded-2xl border border-emerald-300/15 bg-emerald-300/[0.055] p-4 text-sm text-emerald-100"><Localize>{" Code sent via "}</Localize><Localize>{verificationChannel === "EMAIL" ? "email" : "text message"}</Localize><Localize>{challenge.destination_hint ? ` to ${challenge.destination_hint}` : ""}</Localize>.
                       </div>
                       <div>
-                        <label htmlFor="verification-code" className="mb-2 block text-sm font-medium text-slate-200">One-time verification code</label>
-                        <input id="verification-code" value={verificationCode} onChange={(event) => setVerificationCode(event.target.value.replace(/\s/g, ""))} inputMode="numeric" autoComplete="one-time-code" required minLength={4} maxLength={12} placeholder="Enter code" className="w-full rounded-2xl border border-white/10 bg-black/20 px-4 py-4 text-center font-mono text-xl tracking-[0.35em] text-white outline-none placeholder:text-sm placeholder:tracking-normal placeholder:text-slate-600" />
+                        <label htmlFor="verification-code" className="mb-2 block text-sm font-medium text-slate-200"><Localize>{"One-time verification code"}</Localize></label>
+                        <input id="verification-code" value={verificationCode} onChange={(event) => setVerificationCode(event.target.value.replace(/\s/g, ""))} inputMode="numeric" autoComplete="one-time-code" required minLength={4} maxLength={12} placeholder={translate("Enter code", locale)} className="w-full rounded-2xl border border-white/10 bg-black/20 px-4 py-4 text-center font-mono text-xl tracking-[0.35em] text-white outline-none placeholder:text-sm placeholder:tracking-normal placeholder:text-slate-600" />
                       </div>
                       <ErrorNotice message={error} />
-                      <PrimaryButton busy={busy} disabled={verificationCode.length < 4}>Verify contact</PrimaryButton>
-                      <button type="button" disabled={busy} onClick={() => void sendChallenge()} className="flex w-full items-center justify-center gap-2 text-xs font-medium text-cyan-200/80 hover:text-cyan-100"><RefreshCw className="h-3.5 w-3.5" />Send a new code</button>
+                      <PrimaryButton busy={busy} disabled={verificationCode.length < 4}><Localize>{"Verify contact"}</Localize></PrimaryButton>
+                      <button type="button" disabled={busy} onClick={() => void sendChallenge()} className="flex w-full items-center justify-center gap-2 text-xs font-medium text-cyan-200/80 hover:text-cyan-100"><RefreshCw className="h-3.5 w-3.5" /><Localize>{"Send a new code"}</Localize></button>
                     </form>
                   )}
                 </div>
@@ -682,26 +695,27 @@ export function EnrollmentFabric() {
               {stage === "CONSENT" && (
                 <div>
                   <div className="mb-7">
-                    <p className="text-xs font-semibold uppercase tracking-[0.2em] text-cyan-300">Informed participation</p>
-                    <h1 className="mt-3 text-3xl font-semibold text-white">Know what you’re joining.</h1>
-                    <p className="mt-3 text-sm leading-7 text-slate-400">Review the active consent document before connecting your identity to the controlled demonstration.</p>
+                    <p className="text-xs font-semibold uppercase tracking-[0.2em] text-cyan-300"><Localize>{"Informed participation"}</Localize></p>
+                    <h1 className="mt-3 text-3xl font-semibold text-white"><Localize>{"Know what you’re joining."}</Localize></h1>
+                    <p className="mt-3 text-sm leading-7 text-slate-400"><Localize>{"Review the active consent document before connecting your identity to the controlled demonstration."}</Localize></p>
                   </div>
                   <form onSubmit={submitConsent} className="space-y-5">
-                    <div className="max-h-64 overflow-y-auto rounded-2xl border border-white/[0.08] bg-black/20 p-5 text-sm leading-7 text-slate-300">
+                    {consentDocument?.locale === "en" && locale !== "en" && <p role="status" className="rounded-xl border border-amber-300/30 p-4 text-sm text-amber-100"><Localize>Consent document language: English. Only accept if you understand this document; otherwise contact your organizer.</Localize></p>}
+                    <div lang={consentDocument?.locale || "en"} className="max-h-64 overflow-y-auto rounded-2xl border border-white/[0.08] bg-black/20 p-5 text-sm leading-7 text-slate-300">
                       {consentDocument ? (
                         <><h2 className="mb-3 text-base font-semibold text-white">{consentDocument.title || "FalilaX enrollment consent"}</h2>{consentDocument.content.split(/\n{2,}/).map((paragraph, index) => <p key={index} className="mb-3 last:mb-0">{paragraph}</p>)}</>
                       ) : (
-                        <div className="flex items-center gap-2 text-slate-400"><LoaderCircle className="h-4 w-4 animate-spin" />Loading protected document…</div>
+                        <div className="flex items-center gap-2 text-slate-400"><LoaderCircle className="h-4 w-4 animate-spin" /><Localize>{"Loading protected document…"}</Localize></div>
                       )}
                     </div>
-                    {consentDocument?.version && <p className="text-xs text-slate-500">Document version {consentDocument.version}</p>}
+                    {consentDocument?.version && <p className="text-xs text-slate-500"><Localize>{"Document version "}</Localize>{consentDocument.version}</p>}
                     <label className="flex cursor-pointer items-start gap-3 rounded-2xl border border-cyan-300/15 bg-cyan-300/[0.045] p-4">
-                      <input type="checkbox" checked={consentAccepted} onChange={(event) => setConsentAccepted(event.target.checked)} className="mt-0.5 h-4 w-4 accent-cyan-400" />
-                      <span className="text-sm leading-6 text-slate-300">I have read this document and voluntarily consent to participate. I understand that FalilaX supplements—not replaces—official public-health guidance.</span>
+                      <input type="checkbox" disabled={!consentDocument || consentRequestedLocale !== locale || busy} checked={consentAccepted} onChange={(event) => setConsentAccepted(event.target.checked)} className="mt-0.5 h-4 w-4 accent-cyan-400" />
+                      <span className="text-sm leading-6 text-slate-300"><Localize>{"I have read this document and voluntarily consent to participate. I understand that FalilaX supplements—not replaces—official public-health guidance."}</Localize></span>
                     </label>
-                    <p className="text-xs leading-5 text-slate-500">See our <Link className="text-cyan-300 hover:text-cyan-200" to="/privacy" target="_blank">Privacy Policy</Link> and <Link className="text-cyan-300 hover:text-cyan-200" to="/terms" target="_blank">Terms</Link>.</p>
+                    <p className="text-xs leading-5 text-slate-500"><Localize>{"See our "}</Localize><Link className="text-cyan-300 hover:text-cyan-200" to="/privacy" target="_blank"><Localize>{"Privacy Policy"}</Localize></Link><Localize>{" and "}</Localize><Link className="text-cyan-300 hover:text-cyan-200" to="/terms" target="_blank"><Localize>{"Terms"}</Localize></Link>.</p>
                     <ErrorNotice message={error} />
-                    <PrimaryButton busy={busy} disabled={!consentDocument || !consentAccepted}>Record consent securely</PrimaryButton>
+                    <PrimaryButton busy={busy} disabled={!consentDocument || !consentAccepted || consentRequestedLocale !== locale}><Localize>{"Record consent securely"}</Localize></PrimaryButton>
                   </form>
                 </div>
               )}
@@ -709,30 +723,30 @@ export function EnrollmentFabric() {
               {stage === "PREFERENCES" && (
                 <div>
                   <div className="mb-7">
-                    <p className="text-xs font-semibold uppercase tracking-[0.2em] text-cyan-300">Notification intelligence</p>
-                    <h1 className="mt-3 text-3xl font-semibold text-white">Choose how safety reaches you.</h1>
-                    <p className="mt-3 text-sm leading-7 text-slate-400">Only verified channels can be activated. Critical alerts may override quiet hours when you permit it.</p>
+                    <p className="text-xs font-semibold uppercase tracking-[0.2em] text-cyan-300"><Localize>{"Notification intelligence"}</Localize></p>
+                    <h1 className="mt-3 text-3xl font-semibold text-white"><Localize>{"Choose how safety reaches you."}</Localize></h1>
+                    <p className="mt-3 text-sm leading-7 text-slate-400"><Localize>{"Only verified channels can be activated. Critical alerts may override quiet hours when you permit it."}</Localize></p>
                   </div>
                   <form onSubmit={submitPreferences} className="space-y-5">
                     <div className="rounded-2xl border border-emerald-300/15 bg-emerald-300/[0.05] p-4">
-                      <div className="flex items-center gap-3"><CheckCircle2 className="h-5 w-5 text-emerald-300" /><div><p className="text-sm font-medium text-emerald-100">{verificationChannel === "EMAIL" ? "Email" : "Mobile contact"} verified</p><p className="mt-1 text-xs text-emerald-100/60">This is the only external channel enabled for this enrollment.</p></div></div>
+                      <div className="flex items-center gap-3"><CheckCircle2 className="h-5 w-5 text-emerald-300" /><div><p className="text-sm font-medium text-emerald-100"><Localize>{verificationChannel === "EMAIL" ? "Email" : "Mobile contact"}</Localize><Localize>{" verified"}</Localize></p><p className="mt-1 text-xs text-emerald-100/60"><Localize>{"This is the only external channel enabled for this enrollment."}</Localize></p></div></div>
                     </div>
                     <div>
-                      <label htmlFor="minimum-severity" className="mb-2 block text-sm font-medium text-slate-200">Notify me starting at</label>
+                      <label htmlFor="minimum-severity" className="mb-2 block text-sm font-medium text-slate-200"><Localize>{"Notify me starting at"}</Localize></label>
                       <select id="minimum-severity" value={preferences.minimum_severity} onChange={(event) => setPreferences((current) => ({ ...current, minimum_severity: event.target.value as EnrollmentMinimumSeverity }))} className="w-full rounded-2xl border border-white/10 bg-black/20 px-4 py-3.5 text-sm text-white outline-none">
-                        {severityOptions.map((option) => <option key={option.value} value={option.value}>{option.label} — {option.description}</option>)}
+                        {severityOptions.map((option) => <option key={option.value} value={option.value}><Localize>{option.label}</Localize> — <Localize>{option.description}</Localize></option>)}
                       </select>
                     </div>
                     <label className="flex cursor-pointer items-start justify-between gap-4 rounded-2xl border border-white/[0.07] bg-white/[0.025] p-4">
-                      <span className="flex gap-3"><Clock3 className="mt-0.5 h-4 w-4 text-cyan-300" /><span><span className="block text-sm font-medium text-slate-200">Quiet hours</span><span className="mt-1 block text-xs leading-5 text-slate-500">Pause non-emergency messages from 10 PM to 7 AM.</span></span></span>
+                      <span className="flex gap-3"><Clock3 className="mt-0.5 h-4 w-4 text-cyan-300" /><span><span className="block text-sm font-medium text-slate-200"><Localize>{"Quiet hours"}</Localize></span><span className="mt-1 block text-xs leading-5 text-slate-500"><Localize>{"Pause non-emergency messages from 10 PM to 7 AM."}</Localize></span></span></span>
                       <input type="checkbox" checked={preferences.quiet_hours_enabled} onChange={(event) => setPreferences((current) => ({ ...current, quiet_hours_enabled: event.target.checked }))} className="mt-0.5 h-4 w-4 accent-cyan-400" />
                     </label>
                     <label className="flex cursor-pointer items-start justify-between gap-4 rounded-2xl border border-white/[0.07] bg-white/[0.025] p-4">
-                      <span className="flex gap-3"><BellRing className="mt-0.5 h-4 w-4 text-cyan-300" /><span><span className="block text-sm font-medium text-slate-200">Require acknowledgement</span><span className="mt-1 block text-xs leading-5 text-slate-500">Let FalilaX confirm important alerts were received.</span></span></span>
+                      <span className="flex gap-3"><BellRing className="mt-0.5 h-4 w-4 text-cyan-300" /><span><span className="block text-sm font-medium text-slate-200"><Localize>{"Require acknowledgement"}</Localize></span><span className="mt-1 block text-xs leading-5 text-slate-500"><Localize>{"Let FalilaX confirm important alerts were received."}</Localize></span></span></span>
                       <input type="checkbox" checked={preferences.acknowledgement_required} onChange={(event) => setPreferences((current) => ({ ...current, acknowledgement_required: event.target.checked, acknowledgement_timeout_minutes: event.target.checked ? 30 : null, escalation_enabled: event.target.checked, escalation_timeout_minutes: event.target.checked ? 60 : null }))} className="mt-0.5 h-4 w-4 accent-cyan-400" />
                     </label>
                     <ErrorNotice message={error} />
-                    <PrimaryButton busy={busy}>Connect service context</PrimaryButton>
+                    <PrimaryButton busy={busy}><Localize>{"Connect service context"}</Localize></PrimaryButton>
                   </form>
                 </div>
               )}
@@ -740,33 +754,31 @@ export function EnrollmentFabric() {
               {stage === "ACTIVATION" && (
                 <div className="py-4 text-center">
                   <div className="mx-auto grid h-16 w-16 place-items-center rounded-3xl border border-cyan-300/20 bg-cyan-300/[0.07] shadow-[0_0_50px_rgba(53,211,235,0.12)]"><MapPin className="h-8 w-8 text-cyan-300" /></div>
-                  <p className="mt-7 text-xs font-semibold uppercase tracking-[0.2em] text-cyan-300">Protected network matching</p>
-                  <h1 className="mt-3 text-3xl font-semibold text-white">Your place in the network is being reviewed.</h1>
-                  <p className="mx-auto mt-4 max-w-md text-sm leading-7 text-slate-400">FalilaX proposed a synthetic service context for the controlled demonstration. An authorized operator must approve it before activation.</p>
+                  <p className="mt-7 text-xs font-semibold uppercase tracking-[0.2em] text-cyan-300"><Localize>{"Protected network matching"}</Localize></p>
+                  <h1 className="mt-3 text-3xl font-semibold text-white"><Localize>{"Your place in the network is being reviewed."}</Localize></h1>
+                  <p className="mx-auto mt-4 max-w-md text-sm leading-7 text-slate-400"><Localize>{"FalilaX proposed a synthetic service context for the controlled demonstration. An authorized operator must approve it before activation."}</Localize></p>
                   <div className="mx-auto mt-7 grid max-w-lg gap-3 text-left sm:grid-cols-2">
-                    <div className="rounded-2xl border border-white/[0.08] bg-white/[0.025] p-4"><p className="text-xs uppercase tracking-[0.16em] text-slate-500">Assignment</p><p className="mt-2 text-sm font-medium text-white">{topology?.scope_label || topology?.scope_type || "Controlled demo network"}</p><p className="mt-1 text-xs text-slate-500">{topology?.is_synthetic ? "Synthetic • demo-safe" : "Protected context"}</p></div>
-                    <div className="rounded-2xl border border-white/[0.08] bg-white/[0.025] p-4"><p className="text-xs uppercase tracking-[0.16em] text-slate-500">Review status</p><p className="mt-2 flex items-center gap-2 text-sm font-medium text-white"><LoaderCircle className="h-4 w-4 animate-spin text-cyan-300" />{activation?.topology_status || topology?.status || "PROPOSED"}</p><p className="mt-1 text-xs text-slate-500">Checked automatically</p></div>
+                    <div className="rounded-2xl border border-white/[0.08] bg-white/[0.025] p-4"><p className="text-xs uppercase tracking-[0.16em] text-slate-500"><Localize>{"Assignment"}</Localize></p><p className="mt-2 text-sm font-medium text-white"><Localize>{topology?.scope_label || topology?.scope_type || "Controlled demo network"}</Localize></p><p className="mt-1 text-xs text-slate-500"><Localize>{topology?.is_synthetic ? "Synthetic • demo-safe" : "Protected context"}</Localize></p></div>
+                    <div className="rounded-2xl border border-white/[0.08] bg-white/[0.025] p-4"><p className="text-xs uppercase tracking-[0.16em] text-slate-500"><Localize>{"Review status"}</Localize></p><p className="mt-2 flex items-center gap-2 text-sm font-medium text-white"><LoaderCircle className="h-4 w-4 animate-spin text-cyan-300" /><Localize>{activation?.topology_status || topology?.status || "PROPOSED"}</Localize></p><p className="mt-1 text-xs text-slate-500"><Localize>{"Checked automatically"}</Localize></p></div>
                   </div>
                   <ErrorNotice message={error} />
-                  <p className="mt-6 text-xs leading-5 text-slate-500">You can safely leave this page open. This participant capability cannot approve its own topology or activate itself.</p>
+                  <p className="mt-6 text-xs leading-5 text-slate-500"><Localize>{"You can safely leave this page open. This participant capability cannot approve its own topology or activate itself."}</Localize></p>
                 </div>
               )}
 
               {stage === "COMPLETE" && (
                 <div className="py-5 text-center">
                   <div className="mx-auto grid h-20 w-20 place-items-center rounded-[1.75rem] border border-emerald-300/25 bg-emerald-300/[0.08] shadow-[0_0_60px_rgba(52,211,153,0.13)]"><CheckCircle2 className="h-10 w-10 text-emerald-300" /></div>
-                  <p className="mt-7 text-xs font-semibold uppercase tracking-[0.2em] text-emerald-300">Identity activated</p>
-                  <h1 className="mt-3 text-3xl font-semibold text-white">You’re connected to FalilaX.</h1>
-                  <p className="mx-auto mt-4 max-w-md text-sm leading-7 text-slate-400">Your verified identity, consent, notification choices, and approved service context now form one auditable water-safety connection.</p>
-                  <div className="mx-auto mt-7 max-w-md rounded-2xl border border-emerald-300/15 bg-emerald-300/[0.055] p-4 text-left"><div className="flex gap-3"><ShieldCheck className="mt-0.5 h-5 w-5 text-emerald-300" /><div><p className="text-sm font-medium text-emerald-100">Secure activation complete</p><p className="mt-1 text-xs leading-5 text-emerald-100/60">Trust score {activation?.trust_score != null ? `${Math.round(activation.trust_score * 100)}%` : "verified"} • topology {activation?.topology_status?.toLowerCase() || "approved"}</p></div></div></div>
+                  <p className="mt-7 text-xs font-semibold uppercase tracking-[0.2em] text-emerald-300"><Localize>{"Identity activated"}</Localize></p>
+                  <h1 className="mt-3 text-3xl font-semibold text-white"><Localize>{"You’re connected to FalilaX."}</Localize></h1>
+                  <p className="mx-auto mt-4 max-w-md text-sm leading-7 text-slate-400"><Localize>{"Your verified identity, consent, notification choices, and approved service context now form one auditable water-safety connection."}</Localize></p>
+                  <div className="mx-auto mt-7 max-w-md rounded-2xl border border-emerald-300/15 bg-emerald-300/[0.055] p-4 text-left"><div className="flex gap-3"><ShieldCheck className="mt-0.5 h-5 w-5 text-emerald-300" /><div><p className="text-sm font-medium text-emerald-100"><Localize>{"Secure activation complete"}</Localize></p><p className="mt-1 text-xs leading-5 text-emerald-100/60"><Localize>{"Trust score "}</Localize><Localize>{activation?.trust_score != null ? `${Math.round(activation.trust_score * 100)}%` : "verified"}</Localize><Localize>{" • topology "}</Localize><Localize>{activation?.topology_status?.toLowerCase() || "approved"}</Localize></p></div></div></div>
                   <div className="mt-7">
                     <PrimaryButton
                       type="button"
                       busy={busy}
                       onClick={() => void openParticipantWorkspace()}
-                    >
-                      Enter your water-safety workspace
-                    </PrimaryButton>
+                    ><Localize>{" Enter your water-safety workspace "}</Localize></PrimaryButton>
                   </div>
                   <div className="mx-auto mt-4 max-w-md">
                     <ErrorNotice message={error} />
@@ -775,7 +787,7 @@ export function EnrollmentFabric() {
               )}
 
               {stage !== "INVITATION" && stage !== "COMPLETE" && (
-                <button type="button" onClick={restartEnrollment} className="mx-auto mt-7 block text-xs text-slate-600 transition hover:text-slate-400">Use a different invitation</button>
+                <button type="button" onClick={restartEnrollment} className="mx-auto mt-7 block text-xs text-slate-600 transition hover:text-slate-400"><Localize>{"Use a different invitation"}</Localize></button>
               )}
             </div>
           </div>
