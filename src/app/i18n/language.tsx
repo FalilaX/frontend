@@ -4,13 +4,15 @@ import { useLocation } from 'react-router-dom';
 import { chooseLocale, LANGUAGE_KEY, locales, readSavedLocale, supportedLocale } from './locale';
 import type { Locale } from './locale';
 import { messages } from './messages';
+import { operationalMessages } from './operational-messages';
+import { operatorMessages } from './operator-messages';
 
 const names = { en: 'English', es: 'Español', fr: 'Français' };
-const LanguageContext = createContext<{ locale: Locale; select: (value: Locale) => void; adopt: (value: string) => void }>({ locale: 'en', select: () => {}, adopt: () => {} });
+export const LanguageContext = createContext<{ locale: Locale; select: (value: Locale) => void; adopt: (value: string) => void }>({ locale: 'en', select: () => {}, adopt: () => {} });
 export const useLanguage = () => useContext(LanguageContext);
 export function translate(text: string, locale: Locale): string {
   const key = text.replace(/\s+/g, ' ').trim();
-  let translated = locale === 'en' ? undefined : messages[key]?.[locale];
+  let translated = locale === 'en' ? undefined : (operationalMessages[key] ?? operatorMessages[key] ?? messages[key])?.[locale];
   if (!translated && locale !== 'en') {
     const patterns: Array<[RegExp, string, string]> = [
       [/^Requested within (\d+) minutes$/, 'Solicitada en un plazo de $1 minutos', 'Demandé dans un délai de $1 minutes'],
@@ -29,7 +31,7 @@ export function Localize({ children }: { children: ReactNode }) {
 }
 export function LanguageProvider({ children }: { children: ReactNode }) {
   const { pathname } = useLocation();
-  const publicFlow = pathname === '/' || pathname === '/enroll' || pathname.startsWith('/enroll/') || pathname.startsWith('/participant/');
+  const publicFlow = pathname === '/' || pathname === '/enroll' || pathname.startsWith('/enroll/') || pathname === '/participant/sign-in' || pathname === '/operator/sign-in';
   const [locale, setLocale] = useState<Locale>(() => chooseLocale(readSavedLocale(), typeof navigator === 'undefined' ? [] : navigator.languages));
   const explicitChoice = useRef(Boolean(readSavedLocale()));
   const select = useCallback((value: Locale) => {
@@ -52,9 +54,16 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
     window.addEventListener('storage', listener);
     return () => window.removeEventListener('storage', listener);
   }, []);
-  useEffect(() => { document.documentElement.lang = publicFlow ? locale : 'en'; }, [locale, publicFlow]);
-  return <LanguageContext.Provider value={{ locale: publicFlow ? locale : 'en', select, adopt }}>
-    {publicFlow && <div className="border-b border-white/10 bg-[#071b2a] px-5 py-3 text-slate-200">
+  useEffect(() => { if (publicFlow) document.documentElement.lang = locale; }, [locale, publicFlow]);
+  return <LanguageContext.Provider value={{ locale, select, adopt }}>
+    {publicFlow && <LanguageToolbar />}
+    {children}
+  </LanguageContext.Provider>;
+}
+
+export function LanguageToolbar() {
+  const { locale, select } = useLanguage();
+  return (    <div className="border-b border-white/10 bg-[#071b2a] px-5 py-3 text-slate-200">
       <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-3">
         <label className="flex items-center gap-3 text-sm" htmlFor="falilax-language">
           <Localize>Language</Localize>
@@ -62,9 +71,8 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
             {locales.map(value => <option key={value} value={value} lang={value}>{names[value]}</option>)}
           </select>
         </label>
-        {locale !== 'en' && <p className="max-w-2xl text-xs leading-5 text-slate-300" role="status"><Localize>Some documents, messages and operational screens remain in English. Original records are preserved.</Localize></p>}
+        {locale !== 'en' && <p className="max-w-2xl text-xs leading-5 text-slate-300" role="status"><Localize>Original records and retained reports remain in their original language.</Localize></p>}
       </div>
-    </div>}
-    {children}
-  </LanguageContext.Provider>;
+    </div>
+  );
 }

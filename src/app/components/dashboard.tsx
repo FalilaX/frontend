@@ -1,3 +1,4 @@
+import { Localize, useLanguage } from "@/app/i18n/language";
 import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import {
@@ -49,6 +50,7 @@ type DashboardData = {
 };
 
 export default function Dashboard() {
+  const { locale } = useLanguage();
   const [data, setData] = useState<DashboardData | null>(null);
   const [loading, setLoading] = useState(true);
   const [showDetails, setShowDetails] = useState(false);
@@ -188,16 +190,16 @@ export default function Dashboard() {
 
     const estimatedCost =
       data.status === "critical"
-        ? "$182,000"
+        ? 182000
         : data.status === "moderate"
-          ? "$46,500"
-          : "$0";
+          ? 46500
+          : 0;
 
     const projection48h =
       data.status === "critical"
-        ? "18,200"
+        ? 18200
         : data.status === "moderate"
-          ? "6,100"
+          ? 6100
           : "Stable";
 
     const acknowledgementRate =
@@ -278,27 +280,21 @@ export default function Dashboard() {
 
   return (
     <div className="fx-app-shell min-h-screen bg-zinc-950 text-zinc-100">
-      <div className="fixed top-4 right-4 z-50 px-2 py-1 rounded text-xs text-zinc-500 bg-zinc-900 border border-zinc-800">
-        Live Backend · Deployed API
-      </div>
+      <div className="mx-6 mt-3 ml-auto w-fit max-w-[calc(100%-3rem)] px-3 py-1.5 rounded text-xs text-zinc-500 bg-zinc-900 border border-zinc-800"><Localize>{" Live Backend · Deployed API "}</Localize></div>
 
       <header className="border-b border-zinc-800 bg-zinc-950/50 backdrop-blur-sm sticky top-0 z-10">
         <div className="container mx-auto px-6 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-8">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div className="flex flex-wrap items-center gap-4">
               <div onClick={() => navigate("/")} className="flex items-center gap-3 cursor-pointer">
                 <img src={logoImage} alt="FalilaX" className="fx-brand-logo" />
               </div>
 
-              <nav className="hidden md:flex gap-6 text-sm">
-                <Link to="/dashboard" className="text-zinc-100 font-medium">Dashboard</Link>
-                <Link to="/map" className="text-zinc-400 hover:text-zinc-100 transition-colors">Community Map</Link>
-                <Link to="/map" className="text-zinc-400 hover:text-zinc-100 transition-colors">
-                  Source Attribution
-                </Link>
-                <Link to="/incidents" className="text-zinc-400 hover:text-zinc-100 transition-colors">
-                  Investigation Workflow
-                </Link>
+              <nav className="hidden md:flex flex-wrap gap-x-5 gap-y-2 text-sm">
+                <Link to="/dashboard" className="text-zinc-100 font-medium"><Localize>{"Dashboard"}</Localize></Link>
+                <Link to="/map" className="text-zinc-400 hover:text-zinc-100 transition-colors"><Localize>{"Community Map"}</Localize></Link>
+                <Link to="/map" className="text-zinc-400 hover:text-zinc-100 transition-colors"><Localize>{" Source Attribution "}</Localize></Link>
+                <Link to="/incidents" className="text-zinc-400 hover:text-zinc-100 transition-colors"><Localize>{" Investigation Workflow "}</Localize></Link>
                 <Link
                   to={readinessPath ?? "#"}
                   onClick={(event) => {
@@ -306,40 +302,32 @@ export default function Dashboard() {
                   }}
                   aria-disabled={!readinessPath}
                   className={`transition-colors ${readinessPath ? "text-zinc-400 hover:text-zinc-100" : "cursor-not-allowed text-zinc-600"}`}
-                >
-                  Readiness
-                </Link>
+                ><Localize>{" Readiness "}</Localize></Link>
               </nav>
             </div>
             <a
               href="/incident-map"
               className="hidden xl:inline-flex rounded-lg border border-cyan-400/20 bg-cyan-400/5 px-3 py-2 text-sm font-medium text-cyan-200 transition-colors hover:border-cyan-300/40 hover:bg-cyan-300/10 hover:text-white"
-            >
-              Operations Center
-            </a>
+            ><Localize>{" Operations Center "}</Localize></a>
 
             <Button variant="ghost" onClick={() => navigate("/")} className="text-zinc-400 hover:text-white">
-              <ArrowLeft className="w-4 h-4 mr-2" />
-              Back
-            </Button>
+              <ArrowLeft className="w-4 h-4 mr-2" /><Localize>{" Back "}</Localize></Button>
           </div>
         </div>
       </header>
 
       <main className="container mx-auto px-6 py-8">
         {loading ? (
-          <p className="text-zinc-400 animate-pulse">Loading dashboard...</p>
+          <p className="text-zinc-400 animate-pulse"><Localize>{"Loading dashboard..."}</Localize></p>
         ) : data && commandCenter ? (
           <>
             <div className="mb-8">
-              <h1 className="text-3xl font-light mb-2">FalilaX Executive Command Center</h1>
-              <p className="text-zinc-400 mb-4">
-                Incident intelligence, response coordination, and operational water-risk overview
-              </p>
+              <h1 className="text-3xl font-light mb-2"><Localize>{"FalilaX Executive Command Center"}</Localize></h1>
+              <p className="text-zinc-400 mb-4"><Localize>{" Incident intelligence, response coordination, and operational water-risk overview "}</Localize></p>
 
               <div className="flex items-center gap-1.5 text-xs text-zinc-500">
                 <Clock3 className="w-3 h-3" />
-                <span>Updated: {new Date(data.last_updated).toLocaleString()}</span>
+                <span><Localize>{"Updated: "}</Localize>{new Date(data.last_updated).toLocaleString(locale)}</span>
               </div>
             </div>
 
@@ -356,34 +344,33 @@ export default function Dashboard() {
                       )}
                     </div>
                     <div>
-                      <p className="text-[10px] font-bold uppercase tracking-[0.24em] text-zinc-400">Current operational posture</p>
+                      <p className="text-[10px] font-bold uppercase tracking-[0.24em] text-zinc-400"><Localize>{"Current operational posture"}</Localize></p>
                       <div className="mt-1 flex items-center gap-2">
                         <span className={`h-2 w-2 rounded-full ${data.status === "safe" ? "bg-emerald-400" : data.status === "critical" ? "bg-red-400" : "bg-amber-400"}`} />
-                        <span className="text-xs font-semibold text-zinc-300">Live command view</span>
+                        <span className="text-xs font-semibold text-zinc-300"><Localize>{"Live command view"}</Localize></span>
                       </div>
                     </div>
                   </div>
 
                   <h2 className="mt-7 max-w-2xl text-3xl font-semibold tracking-[-0.035em] text-white md:text-4xl">
-                    {commandCenter.incidentHeadline}
+                    <Localize>{commandCenter.incidentHeadline}</Localize>
                   </h2>
                   <p className="mt-3 text-sm leading-6 text-zinc-400">
-                    {data.location} · The response team is tracking the latest network evidence and notification status.
-                  </p>
+                    {data.location}<Localize>{" · The response team is tracking the latest network evidence and notification status. "}</Localize></p>
 
                   <div className="mt-7 flex flex-wrap items-center gap-3">
                     <span className={`rounded-full px-3 py-1.5 text-[11px] font-bold uppercase tracking-[0.16em] ${severityLabelClass(data.status)}`}>
-                      {commandCenter.severity}
+                      <Localize>{commandCenter.severity}</Localize>
                     </span>
                     <span className="rounded-full border border-white/10 bg-black/15 px-3 py-1.5 text-xs text-zinc-300">
-                      {commandCenter.incidentStatus}
+                      <Localize>{commandCenter.incidentStatus}</Localize>
                     </span>
                   </div>
                 </div>
 
                 <div className="grid grid-cols-2 border-t border-white/[0.07] bg-black/10 xl:border-l xl:border-t-0">
                   {[
-                    ["Population at risk", commandCenter.populationAtRisk.toLocaleString()],
+                    ["Population at risk", commandCenter.populationAtRisk.toLocaleString(locale)],
                     ["Escalation", commandCenter.escalationLevel],
                     ["Incident status", commandCenter.incidentStatus],
                     ["Risk score", `${data.risk_score}%`],
@@ -392,8 +379,8 @@ export default function Dashboard() {
                       key={label}
                       className={`flex min-h-[116px] flex-col justify-center px-6 py-5 ${index % 2 === 0 ? "border-r border-white/[0.07]" : ""} ${index < 2 ? "border-b border-white/[0.07]" : ""}`}
                     >
-                      <p className="text-[11px] font-medium uppercase tracking-[0.13em] text-zinc-500">{label}</p>
-                      <p className="mt-2 text-2xl font-semibold tracking-tight text-white">{value}</p>
+                      <p className="text-[11px] font-medium uppercase tracking-[0.13em] text-zinc-500"><Localize>{label}</Localize></p>
+                      <p className="mt-2 text-2xl font-semibold tracking-tight text-white"><Localize>{value}</Localize></p>
                     </div>
                   ))}
                 </div>
@@ -404,15 +391,15 @@ export default function Dashboard() {
               <div className="p-4 rounded-xl bg-zinc-900 border border-zinc-800">
                 <div className="flex items-center gap-2 text-zinc-400 mb-2">
                   <Users className="w-4 h-4" />
-                  <p className="text-xs uppercase tracking-wide">Population at Risk</p>
+                  <p className="text-xs uppercase tracking-wide"><Localize>{"Population at Risk"}</Localize></p>
                 </div>
-                <p className="text-2xl font-semibold">{commandCenter.populationAtRisk.toLocaleString()}</p>
+                <p className="text-2xl font-semibold">{commandCenter.populationAtRisk.toLocaleString(locale)}</p>
               </div>
 
               <div className="p-4 rounded-xl bg-zinc-900 border border-zinc-800">
                 <div className="flex items-center gap-2 text-zinc-400 mb-2">
                   <Map className="w-4 h-4" />
-                  <p className="text-xs uppercase tracking-wide">Affected Sites</p>
+                  <p className="text-xs uppercase tracking-wide"><Localize>{"Affected Sites"}</Localize></p>
                 </div>
                 <p className="text-2xl font-semibold">{commandCenter.affectedSites}</p>
               </div>
@@ -420,7 +407,7 @@ export default function Dashboard() {
               <div className="p-4 rounded-xl bg-zinc-900 border border-zinc-800">
                 <div className="flex items-center gap-2 text-zinc-400 mb-2">
                   <BellRing className="w-4 h-4" />
-                  <p className="text-xs uppercase tracking-wide">Notifications Sent</p>
+                  <p className="text-xs uppercase tracking-wide"><Localize>{"Notifications Sent"}</Localize></p>
                 </div>
                 <p className="text-2xl font-semibold text-green-400">{data.sent_alerts}</p>
               </div>
@@ -428,40 +415,36 @@ export default function Dashboard() {
               <div className="p-4 rounded-xl bg-zinc-900 border border-zinc-800">
                 <div className="flex items-center gap-2 text-zinc-400 mb-2">
                   <DollarSign className="w-4 h-4" />
-                  <p className="text-xs uppercase tracking-wide">Estimated Cost</p>
+                  <p className="text-xs uppercase tracking-wide"><Localize>{"Estimated Cost"}</Localize></p>
                 </div>
-                <p className="text-2xl font-semibold">{commandCenter.estimatedCost}</p>
+                <p className="text-2xl font-semibold">{commandCenter.estimatedCost.toLocaleString(locale, { style: "currency", currency: "USD", maximumFractionDigits: 0 })}</p>
               </div>
 
               <div className="p-4 rounded-xl bg-zinc-900 border border-zinc-800">
                 <div className="flex items-center gap-2 text-zinc-400 mb-2">
                   <TrendingUp className="w-4 h-4" />
-                  <p className="text-xs uppercase tracking-wide">48-Hour Projection</p>
+                  <p className="text-xs uppercase tracking-wide"><Localize>{"48-Hour Projection"}</Localize></p>
                 </div>
-                <p className="text-2xl font-semibold">{commandCenter.projection48h}</p>
+                <p className="text-2xl font-semibold">{typeof commandCenter.projection48h === "number" ? commandCenter.projection48h.toLocaleString(locale) : <Localize>{commandCenter.projection48h}</Localize>}</p>
               </div>
 
               <div className="p-4 rounded-xl bg-zinc-900 border border-zinc-800">
                 <div className="flex items-center gap-2 text-zinc-400 mb-2">
                   <RadioTower className="w-4 h-4" />
-                  <p className="text-xs uppercase tracking-wide">Ack. Rate</p>
+                  <p className="text-xs uppercase tracking-wide"><Localize>{"Ack. Rate"}</Localize></p>
                 </div>
                 <p className="text-2xl font-semibold">{commandCenter.acknowledgementRate}%</p>
               </div>
             </section>
 
             <section className="rounded-xl bg-zinc-900 border border-zinc-800 p-6 mb-6">
-              <div className="flex items-center justify-between mb-5">
+              <div className="flex flex-wrap items-center justify-between gap-3 mb-5">
                 <div>
-                  <h2 className="text-xl font-semibold">Incident Progress Tracker</h2>
-                  <p className="text-sm text-zinc-400">
-                    Operational response workflow from detection to closure
-                  </p>
+                  <h2 className="text-xl font-semibold"><Localize>{"Incident Progress Tracker"}</Localize></h2>
+                  <p className="text-sm text-zinc-400"><Localize>{" Operational response workflow from detection to closure "}</Localize></p>
                 </div>
 
-                <span className="text-xs px-3 py-1 rounded-full bg-zinc-950 border border-zinc-800 text-zinc-400">
-                  Live Workflow
-                </span>
+                <span className="text-xs px-3 py-1 rounded-full bg-zinc-950 border border-zinc-800 text-zinc-400"><Localize>{" Live Workflow "}</Localize></span>
               </div>
 
               <div className="grid md:grid-cols-7 gap-3">
@@ -470,31 +453,31 @@ export default function Dashboard() {
                     key={step.label}
                     className={`relative rounded-xl border p-4 min-h-[120px] ${progressStepClass(step.status)}`}
                   >
-                    <div className="flex items-center justify-between mb-3">
+                    <div className="flex flex-wrap items-center justify-between gap-3 mb-3">
                       {progressIcon(step.status)}
                       <span className="text-xs text-zinc-500">{index + 1}/7</span>
                     </div>
 
-                    <p className="text-sm font-medium leading-snug">{step.label}</p>
+                    <p className="text-sm font-medium leading-snug"><Localize>{step.label}</Localize></p>
 
-                    <p className="text-xs text-zinc-500 mt-2 capitalize">{step.status}</p>
+                    <p className="text-xs text-zinc-500 mt-2 capitalize"><Localize>{step.status}</Localize></p>
                   </div>
                 ))}
               </div>
             </section>
 
             <div className="bg-zinc-900 rounded-xl p-6 mb-6 border border-zinc-800">
-              <div className="flex items-center justify-between mb-4">
+              <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
                 <h2 className="text-2xl font-semibold">{data.location}</h2>
                 <div className="flex items-center gap-2">
                   {statusIcon(data.status)}
-                  <span className="text-lg">{statusText(data.status)}</span>
+                  <span className="text-lg"><Localize>{statusText(data.status)}</Localize></span>
                 </div>
               </div>
 
               <div className="mb-4">
                 <div className="flex justify-between text-sm mb-1">
-                  <span>Risk Score</span>
+                  <span><Localize>{"Risk Score"}</Localize></span>
                   <span>{data.risk_score}%</span>
                 </div>
                 <Progress value={data.risk_score} />
@@ -502,34 +485,34 @@ export default function Dashboard() {
 
               <div className="grid md:grid-cols-3 gap-4 text-sm">
                 <div className="p-4 rounded-lg bg-zinc-800/50 border border-zinc-700">
-                  <p className="text-zinc-400 mb-1">Active Alerts</p>
+                  <p className="text-zinc-400 mb-1"><Localize>{"Active Alerts"}</Localize></p>
                   <p className="text-xl font-semibold">{data.alerts}</p>
                 </div>
 
                 <div className="p-4 rounded-lg bg-zinc-800/50 border border-zinc-700">
-                  <p className="text-zinc-400 mb-1">Critical Alerts</p>
+                  <p className="text-zinc-400 mb-1"><Localize>{"Critical Alerts"}</Localize></p>
                   <p className="text-xl font-semibold text-red-400">{data.critical_alerts}</p>
                 </div>
 
                 <div className="p-4 rounded-lg bg-zinc-800/50 border border-zinc-700">
-                  <p className="text-zinc-400 mb-1">Action Alerts</p>
+                  <p className="text-zinc-400 mb-1"><Localize>{"Action Alerts"}</Localize></p>
                   <p className="text-xl font-semibold text-yellow-400">{data.action_alerts}</p>
                 </div>
               </div>
 
               <div className="grid md:grid-cols-3 gap-4 text-sm mt-4">
                 <div className="p-4 rounded-lg bg-zinc-800/50 border border-zinc-700">
-                  <p className="text-zinc-400 mb-1">Notice Alerts</p>
+                  <p className="text-zinc-400 mb-1"><Localize>{"Notice Alerts"}</Localize></p>
                   <p className="text-xl font-semibold">{data.notice_alerts}</p>
                 </div>
 
                 <div className="p-4 rounded-lg bg-zinc-800/50 border border-zinc-700">
-                  <p className="text-zinc-400 mb-1">Sent Alerts</p>
+                  <p className="text-zinc-400 mb-1"><Localize>{"Sent Alerts"}</Localize></p>
                   <p className="text-xl font-semibold text-green-400">{data.sent_alerts}</p>
                 </div>
 
                 <div className="p-4 rounded-lg bg-zinc-800/50 border border-zinc-700">
-                  <p className="text-zinc-400 mb-1">Failed Alerts</p>
+                  <p className="text-zinc-400 mb-1"><Localize>{"Failed Alerts"}</Localize></p>
                   <p className="text-xl font-semibold text-red-300">{data.failed_alerts}</p>
                 </div>
               </div>
@@ -542,11 +525,9 @@ export default function Dashboard() {
               >
                 <div className="flex items-center gap-3 mb-2">
                   <Map className="w-5 h-5 text-amber-400" />
-                  <h3 className="text-lg font-medium">Community Map</h3>
+                  <h3 className="text-lg font-medium"><Localize>{"Community Map"}</Localize></h3>
                 </div>
-                <p className="text-sm text-zinc-400">
-                  View regional water risk distribution and alert clusters.
-                </p>
+                <p className="text-sm text-zinc-400"><Localize>{" View regional water risk distribution and alert clusters. "}</Localize></p>
               </div>
 
               <div
@@ -555,11 +536,9 @@ export default function Dashboard() {
               >
                 <div className="flex items-center gap-3 mb-2">
                   <Network className="w-5 h-5 text-amber-400" />
-                  <h3 className="text-lg font-medium">Source Attribution</h3>
+                  <h3 className="text-lg font-medium"><Localize>{"Source Attribution"}</Localize></h3>
                 </div>
-                <p className="text-sm text-zinc-400">
-                  Identify the most likely source of water quality issues.
-                </p>
+                <p className="text-sm text-zinc-400"><Localize>{" Identify the most likely source of water quality issues. "}</Localize></p>
               </div>
 
               <div
@@ -568,11 +547,9 @@ export default function Dashboard() {
               >
                 <div className="flex items-center gap-3 mb-2">
                   <Siren className="w-5 h-5 text-amber-400" />
-                  <h3 className="text-lg font-medium">Investigation Workflow</h3>
+                  <h3 className="text-lg font-medium"><Localize>{"Investigation Workflow"}</Localize></h3>
                 </div>
-                <p className="text-sm text-zinc-400">
-                  Acknowledge, assign, investigate, verify, resolve, and close operational incidents.
-                </p>
+                <p className="text-sm text-zinc-400"><Localize>{" Acknowledge, assign, investigate, verify, resolve, and close operational incidents. "}</Localize></p>
               </div>
 
               <div
@@ -581,32 +558,30 @@ export default function Dashboard() {
               >
                 <div className="flex items-center gap-3 mb-2">
                   <ClipboardCheck className="w-5 h-5 text-amber-400" />
-                  <h3 className="text-lg font-medium">Demo Readiness</h3>
+                  <h3 className="text-lg font-medium"><Localize>{"Demo Readiness"}</Localize></h3>
                 </div>
-                <p className="text-sm text-zinc-400">
-                  Confirm system, geographic, and data-source representation before a demonstration.
-                </p>
+                <p className="text-sm text-zinc-400"><Localize>{" Confirm system, geographic, and data-source representation before a demonstration. "}</Localize></p>
               </div>
 
               <div
                 onClick={() => setShowDetails(!showDetails)}
                 className="p-6 bg-zinc-900 rounded-xl border border-zinc-800 hover:border-amber-500 transition cursor-pointer"
               >
-                <div className="flex items-center justify-between">
+                <div className="flex flex-wrap items-center justify-between gap-3">
                   <div className="flex items-center gap-3">
                     <Activity className="w-5 h-5 text-amber-400" />
-                    <h3 className="text-lg font-medium">System Activity</h3>
+                    <h3 className="text-lg font-medium"><Localize>{"System Activity"}</Localize></h3>
                   </div>
                   {showDetails ? <ChevronUp /> : <ChevronDown />}
                 </div>
 
                 {showDetails && (
                   <div className="mt-4 text-sm text-zinc-400 space-y-1">
-                    <p>• Sensor ingestion pipeline operational</p>
-                    <p>• Alert engine operational</p>
-                    <p>• Dashboard summary connected to live backend</p>
-                    <p>• Email alerts active</p>
-                    <p>• SMS pending Twilio toll-free approval</p>
+                    <p><Localize>{"• Sensor ingestion pipeline operational"}</Localize></p>
+                    <p><Localize>{"• Alert engine operational"}</Localize></p>
+                    <p><Localize>{"• Dashboard summary connected to live backend"}</Localize></p>
+                    <p><Localize>{"• Email alerts active"}</Localize></p>
+                    <p><Localize>{"• SMS pending Twilio toll-free approval"}</Localize></p>
                   </div>
                 )}
               </div>
@@ -616,31 +591,25 @@ export default function Dashboard() {
               <div className="p-6 rounded-lg bg-zinc-900/50 border border-zinc-800">
                 <div className="flex items-center gap-3 mb-3">
                   <Shield className="w-5 h-5 text-amber-400" />
-                  <h3 className="text-lg font-medium">Risk Intelligence</h3>
+                  <h3 className="text-lg font-medium"><Localize>{"Risk Intelligence"}</Localize></h3>
                 </div>
-                <p className="text-sm text-zinc-400">
-                  FalilaX combines threshold detection, anomaly tracking, and alert intelligence.
-                </p>
+                <p className="text-sm text-zinc-400"><Localize>{" FalilaX combines threshold detection, anomaly tracking, and alert intelligence. "}</Localize></p>
               </div>
 
               <div className="p-6 rounded-lg bg-zinc-900/50 border border-zinc-800">
                 <div className="flex items-center gap-3 mb-3">
                   <Droplets className="w-5 h-5 text-amber-400" />
-                  <h3 className="text-lg font-medium">Water Monitoring</h3>
+                  <h3 className="text-lg font-medium"><Localize>{"Water Monitoring"}</Localize></h3>
                 </div>
-                <p className="text-sm text-zinc-400">
-                  Live interpretation of water measurements across monitored sites.
-                </p>
+                <p className="text-sm text-zinc-400"><Localize>{" Live interpretation of water measurements across monitored sites. "}</Localize></p>
               </div>
 
               <div className="p-6 rounded-lg bg-zinc-900/50 border border-zinc-800">
                 <div className="flex items-center gap-3 mb-3">
                   <Info className="w-5 h-5 text-amber-400" />
-                  <h3 className="text-lg font-medium">Decision Support</h3>
+                  <h3 className="text-lg font-medium"><Localize>{"Decision Support"}</Localize></h3>
                 </div>
-                <p className="text-sm text-zinc-400">
-                  Clear alerts and context-aware guidance for faster response.
-                </p>
+                <p className="text-sm text-zinc-400"><Localize>{" Clear alerts and context-aware guidance for faster response. "}</Localize></p>
               </div>
             </div>
 
@@ -654,14 +623,11 @@ export default function Dashboard() {
 
             <div className="mt-8 text-xs text-zinc-500 flex items-start gap-2">
               <Info className="w-4 h-4 mt-0.5" />
-              <p>
-                FalilaX provides informational water quality alerts only and does not replace
-                official regulatory testing, public health advisories, or guidance from water authorities.
-              </p>
+              <p><Localize>{" FalilaX provides informational water quality alerts only and does not replace official regulatory testing, public health advisories, or guidance from water authorities. "}</Localize></p>
             </div>
           </>
         ) : (
-          <p className="text-zinc-500">No dashboard data available.</p>
+          <p className="text-zinc-500"><Localize>{"No dashboard data available."}</Localize></p>
         )}
       </main>
     </div>

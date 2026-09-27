@@ -1,3 +1,6 @@
+import { GeneratedText } from "@/app/i18n/generated-text";
+import { Localize } from "@/app/i18n/language";
+import { useOperationalText } from "@/app/i18n/operational-text";
 ﻿import { useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import {
@@ -137,11 +140,11 @@ function toStringArray(value: unknown, fallback: string[] = []): string[] {
   return value.map((item) => String(item));
 }
 
-function formatRefreshTime(value?: string): string {
+function formatRefreshTime(value?: string, locale = "en"): string {
   if (!value) return 'Recently updated';
   const d = new Date(value);
   if (Number.isNaN(d.getTime())) return String(value);
-  return d.toLocaleString();
+  return d.toLocaleString(locale);
 }
 
 function formatAssessmentType(value?: string): string {
@@ -216,19 +219,19 @@ function normalizeRelationshipConfidence(value: unknown): number | null {
   return Math.max(0, Math.min(100, Math.round(n)));
 }
 
-function formatDistance(value: unknown): string {
+function formatDistance(value: unknown, locale = "en"): string {
   const n = toNullableFiniteNumber(value);
 
   if (n === null) return 'Not available';
 
   if (n >= 1000) {
-    return `${(n / 1000).toFixed(n >= 10000 ? 0 : 2)} km`;
+    return `${(n / 1000).toLocaleString(locale, { maximumFractionDigits: n >= 10000 ? 0 : 2 })} km`;
   }
 
-  return `${n.toFixed(n >= 100 ? 0 : 1)} m`;
+  return `${n.toLocaleString(locale, { maximumFractionDigits: n >= 100 ? 0 : 1 })} m`;
 }
 
-function formatTravelTime(value: unknown): string {
+function formatTravelTime(value: unknown, locale = "en"): string {
   const n = toNullableFiniteNumber(value);
 
   if (n === null) return 'Not available';
@@ -238,13 +241,13 @@ function formatTravelTime(value: unknown): string {
     const minutes = Math.round(n % 60);
 
     if (minutes === 0) {
-      return `${hours} hr`;
+      return `${hours.toLocaleString(locale)} ${locale === "en" ? "hr" : "h"}`;
     }
 
-    return `${hours} hr ${minutes} min`;
+    return `${hours.toLocaleString(locale)} ${locale === "en" ? "hr" : "h"} ${minutes.toLocaleString(locale)} min`;
   }
 
-  return `${Math.round(n)} min`;
+  return `${Math.round(n).toLocaleString(locale)} min`;
 }
 
 function sourceIcon(source?: string | null) {
@@ -265,6 +268,7 @@ function sourceIcon(source?: string | null) {
 }
 
 export function SourceAttribution() {
+  const { t, labelText, locale, dateText, numberText } = useOperationalText();
   const [showDetails, setShowDetails] = useState(false);
   const [apiError, setApiError] = useState<string | null>(null);
   const [apiLoading, setApiLoading] = useState(true);
@@ -560,7 +564,7 @@ export function SourceAttribution() {
   const targetResolved = toNullableFiniteNumber(attributionData.topology?.target_asset_id) !== null;
   const topologyLookupFailed = attributionData.topology?.status === 'topology_lookup_failed';
   const targetAssetLabel = attributionData.topology?.target_asset_name ||
-    (targetResolved ? `Asset ${attributionData.topology?.target_asset_id}` : 'Not resolved');
+    (targetResolved ? t("Asset {id}", { id: String(attributionData.topology?.target_asset_id) }) : 'Not resolved');
   const topologyLabel = topologyLookupFailed
     ? 'Topology lookup unavailable'
     : topologyAvailable
@@ -569,7 +573,7 @@ export function SourceAttribution() {
   const topologyDescription = topologyLookupFailed
     ? 'The upstream lookup could not be completed. Connectivity has not been assessed.'
     : topologyAvailable
-      ? `${upstreamRelationshipCount} active upstream relationship${upstreamRelationshipCount === 1 ? '' : 's'} identified.`
+      ? t("{count} active upstream relationships identified.", { count: numberText(upstreamRelationshipCount, 0) })
       : targetResolved
         ? 'The site is linked to an asset, but no upstream relationships were returned.'
         : attributionData.topology?.mapping_reason || 'No infrastructure asset was resolved for this site.';
@@ -581,8 +585,8 @@ export function SourceAttribution() {
     <div className="fx-app-shell min-h-screen bg-zinc-950 text-zinc-100">
       <header className="border-b border-zinc-800 bg-zinc-950/50 backdrop-blur-sm sticky top-0 z-10">
         <div className="container mx-auto px-6 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-8">
+          <div className="flex flex-wrap items-center justify-between gap-4">
+            <div className="flex flex-wrap items-center gap-4">
               <div
                 onClick={() => navigate('/')}
                 className="flex items-center gap-3 cursor-pointer"
@@ -595,31 +599,25 @@ export function SourceAttribution() {
                 <span className="text-xl font-semibold tracking-wide">FalilaX</span>
               </div>
 
-              <nav className="flex gap-6 text-sm">
+              <nav className="flex flex-wrap gap-x-5 gap-y-2 text-sm">
                 <Link
                   to="/dashboard"
                   className="text-zinc-400 hover:text-zinc-100 transition-colors"
-                >
-                  Dashboard
-                </Link>
+                ><Localize>{" Dashboard "}</Localize></Link>
                 <Link
                   to="/map"
                   className="text-zinc-400 hover:text-zinc-100 transition-colors"
-                >
-                  Community Map
-                </Link>
+                ><Localize>{" Community Map "}</Localize></Link>
                 <Link
                   to="/map"
                   className="text-zinc-100 font-medium"
-                >
-                  Source Attribution
-                </Link>
+                ><Localize>{" Source Attribution "}</Localize></Link>
               </nav>
             </div>
 
             <div className="flex items-center gap-4">
               <div className="px-2 py-1 rounded text-xs text-emerald-400 bg-emerald-500/10 border border-emerald-500/20">
-                {apiError ? 'Attribution Unavailable' : topologyUsed ? 'Topology-Aware Attribution' : 'Site-Aware Attribution'}
+                {apiError ? t('Attribution Unavailable') : topologyUsed ? t('Topology-Aware Attribution') : t('Site-Aware Attribution')}
               </div>
 
               <Button
@@ -628,9 +626,7 @@ export function SourceAttribution() {
                 onClick={() => navigate('/map')}
                 className="text-zinc-400 hover:text-zinc-100"
               >
-                <ArrowLeft className="w-4 h-4 mr-2" />
-                Back to Map
-              </Button>
+                <ArrowLeft className="w-4 h-4 mr-2" /><Localize>{" Back to Map "}</Localize></Button>
             </div>
           </div>
         </div>
@@ -638,46 +634,42 @@ export function SourceAttribution() {
 
       <main className="container mx-auto px-6 py-8">
         <div className="mb-8">
-          <h1 className="text-3xl font-light mb-2">Source Attribution Analysis</h1>
-          <p className="text-zinc-400 mb-4">
-            Identifying the most likely origin of water quality issues for the selected site
-          </p>
+          <h1 className="text-3xl font-light mb-2"><Localize>{"Source Attribution Analysis"}</Localize></h1>
+          <p className="text-zinc-400 mb-4"><Localize>{" Identifying the most likely origin of water quality issues for the selected site "}</Localize></p>
 
           <div className="grid md:grid-cols-3 gap-4 mb-4">
             <div className="rounded-lg border border-zinc-800 bg-zinc-900/60 p-4">
-              <p className="text-xs text-zinc-500 mb-1">Selected Site</p>
+              <p className="text-xs text-zinc-500 mb-1"><Localize>{"Selected Site"}</Localize></p>
               <p className="text-lg font-semibold">
-                {attributionData.site_name ?? unavailableSiteMeta.name}
+                {attributionData.site_name ?? t(unavailableSiteMeta.name)}
               </p>
             </div>
 
             <div className="rounded-lg border border-zinc-800 bg-zinc-900/60 p-4">
-              <p className="text-xs text-zinc-500 mb-1">Site Type</p>
+              <p className="text-xs text-zinc-500 mb-1"><Localize>{"Site Type"}</Localize></p>
               <p className="text-lg font-semibold">
-                {normalizeAssetTypeLabel(attributionData.site_type ?? unavailableSiteMeta.type)}
+                {labelText(normalizeAssetTypeLabel(attributionData.site_type ?? unavailableSiteMeta.type))}
               </p>
             </div>
 
             <div className="rounded-lg border border-zinc-800 bg-zinc-900/60 p-4">
-              <p className="text-xs text-zinc-500 mb-1">Location</p>
+              <p className="text-xs text-zinc-500 mb-1"><Localize>{"Location"}</Localize></p>
               <p className="text-lg font-semibold">
                 {attributionData.county && attributionData.state
                   ? `${attributionData.county}, ${attributionData.state}`
-                  : 'Not available'}
+                  : t('Not available')}
               </p>
             </div>
           </div>
 
-          <p className="text-sm text-zinc-500 mb-2">Selected Site ID: {siteId}</p>
+          <p className="text-sm text-zinc-500 mb-2"><Localize>{"Selected Site ID: "}</Localize>{siteId}</p>
 
           <div className="flex flex-wrap items-center gap-2 mb-2">
-            <span className="inline-block px-2 py-0.5 rounded text-xs bg-blue-500/10 text-blue-400 border border-blue-500/20">
-              Assessment: {apiError ? 'Not available' : assessmentLabel}
+            <span className="inline-block px-2 py-0.5 rounded text-xs bg-blue-500/10 text-blue-400 border border-blue-500/20"><Localize>{" Assessment: "}</Localize>{apiError ? t('Not available') : labelText(assessmentLabel)}
             </span>
 
             {attributionData.engine_version && (
-              <span className="inline-block px-2 py-0.5 rounded text-xs bg-zinc-800 text-zinc-400 border border-zinc-700">
-                Engine v{attributionData.engine_version}
+              <span className="inline-block px-2 py-0.5 rounded text-xs bg-zinc-800 text-zinc-400 border border-zinc-700"><Localize>{" Engine v"}</Localize>{attributionData.engine_version}
               </span>
             )}
 
@@ -686,31 +678,23 @@ export function SourceAttribution() {
                 <Info className="w-3.5 h-3.5 text-zinc-500 hover:text-zinc-400 transition-colors cursor-help" />
               </TooltipTrigger>
               <TooltipContent className="max-w-xs bg-zinc-800 text-zinc-200 border border-zinc-700">
-                <p className="text-xs leading-relaxed">
-                  Attribution combines alert behavior and site context with upstream network
-                  topology, relationship confidence, distance, and hydraulic travel-time metadata
-                  when those data are available.
-                </p>
+                <p className="text-xs leading-relaxed"><Localize>{" Attribution combines alert behavior and site context with upstream network topology, relationship confidence, distance, and hydraulic travel-time metadata when those data are available. "}</Localize></p>
               </TooltipContent>
             </Tooltip>
           </div>
 
           <div className="flex items-center gap-1.5 text-xs text-zinc-500">
             <Clock className="w-3 h-3" />
-            <span>
-              Analysis refreshed: {apiError ? 'Not available' : formatRefreshTime(attributionData.updated_at)}
+            <span><Localize>{" Analysis refreshed: "}</Localize>{apiError ? t('Not available') : labelText(formatRefreshTime(attributionData.updated_at, locale))}
             </span>
           </div>
 
           {apiLoading && (
-            <div className="mt-4 rounded-lg border border-blue-500/20 bg-blue-500/5 p-3 text-sm text-blue-400">
-              Loading source attribution...
-            </div>
+            <div className="mt-4 rounded-lg border border-blue-500/20 bg-blue-500/5 p-3 text-sm text-blue-400"><Localize>{" Loading source attribution... "}</Localize></div>
           )}
 
           {!apiLoading && apiError && (
-            <div className="mt-4 rounded-lg border border-amber-500/20 bg-amber-500/5 p-3 text-sm text-amber-400">
-              Source attribution unavailable — {apiError}
+            <div className="mt-4 rounded-lg border border-amber-500/20 bg-amber-500/5 p-3 text-sm text-amber-400"><Localize>{" Source attribution unavailable — "}</Localize>{labelText(apiError)}
             </div>
           )}
 
@@ -718,11 +702,11 @@ export function SourceAttribution() {
             <div className="mt-4 rounded-lg border border-emerald-500/20 bg-emerald-500/5 p-3 text-sm text-emerald-400">
               {hasAttribution
                 ? topologyUsed
-                  ? 'Assessment loaded — topology evidence included'
-                  : 'Assessment loaded — inferred attribution available'
+                  ? t('Assessment loaded — topology evidence included')
+                  : t('Assessment loaded — inferred attribution available')
                 : topologyAvailable
-                  ? 'Site context loaded — connectivity available; source attribution awaits signal evidence'
-                  : 'Site context loaded — insufficient evidence for source attribution'}
+                  ? t('Site context loaded — connectivity available; source attribution awaits signal evidence')
+                  : t('Site context loaded — insufficient evidence for source attribution')}
             </div>
           )}
         </div>
@@ -737,25 +721,25 @@ export function SourceAttribution() {
 
             <div className="flex-1">
               <h2 className="text-2xl font-light mb-2">
-                {attributionData.headline ??
+                {attributionData.headline ? <GeneratedText value={attributionData.headline} /> :
                   (hasAttribution
-                    ? `${normalizeSourceLabel(attributionData.primary?.source)} Issue Likely`
+                    ? t("{source} Issue Likely", { source: labelText(normalizeSourceLabel(attributionData.primary?.source)) })
                     : 'Insufficient evidence for source attribution')}
               </h2>
 
               <p className="text-zinc-300 mb-4">
-                {attributionData.primary?.indicator ?? 'No indicator available'}
+                {attributionData.primary?.indicator ? <GeneratedText value={attributionData.primary.indicator} /> : t('No indicator available')}
               </p>
 
               <div className="mb-4">
-                <p className="text-xs font-medium text-zinc-500 mb-2">Why:</p>
+                <p className="text-xs font-medium text-zinc-500 mb-2"><Localize>{"Why:"}</Localize></p>
                 <div className="flex flex-wrap gap-2">
                   {primaryWhyTags.map((tag) => (
                     <span
                       key={tag}
                       className="text-xs px-2.5 py-1 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20"
                     >
-                      {tag}
+                      {labelText(tag)}
                     </span>
                   ))}
                 </div>
@@ -764,7 +748,7 @@ export function SourceAttribution() {
               <div className="flex items-center gap-4">
                 <div className="flex-1">
                   <div className="flex items-center justify-between mb-2">
-                    <span className="text-sm text-zinc-400">Confidence Score</span>
+                    <span className="text-sm text-zinc-400"><Localize>{"Confidence Score"}</Localize></span>
                     <span className="text-sm font-medium text-amber-400">
                       {primaryConfidence}%
                     </span>
@@ -774,7 +758,7 @@ export function SourceAttribution() {
 
                 <div className="px-4 py-2 rounded-full bg-amber-500/10 border border-amber-500/30">
                   <span className="text-sm font-medium text-amber-400">
-                    {confidenceLabel}
+                    {labelText(confidenceLabel)}
                   </span>
                 </div>
               </div>
@@ -785,11 +769,11 @@ export function SourceAttribution() {
         <section className="mb-8 p-6 rounded-lg bg-zinc-900/50 border border-zinc-800">
           <div className="flex flex-col gap-2 md:flex-row md:items-start md:justify-between mb-6">
             <div>
-              <h2 className="text-xl font-light mb-1">Topology-Aware Investigation</h2>
+              <h2 className="text-xl font-light mb-1"><Localize>{"Topology-Aware Investigation"}</Localize></h2>
               <p className="text-sm text-zinc-400">
                 {hasAttribution
-                  ? 'Ranked infrastructure candidates that may explain the observed signal.'
-                  : 'Infrastructure connectivity is shown separately from source attribution.'}
+                  ? t('Ranked infrastructure candidates that may explain the observed signal.')
+                  : t('Infrastructure connectivity is shown separately from source attribution.')}
               </p>
             </div>
 
@@ -800,41 +784,39 @@ export function SourceAttribution() {
                   : 'bg-zinc-800 text-zinc-400 border-zinc-700'
               }`}
             >
-              {topologyLabel}
+              {labelText(topologyLabel)}
             </span>
           </div>
 
           <div className="grid md:grid-cols-3 gap-4 mb-6">
             <div className="rounded-lg border border-zinc-800 bg-zinc-950/40 p-4">
-              <p className="text-xs text-zinc-500 mb-1">Resolved Target Asset</p>
+              <p className="text-xs text-zinc-500 mb-1"><Localize>{"Resolved Target Asset"}</Localize></p>
               <p className="text-sm font-medium text-zinc-200">
                 {targetAssetLabel}
               </p>
               <p className="text-xs text-zinc-500 mt-1">
                 {attributionData.topology?.target_asset_type
-                  ? normalizeAssetTypeLabel(attributionData.topology.target_asset_type)
-                  : 'No topology asset type available'}
+                  ? labelText(normalizeAssetTypeLabel(attributionData.topology.target_asset_type))
+                  : t('No topology asset type available')}
               </p>
             </div>
 
             <div className="rounded-lg border border-zinc-800 bg-zinc-950/40 p-4">
-              <p className="text-xs text-zinc-500 mb-1">Upstream Relationships</p>
+              <p className="text-xs text-zinc-500 mb-1"><Localize>{"Upstream Relationships"}</Localize></p>
               <p className="text-2xl font-light text-zinc-200">
-                {topologyLookupFailed ? 'Unavailable' : upstreamRelationshipCount}
+                {topologyLookupFailed ? t('Unavailable') : upstreamRelationshipCount}
               </p>
               <p className="text-xs text-zinc-500 mt-1">
-                {topologyUsed ? 'Relationships used in attribution' : 'Structural connections only'}
+                {topologyUsed ? t('Relationships used in attribution') : t('Structural connections only')}
               </p>
             </div>
 
             <div className="rounded-lg border border-zinc-800 bg-zinc-950/40 p-4">
-              <p className="text-xs text-zinc-500 mb-1">Ranked Origin Assets</p>
+              <p className="text-xs text-zinc-500 mb-1"><Localize>{"Ranked Origin Assets"}</Localize></p>
               <p className="text-2xl font-light text-zinc-200">
                 {probableOriginAssets.length}
               </p>
-              <p className="text-xs text-zinc-500 mt-1">
-                Upstream investigation candidates
-              </p>
+              <p className="text-xs text-zinc-500 mt-1"><Localize>{" Upstream investigation candidates "}</Localize></p>
             </div>
           </div>
 
@@ -872,26 +854,23 @@ export function SourceAttribution() {
                         <div>
                           <div className="flex flex-wrap items-center gap-2">
                             <h3 className="font-medium text-zinc-100">
-                              {asset.asset_name || `Asset ${asset.asset_id ?? 'Unknown'}`}
+                              {asset.asset_name || t("Asset {id}", { id: asset.asset_id ?? t("Unknown") })}
                             </h3>
 
                             {index === 0 && (
-                              <span className="rounded-full border border-amber-500/30 bg-amber-500/10 px-2 py-0.5 text-xs text-amber-400">
-                                Highest-ranked origin
-                              </span>
+                              <span className="rounded-full border border-amber-500/30 bg-amber-500/10 px-2 py-0.5 text-xs text-amber-400"><Localize>{" Highest-ranked origin "}</Localize></span>
                             )}
                           </div>
 
                           <p className="mt-1 text-sm text-zinc-400">
-                            {normalizeAssetTypeLabel(asset.asset_type)}
+                            {labelText(normalizeAssetTypeLabel(asset.asset_type))}
                             {asset.source_type
-                              ? ` - ${normalizeSourceLabel(asset.source_type)}`
+                              ? ` - ${labelText(normalizeSourceLabel(asset.source_type))}`
                               : ''}
                           </p>
 
                           {asset.relationship_type && (
-                            <p className="mt-1 text-xs text-zinc-500">
-                              Relationship: {normalizeAssetTypeLabel(asset.relationship_type)}
+                            <p className="mt-1 text-xs text-zinc-500"><Localize>{" Relationship: "}</Localize>{labelText(normalizeAssetTypeLabel(asset.relationship_type))}
                             </p>
                           )}
                         </div>
@@ -899,31 +878,31 @@ export function SourceAttribution() {
 
                       <div className="grid grid-cols-2 gap-x-6 gap-y-3 text-sm sm:grid-cols-4 lg:min-w-[520px]">
                         <div>
-                          <p className="text-xs text-zinc-500">Upstream Depth</p>
+                          <p className="text-xs text-zinc-500"><Localize>{"Upstream Depth"}</Localize></p>
                           <p className="mt-1 text-zinc-200">
                             {depth > 0 ? depth : '\u2014'}
                           </p>
                         </div>
 
                         <div>
-                          <p className="text-xs text-zinc-500">Distance</p>
+                          <p className="text-xs text-zinc-500"><Localize>{"Distance"}</Localize></p>
                           <p className="mt-1 text-zinc-200">
-                            {formatDistance(asset.distance_meters)}
+                            {labelText(formatDistance(asset.distance_meters, locale))}
                           </p>
                         </div>
 
                         <div>
-                          <p className="text-xs text-zinc-500">Travel Time</p>
+                          <p className="text-xs text-zinc-500"><Localize>{"Travel Time"}</Localize></p>
                           <p className="mt-1 text-zinc-200">
-                            {formatTravelTime(asset.estimated_travel_time_minutes)}
+                            {labelText(formatTravelTime(asset.estimated_travel_time_minutes, locale))}
                           </p>
                         </div>
 
                         <div>
-                          <p className="text-xs text-zinc-500">Relationship Confidence</p>
+                          <p className="text-xs text-zinc-500"><Localize>{"Relationship Confidence"}</Localize></p>
                           <p className="mt-1 text-zinc-200">
                             {relationshipConfidence === null
-                              ? 'Not available'
+                              ? t('Not available')
                               : `${relationshipConfidence}%`}
                           </p>
                         </div>
@@ -933,15 +912,13 @@ export function SourceAttribution() {
                     <div className="mt-4 border-t border-zinc-800 pt-4">
                       <div className="flex flex-wrap items-center gap-4 mb-3">
                         {rankingScore !== null && (
-                          <div className="text-xs text-zinc-500">
-                            Topology ranking score:{' '}
-                            <span className="text-zinc-300">{rankingScore.toFixed(3)}</span>
+                          <div className="text-xs text-zinc-500"><Localize>{" Topology ranking score:"}</Localize>{' '}
+                            <span className="text-zinc-300">{numberText(rankingScore, 3)}</span>
                           </div>
                         )}
 
                         {asset.asset_id !== undefined && asset.asset_id !== null && (
-                          <div className="text-xs text-zinc-500">
-                            Asset ID:{' '}
+                          <div className="text-xs text-zinc-500"><Localize>{" Asset ID:"}</Localize>{' '}
                             <span className="text-zinc-300">{String(asset.asset_id)}</span>
                           </div>
                         )}
@@ -949,9 +926,7 @@ export function SourceAttribution() {
 
                       {evidence.length > 0 ? (
                         <div>
-                          <p className="text-xs font-medium text-zinc-500 mb-2">
-                            Why FalilaX ranked this asset
-                          </p>
+                          <p className="text-xs font-medium text-zinc-500 mb-2"><Localize>{" Why FalilaX ranked this asset "}</Localize></p>
                           <div className="space-y-1.5">
                             {evidence.map((item, evidenceIndex) => (
                               <div
@@ -959,15 +934,13 @@ export function SourceAttribution() {
                                 className="flex gap-2 text-sm text-zinc-400"
                               >
                                 <span className="text-amber-400 flex-shrink-0">{'\u2022'}</span>
-                                <p>{item}</p>
+                                <p><GeneratedText value={item} /></p>
                               </div>
                             ))}
                           </div>
                         </div>
                       ) : (
-                        <p className="text-xs text-zinc-500">
-                          No additional asset-level evidence was returned.
-                        </p>
+                        <p className="text-xs text-zinc-500"><Localize>{" No additional asset-level evidence was returned. "}</Localize></p>
                       )}
                     </div>
                   </div>
@@ -979,14 +952,12 @@ export function SourceAttribution() {
               <div className="flex items-start gap-3">
                 <Network className="w-5 h-5 text-zinc-500 mt-0.5 flex-shrink-0" />
                 <div>
-                  <p className="text-sm font-medium text-zinc-300">
-                    No ranked upstream assets available yet
-                  </p>
+                  <p className="text-sm font-medium text-zinc-300"><Localize>{" No ranked upstream assets available yet "}</Localize></p>
                   <p className="text-sm text-zinc-500 mt-1">
-                    {topologyDescription}{' '}
+                    {labelText(topologyDescription)}{' '}
                     {hasAttribution
-                      ? 'No upstream origin candidates were ranked for this assessment.'
-                      : 'A qualifying signal is needed before ranking possible sources. Connectivity alone does not establish a contamination source.'}
+                      ? t('No upstream origin candidates were ranked for this assessment.')
+                      : t('A qualifying signal is needed before ranking possible sources. Connectivity alone does not establish a contamination source.')}
                   </p>
                 </div>
               </div>
@@ -997,13 +968,11 @@ export function SourceAttribution() {
         <div className="grid lg:grid-cols-3 gap-6">
           <div className="lg:col-span-2 space-y-6">
             <div className="p-6 rounded-lg bg-zinc-900/50 border border-zinc-800">
-              <h2 className="text-xl font-light mb-6">Water Source Flow & Attribution</h2>
+              <h2 className="text-xl font-light mb-6"><Localize>{"Water Source Flow & Attribution"}</Localize></h2>
 
               <div className="space-y-4">
                 {breakdownItems.length === 0 && (
-                  <p className="text-sm text-zinc-400">
-                    No source probabilities are available. Additional signal evidence is needed.
-                  </p>
+                  <p className="text-sm text-zinc-400"><Localize>{" No source probabilities are available. Additional signal evidence is needed. "}</Localize></p>
                 )}
                 {breakdownItems.map((item, index) => {
                   const probability = toFiniteNumber(item.probability, 0);
@@ -1036,12 +1005,12 @@ export function SourceAttribution() {
                                 isTop ? 'text-amber-400' : 'text-zinc-100'
                               }`}
                             >
-                              {normalizeSourceLabel(item.source)}
+                              {labelText(normalizeSourceLabel(item.source))}
                             </h3>
                             <p className="text-sm text-zinc-400">
                               {index === 0
-                                ? 'Most likely contributing segment'
-                                : 'Secondary contributing segment'}
+                                ? t('Most likely contributing segment')
+                                : t('Secondary contributing segment')}
                             </p>
                           </div>
 
@@ -1053,13 +1022,13 @@ export function SourceAttribution() {
                             >
                               {probability}%
                             </p>
-                            <p className="text-xs text-zinc-500">Probability</p>
+                            <p className="text-xs text-zinc-500"><Localize>{"Probability"}</Localize></p>
                           </div>
                         </div>
 
                         <div className="pl-12 space-y-1 text-sm text-zinc-400">
                           {factors.map((factor, factorIndex) => (
-                            <p key={`${factor}-${factorIndex}`}>{'\u2022'} {factor}</p>
+                            <p key={`$<GeneratedText value={factor} />-${factorIndex}`}>{'\u2022'} <GeneratedText value={factor} /></p>
                           ))}
                         </div>
                       </div>
@@ -1075,13 +1044,8 @@ export function SourceAttribution() {
               <div className="mt-6 p-4 rounded bg-amber-500/5 border border-amber-500/20 flex items-start gap-3">
                 <AlertCircle className="w-5 h-5 text-amber-400 mt-0.5 flex-shrink-0" />
                 <div className="text-sm text-zinc-300">
-                  <p className="font-medium mb-1">Analysis Method</p>
-                  <p className="text-zinc-400">
-                    FalilaX combines alert severity, parameter behavior, threshold context, and site
-                    evidence with upstream network topology, asset relationships, distance,
-                    hydraulic travel time, and relationship confidence when those infrastructure
-                    data are available.
-                  </p>
+                  <p className="font-medium mb-1"><Localize>{"Analysis Method"}</Localize></p>
+                  <p className="text-zinc-400"><Localize>{" FalilaX combines alert severity, parameter behavior, threshold context, and site evidence with upstream network topology, asset relationships, distance, hydraulic travel time, and relationship confidence when those infrastructure data are available. "}</Localize></p>
                 </div>
               </div>
             </div>
@@ -1090,9 +1054,7 @@ export function SourceAttribution() {
           <div className="space-y-6">
             <div className="p-6 rounded-lg bg-zinc-900/50 border border-zinc-800">
               <h3 className="text-sm font-medium text-zinc-400 mb-4 flex items-center gap-2">
-                <TrendingUp className="w-4 h-4" />
-                Immediate Actions
-              </h3>
+                <TrendingUp className="w-4 h-4" /><Localize>{" Immediate Actions "}</Localize></h3>
 
               <div className="space-y-3">
                 {immediateActions.map((action, index) => (
@@ -1112,9 +1074,7 @@ export function SourceAttribution() {
             </div>
 
             <div className="p-6 rounded-lg bg-zinc-900/50 border border-zinc-800">
-              <h3 className="text-sm font-medium text-zinc-400 mb-4">
-                Follow-up Actions
-              </h3>
+              <h3 className="text-sm font-medium text-zinc-400 mb-4"><Localize>{" Follow-up Actions "}</Localize></h3>
 
               <div className="space-y-2 text-sm">
                 {followUpActions.map((action, index) => (
@@ -1133,7 +1093,7 @@ export function SourceAttribution() {
               >
                 <h2 className="text-xl font-light flex items-center gap-2">
                   <FileText className="w-5 h-5 text-amber-400" />
-                  {hasAttribution ? 'Why this conclusion?' : 'Evidence availability'}
+                  {hasAttribution ? t('Why this conclusion?') : t('Evidence availability')}
                 </h2>
 
                 {showDetails ? (
@@ -1147,8 +1107,8 @@ export function SourceAttribution() {
                 <div className="mt-4 pt-4 border-t border-zinc-800 space-y-3 text-sm text-zinc-300">
                   <p className="text-zinc-400 mb-3">
                     {hasAttribution
-                      ? 'This attribution is based on the currently available evidence layers:'
-                      : 'Source attribution is pending sufficient signal evidence.'}
+                      ? t('This attribution is based on the currently available evidence layers:')
+                      : t('Source attribution is pending sufficient signal evidence.')}
                   </p>
 
                   <div className="space-y-2">
@@ -1157,15 +1117,15 @@ export function SourceAttribution() {
                         .slice(0, index === 0 ? 3 : 1)
                         .map((factor, factorIndex) => (
                           <div
-                            key={`${item.source ?? 'source'}-${factor}-${factorIndex}`}
+                            key={`${item.source ?? 'source'}-$<GeneratedText value={factor} />-${factorIndex}`}
                             className="flex gap-2"
                           >
                             <span className="text-amber-400 flex-shrink-0">{'\u2022'}</span>
                             <p>
                               <span className="text-zinc-100">
-                                {normalizeSourceLabel(item.source)}:
+                                {labelText(normalizeSourceLabel(item.source))}:
                               </span>{' '}
-                              {factor}
+                              <GeneratedText value={factor} />
                             </p>
                           </div>
                         )),
@@ -1175,11 +1135,9 @@ export function SourceAttribution() {
                       <div className="flex gap-2">
                         <span className="text-amber-400 flex-shrink-0">{'\u2022'}</span>
                         <p>
-                          <span className="text-zinc-100">Topology:</span>{' '}
-                          {probableOriginAssets.length} upstream origin candidate
-                          {probableOriginAssets.length === 1 ? '' : 's'} ranked across{' '}
-                          {upstreamRelationshipCount} active relationship
-                          {upstreamRelationshipCount === 1 ? '' : 's'}.
+                          <span className="text-zinc-100"><Localize>{"Topology:"}</Localize></span>{' '}
+                          {probableOriginAssets.length}{" "}{t(probableOriginAssets.length === 1 ? "upstream origin candidate" : "upstream origin candidates")}{" "}<Localize>{" ranked across"}</Localize>{' '}
+                          {upstreamRelationshipCount}{" "}{t(upstreamRelationshipCount === 1 ? "active relationship" : "active relationships")}{" "}.
                         </p>
                       </div>
                     )}
@@ -1187,32 +1145,30 @@ export function SourceAttribution() {
 
                   {attributionData.explanation && (
                     <p className="text-zinc-400 mt-4 pt-3 border-t border-zinc-800">
-                      {attributionData.explanation}
+                      <GeneratedText value={attributionData.explanation} />
                     </p>
                   )}
 
                   <p className="text-zinc-400 mt-4 pt-3 border-t border-zinc-800">
                     {hasAttribution
-                      ? `These factors support ${normalizeSourceLabel(attributionData.primary?.source).toLowerCase()} as the primary source category, with ${confidenceLabel.toLowerCase()} based on the available evidence.`
-                      : 'No source category has been identified. Infrastructure connectivity does not establish water quality or a contamination source.'}
+                      ? t("These factors support {source} as the primary source category, with {confidence} based on the available evidence.", { source: labelText(normalizeSourceLabel(attributionData.primary?.source)), confidence: labelText(confidenceLabel) })
+                      : t('No source category has been identified. Infrastructure connectivity does not establish water quality or a contamination source.')}
                   </p>
                 </div>
               )}
             </div>
 
             <div className="p-6 rounded-lg bg-zinc-900/50 border border-zinc-800">
-              <h2 className="text-xl font-light mb-4 text-zinc-300">
-                Selected Site Context
-              </h2>
+              <h2 className="text-xl font-light mb-4 text-zinc-300"><Localize>{" Selected Site Context "}</Localize></h2>
 
               <div className="space-y-3 text-sm">
                 <div className="flex gap-3">
                   <MapPin className="w-4 h-4 text-amber-400 mt-0.5 flex-shrink-0" />
                   <div>
                     <p className="text-zinc-300">
-                      {attributionData.site_name ?? unavailableSiteMeta.name}
+                      {attributionData.site_name ?? t(unavailableSiteMeta.name)}
                     </p>
-                    <p className="text-zinc-500 text-xs">Active monitored location</p>
+                    <p className="text-zinc-500 text-xs"><Localize>{"Active monitored location"}</Localize></p>
                   </div>
                 </div>
 
@@ -1220,10 +1176,10 @@ export function SourceAttribution() {
                   <Network className="w-4 h-4 text-amber-400 mt-0.5 flex-shrink-0" />
                   <div>
                     <p className="text-zinc-300">
-                      {targetResolved ? targetAssetLabel : 'Infrastructure mapping unavailable'}
+                      {targetResolved ? targetAssetLabel : t('Infrastructure mapping unavailable')}
                     </p>
                     <p className="text-zinc-500 text-xs">
-                      {topologyDescription}
+                      {labelText(topologyDescription)}
                     </p>
                   </div>
                 </div>
@@ -1232,11 +1188,9 @@ export function SourceAttribution() {
                   <AlertCircle className="w-4 h-4 text-amber-400 mt-0.5 flex-shrink-0" />
                   <div>
                     <p className="text-zinc-300">
-                      {attributionData.summary || 'Water quality signal under investigation'}
+                      {attributionData.summary ? <GeneratedText value={attributionData.summary} /> : t('Water quality signal under investigation')}
                     </p>
-                    <p className="text-zinc-500 text-xs">
-                      Requires confirmatory testing and operational follow-up
-                    </p>
+                    <p className="text-zinc-500 text-xs"><Localize>{" Requires confirmatory testing and operational follow-up "}</Localize></p>
                   </div>
                 </div>
               </div>
@@ -1251,10 +1205,7 @@ export function SourceAttribution() {
         <div className="container mx-auto px-6">
           <div className="text-xs text-zinc-500">
             <p>
-              <span className="font-medium text-zinc-400">Responsibility Statement:</span>{' '}
-              FalilaX provides interpretive risk intelligence and does not replace regulatory
-              testing, emergency response, or official advisories.
-            </p>
+              <span className="font-medium text-zinc-400"><Localize>{"Responsibility Statement:"}</Localize></span>{' '}<Localize>{" FalilaX provides interpretive risk intelligence and does not replace regulatory testing, emergency response, or official advisories. "}</Localize></p>
           </div>
         </div>
       </footer>
