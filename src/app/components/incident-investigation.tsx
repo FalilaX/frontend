@@ -460,6 +460,7 @@ type MutationName =
   | "reopen"
   | "cancel"
   | "actions/plan"
+  | "actions/refresh-plan"
   | "actions/approve"
   | "actions/start-execution";
 
@@ -1705,7 +1706,24 @@ const executionOutcomeClasses = (outcome: string) => {
   return "border-cyan-800 bg-cyan-950/30 text-cyan-300";
 };
 
+function actionExpired(action: IncidentAction, now: number): boolean {
+  const status = normalizeWorkflowStatus(action.status);
+  if (status === "expired") return true;
+  if (!["proposed", "pending_approval", "approved", "queued", "in_progress"].includes(status)) return false;
+  return Boolean(action.expires_at && Date.parse(action.expires_at) <= now);
+}
+
 export function IncidentInvestigation() {
+  const [expiryClock, setExpiryClock] = useState(() => Date.now());
+  useEffect(() => {
+    const tick = () => setExpiryClock(Date.now());
+    const timer = window.setInterval(tick, 1000);
+    window.addEventListener("focus", tick);
+    return () => {
+      window.clearInterval(timer);
+      window.removeEventListener("focus", tick);
+    };
+  }, []);
   const { t, labelText, locale, dateText, numberText } = useOperationalText();
   const confidenceText = (value: number | null | undefined) => typeof value === "number" && Number.isFinite(value)
     ? `${numberText(Math.round(value * 100), 2)}%` : t("Not available");
@@ -2006,8 +2024,17 @@ export function IncidentInvestigation() {
     sourceIntelligence?.topology?.probable_origin_assets ??
     [];
   const hydraulicEvidence = sourceIntelligence?.hydraulic_evidence ?? null;
-  const actionPlan = detail?.action_plan ?? null;
-  const incidentActions = detail?.actions ?? [];
+  const incidentActions = (detail?.actions ?? []).map(action =>
+    actionExpired(action, expiryClock) ? { ...action, status: "expired" } : action,
+  );
+  const expiredActionCount = incidentActions.filter(action => action.status === "expired").length;
+  const planExpired = expiredActionCount > 0;
+  const actionPlan = detail?.action_plan ? {
+    ...detail.action_plan,
+    approved_count: incidentActions.filter(action => action.status === "approved").length,
+    pending_approval_count: incidentActions.filter(action => ["proposed", "pending_approval"].includes(action.status)).length,
+    ready_for_execution: !planExpired && detail.action_plan.ready_for_execution,
+  } : null;
   const executionSummary = detail?.execution_summary ?? null;
   const executionRecords = detail?.executions ?? [];
   const currentGenerationSummary =
@@ -2059,7 +2086,7 @@ export function IncidentInvestigation() {
     hasActionPlan &&
     incidentActions.length > 0 &&
     completedActionCount === incidentActions.length;
-  const actionPlanGateLabel = currentPlanCompleted
+  const actionPlanGateLabel = planExpired ? "Plan expired" : currentPlanCompleted
     ? "Execution complete"
     : (actionPlan?.pending_approval_count ?? 0) > 0
       ? "Approval required"
@@ -2156,10 +2183,13 @@ export function IncidentInvestigation() {
     currentStatus === "acknowledged" || currentStatus === "reopened";
   const canCreateActionPlan =
     currentStatus === "investigating" && !hasActionPlan;
+  const canRefreshExpiredPlan = planExpired && ["awaiting_approval", "action_plan_ready"].includes(currentStatus);
   const canApproveActionPlan =
+    !planExpired &&
     currentStatus === "awaiting_approval" &&
     (actionPlan?.pending_approval_count ?? 0) > 0;
   const canStartActionExecution =
+    !planExpired &&
     currentStatus === "action_plan_ready" &&
     hasActionPlan &&
     Boolean(actionPlan?.ready_for_execution);
@@ -2253,6 +2283,7 @@ export function IncidentInvestigation() {
       currentStatus !== "executing" ||
       action.plan_generation !== currentPlanGeneration ||
       action.superseded ||
+      actionExpired(action, Date.now()) ||
       normalizeWorkflowStatus(action.status) !== "approved"
     ) {
       setError(
@@ -3373,6 +3404,21 @@ export function IncidentInvestigation() {
                     </div>
                   ) : (
                     <div className="space-y-5">
+                      {planExpired && (
+                        <div role="status" className="rounded-xl border border-amber-800 bg-amber-950/20 p-4">
+                          <p className="font-medium text-amber-300">{t("Plan expired")}</p>
+                          <p className="mt-2 text-sm text-zinc-400">{t("Expired actions cannot be approved or recorded as completed. Previous approvals do not carry over to a fresh plan.")}</p>
+                          {canRefreshExpiredPlan ? (
+                            <Button className="mt-3 h-auto whitespace-normal bg-violet-700 hover:bg-violet-600"
+                              disabled={mutating !== null}
+                              onClick={() => performMutation("actions/refresh-plan", { actor: operatorName.trim() || DEFAULT_OPERATOR })}>
+                              {mutating === "actions/refresh-plan" ? t("Creating...") : t("Create fresh plan")}
+                            </Button>
+                          ) : (
+                            <p className="mt-2 text-sm text-zinc-400">{t("This plan has already progressed beyond approval. Review its execution history before choosing the next workflow step.")}</p>
+                          )}
+                        </div>
+                      )}
                       <div className="grid gap-3 sm:grid-cols-2">
                         <div className="rounded-xl border border-zinc-800 bg-zinc-950 p-4">
                           <p className="text-xs uppercase tracking-wide text-zinc-500"><Localize>{" Total actions "}</Localize></p>
