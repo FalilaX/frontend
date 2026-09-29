@@ -15,6 +15,7 @@ import AlertFeed from '@/app/components/AlertFeed';
 import FalilaXIncidentMap from '@/app/FalilaXIncidentMap';
 import UtilityReadiness from '@/app/components/utility-readiness';
 import EnrollmentFabric from '@/app/components/enrollment-fabric';
+import PublicDemoEntry from '@/app/components/public-demo-entry';
 import ParticipantHome from '@/app/components/participant-home';
 import ParticipantSignIn from '@/app/components/participant-sign-in';
 import { ParticipantRoute } from '@/app/components/participant-route';
@@ -45,6 +46,11 @@ export default function App() {
           Invitation secrets may arrive through the path and are removed
           from the visible URL immediately after acceptance.
         */}
+        <Route
+          path="/join/water-demo"
+          element={<PublicDemoEntry />}
+        />
+
         <Route
           path="/enroll"
           element={<EnrollmentFabric />}
