@@ -44,7 +44,9 @@ import {
   recordEnrollmentIdentity,
   recordEnrollmentNotificationPreferences,
   requestEnrollmentTopology,
+  requestExistingIdentityProof,
   verifyEnrollmentChannel,
+  verifyExistingIdentityProof,
 } from "@/app/services/enrollment-api";
 import type {
   EnrollmentActivationStatusResponse,
@@ -57,6 +59,7 @@ import type {
   EnrollmentStage,
   EnrollmentSubscriberType,
   EnrollmentTopologyResponse,
+  ExistingIdentityProofRequestedResponse,
 } from "@/app/types/enrollment";
 import {
   clearEnrollmentSession,
@@ -254,6 +257,9 @@ export function EnrollmentFabric() {
   );
   const [challenge, setChallenge] = useState<EnrollmentChallengeResponse | null>(null);
   const [verificationCode, setVerificationCode] = useState("");
+  const [identityProof, setIdentityProof] =
+    useState<ExistingIdentityProofRequestedResponse | null>(null);
+  const [identityProofCode, setIdentityProofCode] = useState("");
   const [consentDocument, setConsentDocument] = useState<EnrollmentConsentDocument | null>(null);
   const [consentAccepted, setConsentAccepted] = useState(false);
   const [topology, setTopology] = useState<EnrollmentTopologyResponse | null>(null);
@@ -394,34 +400,124 @@ export function EnrollmentFabric() {
     }
   }
 
+  function normalizedIdentityPayload(): EnrollmentIdentityRequest {
+    return {
+      ...identity,
+      language: locale,
+      full_name: identity.full_name.trim(),
+      email: identity.email?.trim() || null,
+      phone: identity.phone?.trim() || null,
+    };
+  }
+
+  function advanceFromIdentity(payload: EnrollmentIdentityRequest) {
+    const nextChannel: EnrollmentChannel = payload.email ? "EMAIL" : "SMS";
+    setVerificationChannel(nextChannel);
+    setPreferences((current) => ({
+      ...current,
+      email_enabled: nextChannel === "EMAIL",
+      sms_enabled: nextChannel === "SMS",
+    }));
+    storeEnrollmentBrowserContext({
+      email: payload.email ?? undefined,
+      phone: payload.phone ?? undefined,
+      verificationChannel: nextChannel,
+    });
+    setIdentityProof(null);
+    setIdentityProofCode("");
+    setStage("VERIFICATION");
+  }
+
   async function submitIdentity(event: FormEvent) {
     event.preventDefault();
     setError(null);
     if (!sessionPublicId) return setStage("INVITATION");
-    const email = identity.email?.trim() || null;
-    const phone = identity.phone?.trim() || null;
-    if (!email && !phone) {
+
+    const payload = normalizedIdentityPayload();
+    if (!payload.email && !payload.phone) {
       setError("Provide an email address or phone number for secure verification.");
       return;
     }
+
     setBusy(true);
     try {
-      await recordEnrollmentIdentity(sessionPublicId, {
-        ...identity,
-        language: locale,
-        full_name: identity.full_name.trim(),
-        email,
-        phone,
+      await recordEnrollmentIdentity(sessionPublicId, payload);
+      advanceFromIdentity(payload);
+    } catch (caught) {
+      const needsExistingIdentityProof =
+        caught instanceof EnrollmentApiError &&
+        caught.message === "Identity could not be linked to this enrollment.";
+
+      if (!needsExistingIdentityProof) {
+        setError(normalizeError(caught));
+        return;
+      }
+
+      if (!payload.email) {
+        setError(
+          "This identity needs secure ownership verification. Provide the email address already connected to FalilaX.",
+        );
+        return;
+      }
+
+      try {
+        const proof = await requestExistingIdentityProof(sessionPublicId, {
+          email: payload.email,
+        });
+        setIdentityProof(proof);
+        setIdentityProofCode("");
+        setError(null);
+      } catch (proofError) {
+        setError(normalizeError(proofError));
+      }
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function submitExistingIdentityProof(event: FormEvent) {
+    event.preventDefault();
+    if (!sessionPublicId || !identityProof) return;
+
+    const payload = normalizedIdentityPayload();
+    if (!payload.email) {
+      setError("An email address is required to verify this existing identity.");
+      return;
+    }
+
+    setBusy(true);
+    setError(null);
+    try {
+      await verifyExistingIdentityProof(sessionPublicId, {
+        challenge_id: identityProof.challenge_id,
+        capability: identityProof.capability,
+        code: identityProofCode,
       });
-      const nextChannel: EnrollmentChannel = email ? "EMAIL" : "SMS";
-      setVerificationChannel(nextChannel);
-      setPreferences((current) => ({
-        ...current,
-        email_enabled: nextChannel === "EMAIL",
-        sms_enabled: nextChannel === "SMS",
-      }));
-      storeEnrollmentBrowserContext({ email: email ?? undefined, phone: phone ?? undefined, verificationChannel: nextChannel });
-      setStage("VERIFICATION");
+
+      await recordEnrollmentIdentity(sessionPublicId, payload);
+      advanceFromIdentity(payload);
+    } catch (caught) {
+      setError(normalizeError(caught));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function resendExistingIdentityProof() {
+    if (!sessionPublicId) return;
+
+    const email = identity.email?.trim();
+    if (!email) {
+      setError("An email address is required to verify this existing identity.");
+      return;
+    }
+
+    setBusy(true);
+    setError(null);
+    try {
+      const proof = await requestExistingIdentityProof(sessionPublicId, { email });
+      setIdentityProof(proof);
+      setIdentityProofCode("");
     } catch (caught) {
       setError(normalizeError(caught));
     } finally {
@@ -536,6 +632,8 @@ export function EnrollmentFabric() {
     clearEnrollmentSession();
     setSessionPublicId(null);
     setChallenge(null);
+    setIdentityProof(null);
+    setIdentityProofCode("");
     setActivation(null);
     setError(null);
     setStage("INVITATION");
@@ -619,7 +717,8 @@ export function EnrollmentFabric() {
                     <h1 className="mt-3 text-3xl font-semibold text-white"><Localize>{"Let’s make the experience yours."}</Localize></h1>
                     <p className="mt-3 text-sm leading-7 text-slate-400"><Localize>{"We collect only what is needed to identify you and verify at least one notification channel."}</Localize></p>
                   </div>
-                  <form onSubmit={submitIdentity} className="space-y-5">
+                  {!identityProof ? (
+                    <form onSubmit={submitIdentity} className="space-y-5">
                     <div>
                       <label htmlFor="full-name" className="mb-2 block text-sm font-medium text-slate-200"><Localize>{"Full name"}</Localize></label>
                       <FieldShell icon={<UserRound className="h-4 w-4" />}>
@@ -653,6 +752,28 @@ export function EnrollmentFabric() {
                     <ErrorNotice message={error} />
                     <PrimaryButton busy={busy} disabled={!identity.full_name.trim() || (!identity.email?.trim() && !identity.phone?.trim())}><Localize>{"Continue securely"}</Localize></PrimaryButton>
                   </form>
+                  ) : (
+                    <form onSubmit={submitExistingIdentityProof} className="space-y-5">
+                      <div className="rounded-2xl border border-cyan-300/15 bg-cyan-300/[0.055] p-4">
+                        <div className="flex items-start gap-3">
+                          <ShieldCheck className="mt-0.5 h-5 w-5 shrink-0 text-cyan-300" />
+                          <div>
+                            <p className="text-sm font-medium text-cyan-100"><Localize>{"Secure identity check"}</Localize></p>
+                            <p className="mt-1 text-xs leading-5 text-slate-400"><Localize>{identityProof.message}</Localize></p>
+                          </div>
+                        </div>
+                      </div>
+                      <div>
+                        <label htmlFor="identity-proof-code" className="mb-2 block text-sm font-medium text-slate-200"><Localize>{"One-time identity code"}</Localize></label>
+                        <input id="identity-proof-code" value={identityProofCode} onChange={(event) => setIdentityProofCode(event.target.value.replace(/\s/g, ""))} inputMode="numeric" autoComplete="one-time-code" required minLength={4} maxLength={12} placeholder={translate("Enter code", locale)} className="w-full rounded-2xl border border-white/10 bg-black/20 px-4 py-4 text-center font-mono text-xl tracking-[0.35em] text-white outline-none placeholder:text-sm placeholder:tracking-normal placeholder:text-slate-600" />
+                        <p className="mt-2 text-xs leading-5 text-slate-500"><Localize>{"This check confirms ownership before an existing FalilaX identity can be connected to this enrollment."}</Localize></p>
+                      </div>
+                      <ErrorNotice message={error} />
+                      <PrimaryButton busy={busy} disabled={identityProofCode.length < 4}><Localize>{"Verify identity and continue"}</Localize></PrimaryButton>
+                      <button type="button" disabled={busy} onClick={() => void resendExistingIdentityProof()} className="flex w-full items-center justify-center gap-2 text-xs font-medium text-cyan-200/80 transition hover:text-cyan-100 disabled:opacity-45"><RefreshCw className="h-3.5 w-3.5" /><Localize>{"Send a new code"}</Localize></button>
+                      <button type="button" disabled={busy} onClick={() => { setIdentityProof(null); setIdentityProofCode(""); setError(null); }} className="flex w-full items-center justify-center text-xs text-slate-500 transition hover:text-slate-300 disabled:opacity-45"><Localize>{"Use different details"}</Localize></button>
+                    </form>
+                  )}
                 </div>
               )}
 
@@ -755,14 +876,14 @@ export function EnrollmentFabric() {
                 <div className="py-4 text-center">
                   <div className="mx-auto grid h-16 w-16 place-items-center rounded-3xl border border-cyan-300/20 bg-cyan-300/[0.07] shadow-[0_0_50px_rgba(53,211,235,0.12)]"><MapPin className="h-8 w-8 text-cyan-300" /></div>
                   <p className="mt-7 text-xs font-semibold uppercase tracking-[0.2em] text-cyan-300"><Localize>{"Protected network matching"}</Localize></p>
-                  <h1 className="mt-3 text-3xl font-semibold text-white"><Localize>{"Your place in the network is being reviewed."}</Localize></h1>
-                  <p className="mx-auto mt-4 max-w-md text-sm leading-7 text-slate-400"><Localize>{"FalilaX proposed a synthetic service context for the controlled demonstration. An authorized operator must approve it before activation."}</Localize></p>
+                  <h1 className="mt-3 text-3xl font-semibold text-white"><Localize>{"Your place in the network is being verified."}</Localize></h1>
+                  <p className="mx-auto mt-4 max-w-md text-sm leading-7 text-slate-400"><Localize>{"FalilaX is securely matching your controlled-demo service context and evaluating it for activation."}</Localize></p>
                   <div className="mx-auto mt-7 grid max-w-lg gap-3 text-left sm:grid-cols-2">
                     <div className="rounded-2xl border border-white/[0.08] bg-white/[0.025] p-4"><p className="text-xs uppercase tracking-[0.16em] text-slate-500"><Localize>{"Assignment"}</Localize></p><p className="mt-2 text-sm font-medium text-white"><Localize>{topology?.scope_label || topology?.scope_type || "Controlled demo network"}</Localize></p><p className="mt-1 text-xs text-slate-500"><Localize>{topology?.is_synthetic ? "Synthetic • demo-safe" : "Protected context"}</Localize></p></div>
-                    <div className="rounded-2xl border border-white/[0.08] bg-white/[0.025] p-4"><p className="text-xs uppercase tracking-[0.16em] text-slate-500"><Localize>{"Review status"}</Localize></p><p className="mt-2 flex items-center gap-2 text-sm font-medium text-white"><LoaderCircle className="h-4 w-4 animate-spin text-cyan-300" /><Localize>{activation?.topology_status || topology?.status || "PROPOSED"}</Localize></p><p className="mt-1 text-xs text-slate-500"><Localize>{"Checked automatically"}</Localize></p></div>
+                    <div className="rounded-2xl border border-white/[0.08] bg-white/[0.025] p-4"><p className="text-xs uppercase tracking-[0.16em] text-slate-500"><Localize>{"Review status"}</Localize></p><p className="mt-2 flex items-center gap-2 text-sm font-medium text-white"><LoaderCircle className="h-4 w-4 animate-spin text-cyan-300" /><Localize>{activation?.topology_status || topology?.status || "PROPOSED"}</Localize></p><p className="mt-1 text-xs text-slate-500"><Localize>{"Evaluated automatically"}</Localize></p></div>
                   </div>
                   <ErrorNotice message={error} />
-                  <p className="mt-6 text-xs leading-5 text-slate-500"><Localize>{"You can safely leave this page open. This participant capability cannot approve its own topology or activate itself."}</Localize></p>
+                  <p className="mt-6 text-xs leading-5 text-slate-500"><Localize>{"You can safely leave this page open while FalilaX completes the protected activation checks."}</Localize></p>
                 </div>
               )}
 

@@ -12,12 +12,18 @@ export const API_ENDPOINTS = {
   NOTIFICATION_ACKNOWLEDGE:
     "/api/v1/notification-inbox/{notification_id}/acknowledge",
 
+  ENROLLMENT_START_PUBLIC_PROGRAM:
+    "/api/v1/enrollment/public/programs/start",
   ENROLLMENT_ACCEPT_INVITATION:
     "/api/v1/enrollment/public/invitations/accept",
   ENROLLMENT_SESSION:
     "/api/v1/enrollment/public/sessions/{session_public_id}",
   ENROLLMENT_IDENTITY:
     "/api/v1/enrollment/public/sessions/{session_public_id}/identity",
+  ENROLLMENT_IDENTITY_PROOF_REQUEST:
+    "/api/v1/enrollment/public/sessions/{session_public_id}/identity-proof/request",
+  ENROLLMENT_IDENTITY_PROOF_VERIFY:
+    "/api/v1/enrollment/public/sessions/{session_public_id}/identity-proof/verify",
   ENROLLMENT_CHALLENGES:
     "/api/v1/enrollment/public/sessions/{session_public_id}/channels/challenges",
   ENROLLMENT_VERIFY_CHANNEL:
@@ -86,29 +92,44 @@ export function buildApiUrl(
   params?: Record<string, string | number>,
 ): string {
   let url = `${API_BASE_URL}${endpoint}`;
+
   if (params) {
     Object.entries(params).forEach(([key, value]) => {
-      url = url.replace(`{${key}}`, encodeURIComponent(String(value)));
+      url = url.replace(
+        `{${key}}`,
+        encodeURIComponent(String(value)),
+      );
     });
   }
+
   return url;
 }
 
 export function buildApiUrlWithQuery(
   endpoint: string,
   pathParams?: Record<string, string | number>,
-  queryParams?: Record<string, string | number | boolean | undefined | null>,
+  queryParams?: Record<
+    string,
+    string | number | boolean | undefined | null
+  >,
 ): string {
   let url = buildApiUrl(endpoint, pathParams);
+
   if (queryParams) {
     const searchParams = new URLSearchParams();
+
     Object.entries(queryParams).forEach(([key, value]) => {
       if (value !== undefined && value !== null) {
         searchParams.append(key, String(value));
       }
     });
+
     const queryString = searchParams.toString();
-    if (queryString) url += `?${queryString}`;
+
+    if (queryString) {
+      url += `?${queryString}`;
+    }
   }
+
   return url;
 }
