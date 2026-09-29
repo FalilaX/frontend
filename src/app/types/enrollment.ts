@@ -24,6 +24,16 @@ export interface EnrollmentInvitationAcceptResponse {
   expires_at?: string | null;
 }
 
+export interface PublicProgramEnrollmentStartResponse {
+  session_public_id: string;
+  access_token: string;
+  status: string;
+  current_step: string;
+  pathway: string;
+  expires_at?: string | null;
+  access_token_version: number;
+}
+
 export interface EnrollmentSessionResponse {
   session_public_id: string;
   status: string;
@@ -45,6 +55,48 @@ export interface EnrollmentIdentityRequest {
 
 export interface EnrollmentIdentityResponse {
   subscriber_id: number;
+  status: string;
+  current_step: string;
+}
+
+/**
+ * Request ownership proof when a public enrollment identity already
+ * belongs to an existing FalilaX subscriber.
+ */
+export interface ExistingIdentityProofRequest {
+  email: string;
+}
+
+/**
+ * Returned after FalilaX creates and binds an identity-proof challenge
+ * to the current enrollment session.
+ *
+ * capability is sensitive and should remain only in transient client
+ * state for the active proof flow.
+ */
+export interface ExistingIdentityProofRequestedResponse {
+  challenge_id: string;
+  capability: string;
+  expires_in: number;
+  message: string;
+}
+
+/**
+ * Submit the one-time code together with the challenge capability.
+ */
+export interface ExistingIdentityProofVerifyRequest {
+  challenge_id: string;
+  capability: string;
+  code: string;
+}
+
+/**
+ * Returned after ownership has been proven and the existing subscriber
+ * has been securely attached to the enrollment session.
+ */
+export interface ExistingIdentityProofVerifiedResponse {
+  subscriber_id: number;
+  organization_id: number;
   status: string;
   current_step: string;
 }
