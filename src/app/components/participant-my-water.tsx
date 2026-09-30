@@ -32,19 +32,6 @@ function readable(value: string): string {
     .replace(/\b\w/g, character => character.toUpperCase());
 }
 
-function riskClasses(value: number): string {
-  if (value >= 0.75) {
-    return "border-rose-300/20 bg-rose-300/[0.07] text-rose-100";
-  }
-  if (value >= 0.5) {
-    return "border-amber-300/20 bg-amber-300/[0.07] text-amber-100";
-  }
-  if (value >= 0.25) {
-    return "border-yellow-200/20 bg-yellow-200/[0.06] text-yellow-100";
-  }
-  return "border-emerald-300/20 bg-emerald-300/[0.07] text-emerald-100";
-}
-
 export function ParticipantMyWater() {
   const { locale } = useLanguage();
   const navigate = useNavigate();
@@ -232,9 +219,7 @@ export function ParticipantMyWater() {
           </div>
 
           <div
-            className={`min-w-[170px] rounded-2xl border px-5 py-4 ${riskClasses(
-              intelligence.overall_risk_score,
-            )}`}
+            className="min-w-[170px] rounded-2xl border border-cyan-300/20 bg-cyan-300/[0.06] px-5 py-4 text-cyan-50"
           >
             <p className="text-xs uppercase tracking-[0.16em] opacity-70">
               <Localize>{"Current status"}</Localize>
