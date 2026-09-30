@@ -2,6 +2,7 @@ import { Localize, useLanguage } from "@/app/i18n/language";
 import { ParticipantNotificationHistory } from "@/app/components/participant-notification-history";
 import { ParticipantEmailRehearsal } from "@/app/components/participant-email-rehearsal";
 import { ParticipantPreferencesEditor } from "@/app/components/participant-preferences-editor";
+import { ParticipantMyWater } from "@/app/components/participant-my-water";
 import { useEffect, useState } from "react";
 import { getParticipantContext, ParticipantAccessError } from "@/app/services/participant-api";
 import type { ParticipantContext } from "@/app/services/participant-api";
@@ -98,6 +99,8 @@ export function ParticipantHome() {
             </div>
           </div>
         </section>
+
+        <ParticipantMyWater />
 
         {!context && <div role="status" className="mt-6 rounded-3xl border border-white/10 p-6 text-sm text-slate-300">
           <Localize>{contextError ? "Your profile is verified, but we could not load your saved preferences and service context." : "Loading your saved preferences and service context…"}</Localize>
