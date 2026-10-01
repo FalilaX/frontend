@@ -31,7 +31,7 @@ export function Localize({ children }: { children: ReactNode }) {
 }
 export function LanguageProvider({ children }: { children: ReactNode }) {
   const { pathname } = useLocation();
-  const publicFlow = pathname === '/' || pathname === '/enroll' || pathname.startsWith('/enroll/') || pathname === '/participant/sign-in' || pathname === '/operator/sign-in';
+  const publicFlow = pathname === '/' || pathname === '/join/water-demo' || pathname === '/enroll' || pathname.startsWith('/enroll/') || pathname === '/participant/sign-in' || pathname === '/operator/sign-in';
   const [locale, setLocale] = useState<Locale>(() => chooseLocale(readSavedLocale(), typeof navigator === 'undefined' ? [] : navigator.languages));
   const explicitChoice = useRef(Boolean(readSavedLocale()));
   const select = useCallback((value: Locale) => {

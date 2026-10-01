@@ -713,6 +713,7 @@ const hasExplicitSyntheticSignal = (value: unknown): boolean => {
 
     if (
       [
+        "simulation",
         "synthetic",
         "is_synthetic",
         "synthetic_test",
@@ -725,11 +726,11 @@ const hasExplicitSyntheticSignal = (value: unknown): boolean => {
     }
 
     if (
-      ["environment", "record_environment", "incident_environment"].includes(
+      ["data_mode", "environment", "record_environment", "incident_environment"].includes(
         key,
       ) &&
       typeof rawValue === "string" &&
-      ["development", "dev", "test", "testing", "synthetic", "demo"].includes(
+      ["simulation", "development", "dev", "test", "testing", "synthetic", "demo"].includes(
         rawValue.trim().toLowerCase(),
       )
     ) {
@@ -778,6 +779,7 @@ const buildReportEvidenceSnapshot = (
   syntheticOverride = false,
 ): Record<string, unknown> => ({
   schema: "falilax.incident_report_evidence_snapshot.v1",
+  report_renderer_version: "1.4",
   plan_generation: reportGeneration(detail),
   report_stage: reportStageFor(detail, profile),
   classification:
@@ -833,12 +835,23 @@ const reportEvidenceFingerprint = async (value: unknown): Promise<string> => {
       .join("");
   }
 
-  let hash = 2166136261;
-  for (const byte of encoded) {
-    hash ^= byte;
-    hash = Math.imul(hash, 16777619);
+  throw new Error("Evidence snapshot hashing requires a secure browser context (HTTPS or localhost).");
+};
+
+const reportImpactCount = (incident: IncidentDetailResponse["incident"], value: number): string => {
+  const impact = incident.impact as Record<string, unknown> | null;
+  const assessment = String(impact?.assessment_status ?? "").toLowerCase();
+  if (!assessment || ["not_evaluated", "not_assessed", "unavailable", "unknown", "pending"].includes(assessment)) {
+    return "Not assessed";
   }
-  return `fnv1a-${(hash >>> 0).toString(16).padStart(8, "0")}`;
+  return Number.isFinite(value) ? String(value) : "Not available";
+};
+
+const reportExecutionEvidence = (record: IncidentExecution): string => {
+  const attestation = record.result?.attestation_message;
+  return typeof attestation === "string" && attestation.trim()
+    ? attestation
+    : record.message || "No execution evidence message was recorded.";
 };
 
 const buildIncidentEvidenceReportHtml = (
@@ -850,6 +863,7 @@ const buildIncidentEvidenceReportHtml = (
   },
   syntheticOverride = false,
   generatedAt = new Date(),
+  evidenceSnapshotId = "Not available",
 ): string => {
   const incident = detail.incident;
   const workflow = detail.workflow;
@@ -948,7 +962,7 @@ const buildIncidentEvidenceReportHtml = (
       (action) => `
         <tr>
           <td>${escapeReportHtml(action.title)}</td>
-          <td>${escapeReportHtml(formatStatus(action.status))}</td>
+          <td>${escapeReportHtml(isSynthetic && action.status === "completed" ? "Rehearsal completed" : formatStatus(action.status))}</td>
           <td>${escapeReportHtml(formatStatus(action.risk))}</td>
           <td>${escapeReportHtml(formatStatus(action.execution_mode))}</td>
           <td>${action.requires_approval ? "Required" : "Not required"}</td>
@@ -965,7 +979,7 @@ const buildIncidentEvidenceReportHtml = (
       (action) => `
         <tr>
           <td>${escapeReportHtml(action.title)}</td>
-          <td>${escapeReportHtml(formatStatus(action.status))}</td>
+          <td>${escapeReportHtml(isSynthetic && action.status === "completed" ? "Rehearsal completed" : formatStatus(action.status))}</td>
           <td>${escapeReportHtml(formatStatus(action.risk))}</td>
           <td>${escapeReportHtml(formatStatus(action.execution_mode))}</td>
         </tr>
@@ -977,14 +991,13 @@ const buildIncidentEvidenceReportHtml = (
     .map(
       (record) => `
         <tr>
-          <td>${record.plan_generation}</td>
-          <td>${escapeReportHtml(formatStatus(record.action_type))}</td>
-          <td>${escapeReportHtml(formatStatus(record.outcome))}</td>
-          <td>${escapeReportHtml(reportValue(record.executor))}</td>
-          <td>${escapeReportHtml(reportValue(record.adapter_name))}</td>
-          <td>${record.attempt_number}</td>
-          <td>${escapeReportHtml(formatDate(record.started_at))}</td>
-          <td>${escapeReportHtml(record.message)}</td>
+          <td><strong>${escapeReportHtml(formatStatus(record.action_type))}</strong><br />
+          Generation ${record.plan_generation} · Attempt ${record.attempt_number}<br />
+          ${escapeReportHtml(isSynthetic ? "Rehearsal record" : formatStatus(record.outcome))}<br />
+          ${escapeReportHtml(formatStatus(record.outcome))} · ${escapeReportHtml(formatDate(record.started_at))}<br />
+          ${escapeReportHtml(reportValue(record.executor))}<br />
+          ${escapeReportHtml(reportValue(record.adapter_name))}</td>
+          <td>${escapeReportHtml(reportExecutionEvidence(record))}</td>
         </tr>
       `,
     )
@@ -1011,11 +1024,8 @@ const buildIncidentEvidenceReportHtml = (
     .map(
       (event) => `
         <tr>
-          <td>${escapeReportHtml(formatDate(event.occurred_at))}</td>
-          <td>${escapeReportHtml(formatStatus(event.event_type))}</td>
-          <td>${escapeReportHtml(reportValue(event.actor))}</td>
-          <td>${escapeReportHtml(reportValue(event.from_status, "-"))}</td>
-          <td>${escapeReportHtml(reportValue(event.to_status, "-"))}</td>
+          <td>${escapeReportHtml(formatDate(event.occurred_at))}<br /><strong>${escapeReportHtml(formatStatus(event.event_type))}</strong><br />${escapeReportHtml(reportValue(event.actor))}</td>
+          <td>${escapeReportHtml(formatStatus(event.from_status || "-"))} → ${escapeReportHtml(formatStatus(event.to_status || "-"))}</td>
           <td>${escapeReportHtml(event.message)}</td>
         </tr>
       `,
@@ -1170,7 +1180,7 @@ const buildIncidentEvidenceReportHtml = (
         ${reportCell("System / Facility", systemName)}
         ${reportCell("Prepared by", preparedBy)}
         ${reportCell("Generated", generatedAt.toLocaleString())}
-        ${reportCell("Report version", "1.3")}
+        ${reportCell("Report version", "1.4")}
         ${reportCell("Current generation", currentGeneration)}
         ${reportCell("Audit events", events.length)}
       </div>
@@ -1182,8 +1192,8 @@ const buildIncidentEvidenceReportHtml = (
       <div class="facts" style="margin-top:16px">
         ${reportCell("Detected", formatDate(incident.detected_at))}
         ${reportCell("Last seen", formatDate(incident.last_seen_at))}
-        ${reportCell("Affected assets", incident.affected_asset_count)}
-        ${reportCell("Affected subscribers", incident.affected_subscriber_count)}
+        ${reportCell("Affected assets", reportImpactCount(incident, incident.affected_asset_count))}
+        ${reportCell("Affected subscribers", reportImpactCount(incident, incident.affected_subscriber_count))}
         ${reportCell("Source asset", sourceAssetName)}
         ${reportCell("Source asset type", sourceAssetType)}
         ${reportCell("Source node", incident.source_node_id)}
@@ -1263,7 +1273,7 @@ const buildIncidentEvidenceReportHtml = (
       </div>
       ${executionRows ? `
         <table style="margin-top:16px">
-          <thead><tr><th>Gen.</th><th>Action</th><th>Outcome</th><th>Executor</th><th>Adapter</th><th>Attempt</th><th>Started</th><th>Evidence message</th></tr></thead>
+          <thead><tr><th style="width:32%">Execution record</th><th>Evidence / operator attestation</th></tr></thead>
           <tbody>${executionRows}</tbody>
         </table>
       ` : `<p class="lede" style="margin-top:14px">No execution evidence has been recorded.</p>`}
@@ -1297,7 +1307,7 @@ const buildIncidentEvidenceReportHtml = (
       <h2>Persistent Audit Timeline</h2>
       ${eventRows ? `
         <table>
-          <thead><tr><th>Time</th><th>Event</th><th>Actor</th><th>From</th><th>To</th><th>Message</th></tr></thead>
+          <thead><tr><th style="width:28%">Time / event / actor</th><th style="width:20%">Transition</th><th>Message</th></tr></thead>
           <tbody>${eventRows}</tbody>
         </table>
       ` : `<p class="lede">No workflow events were returned.</p>`}
@@ -1443,7 +1453,14 @@ const buildIncidentEvidenceReportHtml = (
       .toolbar { display: none !important; }
       .report { width: 100%; margin: 0; border: 0; box-shadow: none; }
       .cover { padding-top: 8px; }
-      section { break-inside: auto; }
+      section { break-inside: auto; padding: 16px 12px; }
+      .cover, .footer { padding-left: 12px; padding-right: 12px; }
+      .footer { break-inside: avoid; padding-top: 12px; padding-bottom: 8px; }
+      .fact, .identity-strip > div, .callout { break-inside: avoid; }
+      h2, h3 { break-after: avoid; }
+      td { overflow-wrap: break-word; }
+      .facts { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .outcome-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
       .outcome-card, .signature-block { break-inside: avoid; }
       table { break-inside: auto; }
       tr { break-inside: avoid; }
@@ -1487,6 +1504,7 @@ const buildIncidentEvidenceReportHtml = (
       <span class="mono">${escapeReportHtml(generatedIso)}</span>. It is an operational record, not a laboratory certificate,
       regulatory filing, or proof that physical control commands were issued. Preserve the accompanying FalilaX JSON evidence
       package when a machine-readable audit copy is required.<br />
+      <strong>Evidence snapshot:</strong> <span class="mono">${escapeReportHtml(evidenceSnapshotId)}</span><br />
       <strong>Report No.:</strong> <span class="mono">${escapeReportHtml(humanReportNumber)}</span>
       <br /><strong>Record stage:</strong> ${escapeReportHtml(reportStage)}
       ${!profileComplete ? `<br /><strong>Finalization requirement:</strong> Utility / Organization and System / Facility must be configured before this record can be issued as FINAL.` : ""}
@@ -1520,6 +1538,7 @@ const buildIncidentEvidenceJsonPayload = (
   profile: IncidentReportProfile,
   syntheticOverride = false,
   generatedAtDate = new Date(),
+  evidenceSnapshotId = "Not available",
 ) => {
   const generatedAt = generatedAtDate.toISOString();
   const humanReportNumber = buildHumanReportNumber(detail, generatedAtDate);
@@ -1528,9 +1547,10 @@ const buildIncidentEvidenceJsonPayload = (
 
   return {
     schema: "falilax.incident_evidence.v1",
-    report_version: "1.3",
+    report_version: "1.4",
     report_number: humanReportNumber,
     machine_report_id: machineReportId,
+    evidence_snapshot_id: evidenceSnapshotId,
     generated_at: generatedAt,
     report_stage: reportStageFor(detail, profile),
     organization_profile_complete: Boolean(
@@ -2429,6 +2449,7 @@ export function IncidentInvestigation() {
           String(report.system_name ?? "").trim() === expectedSystemName &&
           Boolean(report.synthetic) === expectedSynthetic &&
           String(report.content_type ?? "").toLowerCase().includes("html") &&
+          String(report.metadata?.browser_report_version ?? "") === "1.4" &&
           String(report.metadata?.evidence_fingerprint ?? "") === fingerprint,
       );
 
@@ -2455,6 +2476,7 @@ export function IncidentInvestigation() {
         reportProfile,
         reportSyntheticOverride,
         generatedAt,
+        `FX-SNAPSHOT-SHA256-${fingerprint}`,
       );
 
       const persisted = await apiFetch<PersistIncidentReportResponse>(
@@ -2478,7 +2500,7 @@ export function IncidentInvestigation() {
               evidence_fingerprint: fingerprint,
               artifact_source: "incident_investigation_ui",
               report_variant: variant,
-              browser_report_version: "1.3",
+              browser_report_version: "1.4",
             },
           }),
         },
@@ -2539,6 +2561,7 @@ export function IncidentInvestigation() {
           String(report.system_name ?? "").trim() === expectedSystemName &&
           Boolean(report.synthetic) === expectedSynthetic &&
           String(report.content_type ?? "").toLowerCase().includes("json") &&
+          String(report.metadata?.browser_report_version ?? "") === "1.4" &&
           String(report.metadata?.evidence_fingerprint ?? "") === fingerprint,
       );
 
@@ -2567,6 +2590,7 @@ export function IncidentInvestigation() {
         reportProfile,
         reportSyntheticOverride,
         generatedAt,
+        `FX-SNAPSHOT-SHA256-${fingerprint}`,
       );
       const reportNumber = payload.report_number;
       if (reportNumber !== expectedReportNumber) {
@@ -2594,7 +2618,7 @@ export function IncidentInvestigation() {
               evidence_fingerprint: fingerprint,
               artifact_source: "incident_investigation_ui",
               report_variant: "evidence_json",
-              browser_report_version: "1.3",
+              browser_report_version: "1.4",
             },
           }),
         },
