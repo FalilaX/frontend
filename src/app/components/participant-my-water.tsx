@@ -1,4 +1,4 @@
-import { Localize, useLanguage } from "@/app/i18n/language";
+﻿import { Localize, useLanguage } from "@/app/i18n/language";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
@@ -32,7 +32,7 @@ function readable(value: string): string {
     .replace(/\b\w/g, character => character.toUpperCase());
 }
 
-export function ParticipantMyWater() {
+export function ParticipantMyWater({ onExperienceComplete }: { onExperienceComplete?: () => void }) {
   const { locale } = useLanguage();
   const navigate = useNavigate();
 
@@ -71,6 +71,7 @@ export function ParticipantMyWater() {
         }
 
         setIntelligence(result);
+        onExperienceComplete?.();
       })
       .catch(caught => {
         if (disposed) return;
@@ -261,6 +262,67 @@ export function ParticipantMyWater() {
           </div>
         </div>
 
+        <article className="mt-8 rounded-3xl border border-cyan-300/15 bg-cyan-300/[0.035] p-6">
+          <div className="flex flex-wrap items-center justify-between gap-4">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-cyan-300">
+                <Localize>{"Water Pulse"}</Localize>
+              </p>
+              <h3 className="mt-2 text-xl font-semibold text-white">
+                <Localize>{"Multi-parameter water signal"}</Localize>
+              </h3>
+              <p className="mt-2 text-sm leading-6 text-slate-400">
+                <Localize>
+                  {"A compact view of the parameters contributing to the current FalilaX assessment."}
+                </Localize>
+              </p>
+            </div>
+
+            <div className="flex h-16 w-16 items-center justify-center rounded-full border border-cyan-300/30 bg-cyan-300/[0.06]">
+              <Activity className="h-7 w-7 text-cyan-300" />
+            </div>
+          </div>
+
+          <div className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            {intelligence.parameters.map(parameter => (
+              <div
+                key={`pulse-${parameter.parameter_code}`}
+                className="rounded-2xl border border-white/[0.08] bg-black/10 px-4 py-3"
+              >
+                <div className="flex items-center justify-between gap-3">
+                  <span className="text-sm font-medium text-white">
+                    {readable(parameter.parameter_code)}
+                  </span>
+                  <span className="text-[11px] uppercase tracking-[0.12em] text-slate-500">
+                    {readable(parameter.risk_level)}
+                  </span>
+                </div>
+
+                <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-white/[0.08]">
+                  <div
+                    className={`h-full rounded-full ${
+                      parameter.risk_level === "HIGH" ||
+                      parameter.risk_level === "CRITICAL"
+                        ? "w-[85%] bg-amber-300"
+                        : parameter.risk_level === "MODERATE"
+                          ? "w-[55%] bg-cyan-300"
+                          : "w-[25%] bg-cyan-200/60"
+                    }`}
+                  />
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {intelligence.parameters.length === 0 && (
+            <p className="mt-5 text-sm text-slate-400">
+              <Localize>
+                {"No parameter signals are currently available for the pulse view."}
+              </Localize>
+            </p>
+          )}
+        </article>
+
         <div className="mt-8 grid gap-5 lg:grid-cols-2">
           <article className="rounded-3xl border border-white/[0.08] bg-white/[0.025] p-6">
             <div className="flex items-center gap-3">
@@ -317,7 +379,7 @@ export function ParticipantMyWater() {
                 </p>
 
                 <p className="mt-2 text-sm leading-6 text-slate-300">
-                  {intelligence.dominant_parameters.map(readable).join(" · ")}
+                  {intelligence.dominant_parameters.map(readable).join(" Â· ")}
                 </p>
               </div>
             )}

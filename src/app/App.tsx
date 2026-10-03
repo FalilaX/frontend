@@ -21,6 +21,7 @@ import ParticipantSignIn from '@/app/components/participant-sign-in';
 import { ParticipantRoute } from '@/app/components/participant-route';
 import OperatorSignIn from '@/app/components/operator-sign-in';
 import { OperatorRoute } from '@/app/components/operator-route';
+import Analytics from '@/app/components/analytics';
 
 import PrivacyPolicy from '@/app/docs/PrivacyPolicy';
 import TermsOfService from '@/app/docs/TermsOfService';
@@ -110,6 +111,15 @@ export default function App() {
           Existing buttons, bookmarks, or links that still use
           /dashboard will enter the professional Utility workspace.
         */}
+        <Route
+          path="/analytics"
+          element={
+            <OperatorRoute>
+              <Analytics />
+            </OperatorRoute>
+          }
+        />
+
         <Route
           path="/dashboard"
           element={
@@ -204,3 +214,6 @@ export default function App() {
     </BrowserRouter>
   );
 }
+
+
+

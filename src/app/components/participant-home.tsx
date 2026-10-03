@@ -3,6 +3,11 @@ import { ParticipantNotificationHistory } from "@/app/components/participant-not
 import { ParticipantEmailRehearsal } from "@/app/components/participant-email-rehearsal";
 import { ParticipantPreferencesEditor } from "@/app/components/participant-preferences-editor";
 import { ParticipantMyWater } from "@/app/components/participant-my-water";
+import { ParticipantQuestionnaire } from "@/app/components/participant-questionnaire";
+import {
+  getParticipantQuestionnaire,
+  type ParticipantQuestionnaire as ParticipantQuestionnaireData,
+} from "@/app/services/participant-api";
 import { useEffect, useState } from "react";
 import { getParticipantContext, ParticipantAccessError } from "@/app/services/participant-api";
 import type { ParticipantContext } from "@/app/services/participant-api";
@@ -27,6 +32,10 @@ export function ParticipantHome() {
   const [attempt, setAttempt] = useState(0);
   const [editing, setEditing] = useState(false);
   const [savedMessage, setSavedMessage] = useState("");
+  const [questionnaire, setQuestionnaire] =
+    useState<ParticipantQuestionnaireData | null>(null);
+  const [questionnaireOpen, setQuestionnaireOpen] = useState(false);
+  const [questionnaireChecked, setQuestionnaireChecked] = useState(false);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -61,6 +70,26 @@ export function ParticipantHome() {
   const preference = context?.preferences;
   const readable = (value: string) => value.toLowerCase().replaceAll("_", " ");
   const channelNames: Record<string, string> = { EMAIL: "Email", SMS: "SMS", WHATSAPP: "WhatsApp", IN_APP: "In-app", PUSH: "Push" };
+
+  async function handleWaterExperienceComplete() {
+    if (questionnaireChecked) return;
+
+    const session = getParticipantSession();
+    if (!session) return;
+
+    setQuestionnaireChecked(true);
+
+    try {
+      const available = await getParticipantQuestionnaire(session);
+      if (available) {
+        setQuestionnaire(available);
+        setQuestionnaireOpen(true);
+      }
+    } catch {
+      // Questionnaire availability must never interrupt the participant
+      // water-intelligence experience.
+    }
+  }
 
   function signOut() {
     clearParticipantSession();
@@ -100,7 +129,20 @@ export function ParticipantHome() {
           </div>
         </section>
 
-        <ParticipantMyWater />
+        <ParticipantMyWater
+          onExperienceComplete={() => {
+            void handleWaterExperienceComplete();
+          }}
+        />
+
+        <ParticipantQuestionnaire
+          questionnaire={questionnaire}
+          open={questionnaireOpen}
+          onOpenChange={setQuestionnaireOpen}
+          onSubmitted={() => {
+            setQuestionnaireOpen(false);
+          }}
+        />
 
         {!context && <div role="status" className="mt-6 rounded-3xl border border-white/10 p-6 text-sm text-slate-300">
           <Localize>{contextError ? "Your profile is verified, but we could not load your saved preferences and service context." : "Loading your saved preferences and service context…"}</Localize>

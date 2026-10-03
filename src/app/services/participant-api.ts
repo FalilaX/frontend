@@ -98,3 +98,115 @@ export async function getParticipantContext(
   }
   return data;
 }
+
+export interface ParticipantQuestionnaireQuestion {
+  id: number;
+  question_key: string;
+  prompt: string;
+  question_type: string;
+  display_order: number;
+  is_required: boolean;
+  options_json: Record<string, unknown> | unknown[] | null;
+  validation_json: Record<string, unknown> | null;
+  help_text: string | null;
+}
+
+export interface ParticipantQuestionnaire {
+  id: number;
+  code: string;
+  title: string;
+  description: string | null;
+  version: string;
+  purpose: string | null;
+  questions: ParticipantQuestionnaireQuestion[];
+}
+
+export interface ParticipantQuestionnaireAnswer {
+  question_id: number;
+  value_json: unknown;
+}
+
+export interface ParticipantQuestionnaireSubmission {
+  response_id: number;
+  questionnaire_id: number;
+  status: string;
+  submitted_at: string;
+}
+
+export async function getParticipantQuestionnaire(
+  session: ParticipantBrowserSession,
+  signal?: AbortSignal,
+): Promise<ParticipantQuestionnaire | null> {
+  const response = await fetch(
+    buildApiUrl(
+      `/api/v1/questionnaires/public/sessions/${encodeURIComponent(
+        session.sessionPublicId,
+      )}`,
+    ),
+    {
+      headers: {
+        Accept: "application/json",
+        Authorization: `Bearer ${session.accessToken}`,
+      },
+      signal,
+      credentials: "omit",
+      cache: "no-store",
+      redirect: "error",
+      referrerPolicy: "no-referrer",
+    },
+  );
+
+  if (response.status === 404) return null;
+
+  if (!response.ok) {
+    throw new ParticipantAccessError([401, 403].includes(response.status));
+  }
+
+  const data = await response.json() as ParticipantQuestionnaire;
+
+  if (
+    !data
+    || !Number.isInteger(data.id)
+    || typeof data.code !== "string"
+    || typeof data.title !== "string"
+    || !Array.isArray(data.questions)
+  ) {
+    throw new Error("FalilaX returned an invalid questionnaire.");
+  }
+
+  return data;
+}
+
+export async function submitParticipantQuestionnaire(
+  session: ParticipantBrowserSession,
+  answers: ParticipantQuestionnaireAnswer[],
+  signal?: AbortSignal,
+): Promise<ParticipantQuestionnaireSubmission> {
+  const response = await fetch(
+    buildApiUrl(
+      `/api/v1/questionnaires/public/sessions/${encodeURIComponent(
+        session.sessionPublicId,
+      )}/responses`,
+    ),
+    {
+      method: "POST",
+      headers: {
+        Accept: "application/json",
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${session.accessToken}`,
+      },
+      body: JSON.stringify({ answers }),
+      signal,
+      credentials: "omit",
+      cache: "no-store",
+      redirect: "error",
+      referrerPolicy: "no-referrer",
+    },
+  );
+
+  if (!response.ok) {
+    throw new ParticipantAccessError([401, 403].includes(response.status));
+  }
+
+  return await response.json() as ParticipantQuestionnaireSubmission;
+}

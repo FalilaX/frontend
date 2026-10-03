@@ -200,6 +200,7 @@ export interface EnrollmentActivationStatusResponse {
 }
 
 export interface EnrollmentWorkspaceSessionResponse {
+  session_public_id: string;
   access_token: string;
   token_type: "bearer";
   expires_in: number;

@@ -292,17 +292,18 @@ export default function Dashboard() {
 
               <nav className="hidden md:flex flex-wrap gap-x-5 gap-y-2 text-sm">
                 <Link to="/dashboard" className="text-zinc-100 font-medium"><Localize>{"Dashboard"}</Localize></Link>
+<Link to="/analytics" className="text-zinc-400 hover:text-zinc-100 transition-colors"><Localize>{" Analytics "}</Localize></Link>
                 <Link to="/map" className="text-zinc-400 hover:text-zinc-100 transition-colors"><Localize>{"Community Map"}</Localize></Link>
-                <Link to="/map" className="text-zinc-400 hover:text-zinc-100 transition-colors"><Localize>{" Source Attribution "}</Localize></Link>
-                <Link to="/incidents" className="text-zinc-400 hover:text-zinc-100 transition-colors"><Localize>{" Investigation Workflow "}</Localize></Link>
-                <Link
-                  to={readinessPath ?? "#"}
+                <Link to="/map" className="text-zinc-400 hover:text-zinc-100 transition-colors"><Localize>{" Source Attribution "}</Localize></Link>                <Link
+                  to="/readiness?utilityId={readinessUtilityId}"
                   onClick={(event) => {
-                    if (!readinessPath) event.preventDefault();
+                    if (!readinessUtilityId) event.preventDefault()
                   }}
-                  aria-disabled={!readinessPath}
-                  className={`transition-colors ${readinessPath ? "text-zinc-400 hover:text-zinc-100" : "cursor-not-allowed text-zinc-600"}`}
-                ><Localize>{" Readiness "}</Localize></Link>
+                  aria-disabled={!readinessUtilityId}
+                  className={`transition-colors ${readinessUtilityId ? "text-zinc-400 hover:text-zinc-100" : "cursor-not-allowed text-zinc-600"}`}
+                >
+                  <Localize>{" Readiness "}</Localize>
+                </Link>
               </nav>
             </div>
             <a
@@ -633,3 +634,6 @@ export default function Dashboard() {
     </div>
   );
 }
+
+
+
