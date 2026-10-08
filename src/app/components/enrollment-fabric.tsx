@@ -30,7 +30,7 @@ import {
 import { Link, useNavigate, useParams } from "react-router-dom";
 
 import logoImage from "@/assets/falilax-logo.png";
-import { API_CONFIG } from "@/app/config/api";
+import { API_BASE_URL, API_CONFIG, API_ENDPOINTS } from "@/app/config/api";
 import {
   acceptEnrollmentInvitation,
   createEnrollmentWorkspaceSession,
@@ -65,9 +65,11 @@ import {
   clearEnrollmentSession,
   getEnrollmentBrowserContext,
   getEnrollmentSessionPublicId,
-  storeEnrollmentBrowserContext,
+  storeEnrollmentBrowserContext,  storeEnrollmentSession,
 } from "@/app/utils/enrollment-session";
 import { storeParticipantSession } from "@/app/utils/participant-session";
+
+const CONTROLLED_DEMO_PROGRAM_CODE = "CONTROLLED-DEMO-2026";
 
 const journey = [
   { key: "INVITATION", label: "Invitation", description: "Secure entry" },
@@ -313,7 +315,6 @@ export function EnrollmentFabric() {
     }
     setToken(invitationToken);
   }, [existingSessionId, invitationToken, navigate]);
-
   useEffect(() => {
     if (!existingSessionId) return;
     const resumeSessionId = existingSessionId;
@@ -383,6 +384,81 @@ export function EnrollmentFabric() {
     };
   }, [sessionPublicId, stage]);
 
+
+  useEffect(() => {
+    if (invitationToken || existingSessionId) return;
+
+    let cancelled = false;
+
+    async function startControlledDemo() {
+      setBusy(true);
+      setError(null);
+
+      try {
+        const response = await fetch(
+          `${API_BASE_URL}${API_ENDPOINTS.ENROLLMENT_START_PUBLIC_PROGRAM}`,
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              program_code: CONTROLLED_DEMO_PROGRAM_CODE,
+            }),
+          },
+        );
+
+        const payload = await response.json().catch(() => null);
+
+        if (!response.ok) {
+          const message =
+            payload?.detail ||
+            payload?.message ||
+            "FalilaX could not start the controlled demonstration enrollment.";
+
+          throw new Error(
+            typeof message === "string"
+              ? message
+              : "FalilaX could not start the controlled demonstration enrollment.",
+          );
+        }
+
+        if (
+          !payload?.session_public_id ||
+          !payload?.access_token
+        ) {
+          throw new Error(
+            "The controlled demonstration did not return a valid enrollment session.",
+          );
+        }
+
+        if (cancelled) return;
+
+        storeEnrollmentSession(
+          payload.session_public_id,
+          payload.access_token,
+        );
+
+        setSessionPublicId(payload.session_public_id);
+        setStage(stageFromCurrentStep(payload.current_step));
+        setToken("");
+      } catch (caught) {
+        if (!cancelled) {
+          setError(normalizeError(caught));
+        }
+      } finally {
+        if (!cancelled) {
+          setBusy(false);
+        }
+      }
+    }
+
+    void startControlledDemo();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [existingSessionId, invitationToken]);
   async function acceptInvitation(event: FormEvent) {
     event.preventDefault();
     setError(null);
@@ -714,7 +790,7 @@ export function EnrollmentFabric() {
                 <div>
                   <div className="mb-8">
                     <p className="text-xs font-semibold uppercase tracking-[0.2em] text-cyan-300"><Localize>{"Identity connection"}</Localize></p>
-                    <h1 className="mt-3 text-3xl font-semibold text-white"><Localize>{"Let’s make the experience yours."}</Localize></h1>
+                    <h1 className="mt-3 text-3xl font-semibold text-white"><Localize>{"Let's make the experience yours."}</Localize></h1>
                     <p className="mt-3 text-sm leading-7 text-slate-400"><Localize>{"We collect only what is needed to identify you and verify at least one notification channel."}</Localize></p>
                   </div>
                   {!identityProof ? (
@@ -905,10 +981,6 @@ export function EnrollmentFabric() {
                     <ErrorNotice message={error} />
                   </div>
                 </div>
-              )}
-
-              {stage !== "INVITATION" && stage !== "COMPLETE" && (
-                <button type="button" onClick={restartEnrollment} className="mx-auto mt-7 block text-xs text-slate-600 transition hover:text-slate-400"><Localize>{"Use a different invitation"}</Localize></button>
               )}
             </div>
           </div>

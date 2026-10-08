@@ -1,4 +1,4 @@
-const ENROLLMENT_ACCESS_TOKEN_KEY = "falilax_enrollment_session_token";
+﻿const ENROLLMENT_ACCESS_TOKEN_KEY = "falilax_enrollment_session_token";
 const ENROLLMENT_PUBLIC_ID_KEY = "falilax_enrollment_session_public_id";
 const ENROLLMENT_CONTEXT_KEY = "falilax_enrollment_context";
 
@@ -33,7 +33,7 @@ export function storeEnrollmentSession(
   sessionPublicId: string,
   accessToken: string,
 ): void {
-  const id = sessionPublicId.trim();
+  const id = String(sessionPublicId).trim();
   const token = accessToken.trim();
 
   if (!id || !token) {
@@ -77,4 +77,3 @@ export function clearEnrollmentSession(): void {
   target.removeItem(ENROLLMENT_CONTEXT_KEY);
   window.dispatchEvent(new Event(ENROLLMENT_SESSION_CHANGED_EVENT));
 }
-

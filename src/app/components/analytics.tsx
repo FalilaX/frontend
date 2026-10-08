@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+ï»¿import { useEffect, useState } from "react";
 import { BarChart3, Building2, MapPin, Users, Activity, Globe2 } from "lucide-react";
 
 import { authenticatedFetch } from "@/app/utils/auth-session";
@@ -38,6 +38,14 @@ type AnalyticsData = {
     by_channel?: Record<string, number>;
   };
   engagement?: {
+    total_events?: number;
+    unique_users?: number;
+    events_by_type?: Array<{
+      event_type: string;
+      count: number;
+    }>;
+  };
+  usage?: {
     total_events?: number;
     unique_users?: number;
     events_by_type?: Array<{
@@ -139,7 +147,7 @@ export default function Analytics() {
   const deployments = data?.deployments?.deployments ?? [];
   const localities = data?.localities?.localities ?? [];
   const notifications = data?.notifications ?? {};
-  const engagement = data?.engagement ?? {};
+  const engagement = data?.engagement ?? data?.usage ?? {};
 
   return (
     <div className="min-h-screen bg-zinc-950 text-zinc-100">
@@ -158,7 +166,7 @@ export default function Analytics() {
           </div>
 
           <span className="rounded-full border border-zinc-800 bg-zinc-900 px-3 py-1 text-xs text-zinc-400">
-            {globalAccess ? "GLOBAL · FALILAX OVERSEER" : "AUTHORIZED UTILITY SCOPE"}
+            {globalAccess ? "GLOBAL Â· FALILAX OVERSEER" : "AUTHORIZED UTILITY SCOPE"}
           </span>
         </div>
       </header>
@@ -292,7 +300,7 @@ export default function Analytics() {
                           .join(", ") || "Unspecified locality"}
                       </p>
                       <p className="mt-1 text-xs text-zinc-500">
-                        {locality.utility_count} utilities ·{" "}
+                        {locality.utility_count} utilities Â·{" "}
                         {locality.unique_participants} people
                       </p>
                     </div>

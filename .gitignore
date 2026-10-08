@@ -8,3 +8,5 @@ dist
 
 .vercel
 .env*
+
+.vercel-production.env

@@ -17,6 +17,7 @@ import UtilityReadiness from '@/app/components/utility-readiness';
 import EnrollmentFabric from '@/app/components/enrollment-fabric';
 import PublicDemoEntry from '@/app/components/public-demo-entry';
 import ParticipantHome from '@/app/components/participant-home';
+import ParticipantExperienceFeedback from '@/app/components/participant-experience-feedback';
 import ParticipantSignIn from '@/app/components/participant-sign-in';
 import { ParticipantRoute } from '@/app/components/participant-route';
 import OperatorSignIn from '@/app/components/operator-sign-in';
@@ -72,6 +73,13 @@ export default function App() {
           }
         />
         <Route
+          path="/participant/experience-feedback"
+          element={
+            <ParticipantRoute>
+              <ParticipantExperienceFeedback />
+            </ParticipantRoute>
+          }
+        />        <Route
           path="/operator/sign-in"
           element={<OperatorSignIn />}
         />
