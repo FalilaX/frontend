@@ -1,4 +1,4 @@
-import { Localize, useLanguage, translate } from "@/app/i18n/language";
+﻿import { Localize, useLanguage, translate } from "@/app/i18n/language";
 import { useNavigate } from "react-router-dom";
 import {
   Activity,
@@ -116,7 +116,9 @@ export function LandingPage() {
             <a href="#operations" className="transition hover:text-white"><Localize>{"Operations"}</Localize></a>
           </nav>
 
-          <button
+                    <button type="button" onClick={() => navigate("/participant/sign-in")} className="group hidden items-center gap-2 rounded-xl border border-cyan-300/15 bg-cyan-300/[0.05] px-4 py-2.5 text-sm font-semibold text-cyan-100 transition hover:border-cyan-300/35 hover:bg-cyan-300/10 sm:inline-flex"><Localize>{" Participant sign in "}</Localize><ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" /></button>
+
+<button
             type="button"
             onClick={enterPlatform}
             className="group inline-flex items-center gap-2 rounded-xl border border-cyan-300/20 bg-white/[0.045] px-4 py-2.5 text-sm font-semibold text-white transition hover:border-cyan-300/40 hover:bg-cyan-300/10"
@@ -137,7 +139,7 @@ export function LandingPage() {
             <h1 className="text-balance text-5xl font-semibold leading-[0.98] tracking-[-0.055em] text-white sm:text-6xl lg:text-[5.35rem]"><Localize>{" See risk sooner. "}</Localize><span className="mt-2 block bg-gradient-to-r from-cyan-200 via-sky-400 to-blue-500 bg-clip-text text-transparent"><Localize>{" Know what happens next. "}</Localize></span>
             </h1>
 
-            <p className="mt-8 max-w-xl text-lg leading-8 text-slate-300 sm:text-xl"><Localize>{" FalilaX turns fragmented water, infrastructure, and public-health signals into one clear operating picture—so teams can detect, trace, and respond with confidence. "}</Localize></p>
+            <p className="mt-8 max-w-xl text-lg leading-8 text-slate-300 sm:text-xl"><Localize>{" FalilaX turns fragmented water, infrastructure, and public-health signals into one clear operating pictureâ€”so teams can detect, trace, and respond with confidence. "}</Localize></p>
 
             <div className="mt-10 flex flex-col gap-3 sm:flex-row">
               <button
@@ -172,7 +174,7 @@ export function LandingPage() {
                   />
                   <div>
                     <p className="text-sm font-bold text-white"><Localize>{"FalilaX Network Intelligence"}</Localize></p>
-                    <p className="mt-0.5 text-xs text-slate-500"><Localize>{"City water system · Live operating picture"}</Localize></p>
+                    <p className="mt-0.5 text-xs text-slate-500"><Localize>{"City water system Â· Live operating picture"}</Localize></p>
                   </div>
                 </div>
                 <span className="hidden items-center gap-2 rounded-full border border-emerald-400/20 bg-emerald-400/[0.07] px-3 py-1.5 text-[10px] font-bold uppercase tracking-[0.16em] text-emerald-300 sm:flex">
@@ -238,7 +240,7 @@ export function LandingPage() {
             <div className="max-w-3xl">
               <p className="text-xs font-bold uppercase tracking-[0.22em] text-cyan-300"><Localize>{"One intelligence platform"}</Localize></p>
               <h2 className="mt-5 text-4xl font-semibold tracking-[-0.04em] text-white sm:text-5xl"><Localize>{"From detection to decision."}</Localize></h2>
-              <p className="mt-5 text-lg leading-8 text-slate-400"><Localize>{"Everything needed to understand a water event and coordinate the next response—without unnecessary layers."}</Localize></p>
+              <p className="mt-5 text-lg leading-8 text-slate-400"><Localize>{"Everything needed to understand a water event and coordinate the next responseâ€”without unnecessary layers."}</Localize></p>
             </div>
 
             <div className="mt-14 grid gap-5 lg:grid-cols-3">
@@ -285,9 +287,10 @@ export function LandingPage() {
       <footer className="relative z-10 border-t border-cyan-300/10">
         <div className="mx-auto flex max-w-[1500px] flex-col gap-5 px-6 py-8 text-sm text-slate-500 sm:flex-row sm:items-center sm:justify-between lg:px-10">
           <div className="flex items-center gap-2"><MapPinned className="h-4 w-4 text-cyan-400" /><Localize>{" Source-to-tap water intelligence"}</Localize></div>
-          <p><Localize>{"© 2026 FalilaX™ · Demonstration environment"}</Localize></p>
+          <p><Localize>{"Â© 2026 FalilaXâ„¢ Â· Demonstration environment"}</Localize></p>
         </div>
       </footer>
     </div>
   );
 }
+
