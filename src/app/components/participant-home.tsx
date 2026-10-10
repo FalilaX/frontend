@@ -1,4 +1,4 @@
-import { Localize, useLanguage } from "@/app/i18n/language";
+﻿import { Localize, useLanguage } from "@/app/i18n/language";
 import { ParticipantNotificationHistory } from "@/app/components/participant-notification-history";
 import { ParticipantEmailRehearsal } from "@/app/components/participant-email-rehearsal";
 import { ParticipantPreferencesEditor } from "@/app/components/participant-preferences-editor";
@@ -79,7 +79,7 @@ export function ParticipantHome() {
 
   function signOut() {
     clearParticipantSession();
-    navigate("/", { replace: true });
+    navigate("/participant/sign-in", { replace: true });
   }
 
   return (
@@ -122,7 +122,7 @@ export function ParticipantHome() {
         />
 
         {!context && <div role="status" className="mt-6 rounded-3xl border border-white/10 p-6 text-sm text-slate-300">
-          <Localize>{contextError ? "Your profile is verified, but we could not load your saved preferences and service context." : "Loading your saved preferences and service context…"}</Localize>
+          <Localize>{contextError ? "Your profile is verified, but we could not load your saved preferences and service context." : "Loading your saved preferences and service contextâ€¦"}</Localize>
           {contextError && <button type="button" onClick={() => setAttempt(value => value + 1)} className="ml-3 rounded-xl border border-cyan-300/30 px-4 py-2 text-cyan-200"><Localize>{"Try again"}</Localize></button>}
         </div>}
         {context && <section className="mt-6 grid gap-5 md:grid-cols-2">
@@ -133,9 +133,9 @@ export function ParticipantHome() {
             {preference ? <>
               <p className="mt-4 text-sm text-cyan-200"><Localize>{!preference.is_active ? "Preferences inactive" : preference.paused ? "Notifications paused" : "Preferences active"}</Localize></p>
               <dl className="mt-4 space-y-4 text-sm">
-                <div><dt className="text-slate-400"><Localize>{"Selected channels"}</Localize></dt><dd className="mt-1 text-slate-100"><Localize>{preference.channels.map(channel => channelNames[channel]).join(" · ") || "No channels selected"}</Localize></dd></div>
+                <div><dt className="text-slate-400"><Localize>{"Selected channels"}</Localize></dt><dd className="mt-1 text-slate-100"><Localize>{preference.channels.map(channel => channelNames[channel]).join(" Â· ") || "No channels selected"}</Localize></dd></div>
                 <div><dt className="text-slate-400"><Localize>{"Minimum severity"}</Localize></dt><dd className="mt-1 capitalize"><Localize>{readable(preference.minimum_severity)}</Localize></dd></div>
-                <div><dt className="text-slate-400"><Localize>{"Quiet hours"}</Localize></dt><dd className="mt-1"><Localize>{preference.quiet_hours_enabled ? `${preference.quiet_hours_start?.slice(0, 5)}–${preference.quiet_hours_end?.slice(0, 5)} (${preference.quiet_hours_timezone})` : "Not enabled"}</Localize></dd></div>
+                <div><dt className="text-slate-400"><Localize>{"Quiet hours"}</Localize></dt><dd className="mt-1"><Localize>{preference.quiet_hours_enabled ? `${preference.quiet_hours_start?.slice(0, 5)}â€“${preference.quiet_hours_end?.slice(0, 5)} (${preference.quiet_hours_timezone})` : "Not enabled"}</Localize></dd></div>
                 {preference.paused && <div><dt className="text-slate-400"><Localize>{"Paused until"}</Localize></dt><dd className="mt-1"><Localize>{preference.paused_until ? new Date(preference.paused_until).toLocaleString(locale) : "Not specified"}</Localize><Localize>{" (your device time)"}</Localize></dd></div>}
                 <div><dt className="text-slate-400"><Localize>{"Emergency quiet-hours override"}</Localize></dt><dd className="mt-1"><Localize>{preference.emergency_override_enabled ? "Enabled" : "Not enabled"}</Localize></dd></div>
                 <div><dt className="text-slate-400"><Localize>{"Acknowledgement"}</Localize></dt><dd className="mt-1"><Localize>{preference.acknowledgement_required ? `Requested within ${preference.acknowledgement_timeout_minutes} minutes` : "Not requested"}</Localize></dd></div>
@@ -156,7 +156,7 @@ export function ParticipantHome() {
             {context.assignments.length ? <ul className="mt-5 space-y-3">
               {context.assignments.map(assignment => <li key={assignment.assignment_id} className="rounded-2xl border border-white/10 p-4">
                 <p className="text-xs font-medium text-cyan-200"><Localize>{assignment.context_kind === "DEMONSTRATION" ? "Demonstration association" : "Recorded association"}</Localize></p>
-                <p className="mt-2 text-sm capitalize"><Localize>{readable(assignment.scope_type)}</Localize><Localize>{" · Reference "}</Localize>{assignment.scope_id}</p>
+                <p className="mt-2 text-sm capitalize"><Localize>{readable(assignment.scope_type)}</Localize><Localize>{" Â· Reference "}</Localize>{assignment.scope_id}</p>
                 <p className="mt-1 text-xs capitalize text-slate-400"><Localize>{readable(assignment.relationship_type)}</Localize></p>
               </li>)}
             </ul> : <p className="mt-4 text-sm text-slate-300"><Localize>{"No approved service associations from completed enrollment are available."}</Localize></p>}
@@ -173,3 +173,4 @@ export function ParticipantHome() {
 }
 
 export default ParticipantHome;
+
