@@ -75,11 +75,26 @@ export default function Analytics() {
       setError(null);
 
       try {
-        const globalResponse = await authenticatedFetch(
-          `${API_BASE_URL}/api/v1/participant-analytics/dashboard?level=GLOBAL`
+        const meResponse = await authenticatedFetch(
+          `${API_BASE_URL}/api/v1/auth/me`
         );
 
-        if (globalResponse.ok) {
+        if (!meResponse.ok) {
+          throw new Error(`Unable to resolve authenticated user: ${meResponse.status}`);
+        }
+
+        const currentUser = await meResponse.json();
+        const canViewGlobal = currentUser?.role === "super_admin";
+
+        if (canViewGlobal) {
+          const globalResponse = await authenticatedFetch(
+            `${API_BASE_URL}/api/v1/participant-analytics/dashboard?level=GLOBAL`
+          );
+
+          if (!globalResponse.ok) {
+            throw new Error(`Global analytics API error: ${globalResponse.status}`);
+          }
+
           const globalData = await globalResponse.json();
           setData(globalData);
           setGlobalAccess(true);
@@ -222,9 +237,9 @@ export default function Analytics() {
 
             <section className="mb-8 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
               {[
-                ["Enrolled", population.enrollment_sessions ?? 0, Users],
-                ["Unique People", population.unique_participants ?? 0, Users],
-                ["Assigned", population.assigned_participants ?? 0, MapPin],
+                ["Enrollment Sessions", population.enrollment_sessions ?? 0, Users],
+                ["Enrolled", population.unique_participants ?? 0, Users],
+                ["Assigned Participants", population.assigned_participants ?? 0, MapPin],
                 ["Active Users", engagement.unique_users ?? 0, Activity],
               ].map(([label, value, Icon]) => (
                 <div
@@ -357,3 +372,6 @@ export default function Analytics() {
     </div>
   );
 }
+
+
+
