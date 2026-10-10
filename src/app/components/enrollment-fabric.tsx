@@ -1,4 +1,4 @@
-import { Localize, useLanguage, translate } from "@/app/i18n/language";
+﻿import { Localize, useLanguage, translate } from "@/app/i18n/language";
 import {
   type FormEvent,
   type ReactNode,
@@ -69,7 +69,7 @@ import {
 } from "@/app/utils/enrollment-session";
 import { storeParticipantSession } from "@/app/utils/participant-session";
 
-const CONTROLLED_DEMO_PROGRAM_CODE = "CONTROLLED-DEMO-2026";
+const CONTROLLED_DEMO_PROGRAM_CODE = "PRIVATE-EMAIL-REHEARSAL";
 
 const journey = [
   { key: "INVITATION", label: "Invitation", description: "Secure entry" },
@@ -857,8 +857,8 @@ export function EnrollmentFabric() {
                 <div>
                   <div className="mb-8">
                     <p className="text-xs font-semibold uppercase tracking-[0.2em] text-cyan-300"><Localize>{"Contact verification"}</Localize></p>
-                    <h1 className="mt-3 text-3xl font-semibold text-white"><Localize>{"Confirm it’s really you."}</Localize></h1>
-                    <p className="mt-3 text-sm leading-7 text-slate-400"><Localize>{"We’ll send a short-lived code to a contact channel you provided. Attempts are limited for your protection."}</Localize></p>
+                    <h1 className="mt-3 text-3xl font-semibold text-white"><Localize>{"Confirm itâ€™s really you."}</Localize></h1>
+                    <p className="mt-3 text-sm leading-7 text-slate-400"><Localize>{"Weâ€™ll send a short-lived code to a contact channel you provided. Attempts are limited for your protection."}</Localize></p>
                   </div>
                   {!challenge ? (
                     <div className="space-y-5">
@@ -893,7 +893,7 @@ export function EnrollmentFabric() {
                 <div>
                   <div className="mb-7">
                     <p className="text-xs font-semibold uppercase tracking-[0.2em] text-cyan-300"><Localize>{"Informed participation"}</Localize></p>
-                    <h1 className="mt-3 text-3xl font-semibold text-white"><Localize>{"Know what you’re joining."}</Localize></h1>
+                    <h1 className="mt-3 text-3xl font-semibold text-white"><Localize>{"Know what youâ€™re joining."}</Localize></h1>
                     <p className="mt-3 text-sm leading-7 text-slate-400"><Localize>{"Review the active consent document before connecting your identity to the controlled demonstration."}</Localize></p>
                   </div>
                   <form onSubmit={submitConsent} className="space-y-5">
@@ -902,13 +902,13 @@ export function EnrollmentFabric() {
                       {consentDocument ? (
                         <><h2 className="mb-3 text-base font-semibold text-white">{consentDocument.title || "FalilaX enrollment consent"}</h2>{consentDocument.content.split(/\n{2,}/).map((paragraph, index) => <p key={index} className="mb-3 last:mb-0">{paragraph}</p>)}</>
                       ) : (
-                        <div className="flex items-center gap-2 text-slate-400"><LoaderCircle className="h-4 w-4 animate-spin" /><Localize>{"Loading protected document…"}</Localize></div>
+                        <div className="flex items-center gap-2 text-slate-400"><LoaderCircle className="h-4 w-4 animate-spin" /><Localize>{"Loading protected documentâ€¦"}</Localize></div>
                       )}
                     </div>
                     {consentDocument?.version && <p className="text-xs text-slate-500"><Localize>{"Document version "}</Localize>{consentDocument.version}</p>}
                     <label className="flex cursor-pointer items-start gap-3 rounded-2xl border border-cyan-300/15 bg-cyan-300/[0.045] p-4">
                       <input type="checkbox" disabled={!consentDocument || consentRequestedLocale !== locale || busy} checked={consentAccepted} onChange={(event) => setConsentAccepted(event.target.checked)} className="mt-0.5 h-4 w-4 accent-cyan-400" />
-                      <span className="text-sm leading-6 text-slate-300"><Localize>{"I have read this document and voluntarily consent to participate. I understand that FalilaX supplements—not replaces—official public-health guidance."}</Localize></span>
+                      <span className="text-sm leading-6 text-slate-300"><Localize>{"I have read this document and voluntarily consent to participate. I understand that FalilaX supplementsâ€”not replacesâ€”official public-health guidance."}</Localize></span>
                     </label>
                     <p className="text-xs leading-5 text-slate-500"><Localize>{"See our "}</Localize><Link className="text-cyan-300 hover:text-cyan-200" to="/privacy" target="_blank"><Localize>{"Privacy Policy"}</Localize></Link><Localize>{" and "}</Localize><Link className="text-cyan-300 hover:text-cyan-200" to="/terms" target="_blank"><Localize>{"Terms"}</Localize></Link>.</p>
                     <ErrorNotice message={error} />
@@ -931,7 +931,7 @@ export function EnrollmentFabric() {
                     <div>
                       <label htmlFor="minimum-severity" className="mb-2 block text-sm font-medium text-slate-200"><Localize>{"Notify me starting at"}</Localize></label>
                       <select id="minimum-severity" value={preferences.minimum_severity} onChange={(event) => setPreferences((current) => ({ ...current, minimum_severity: event.target.value as EnrollmentMinimumSeverity }))} className="w-full rounded-2xl border border-white/10 bg-black/20 px-4 py-3.5 text-sm text-white outline-none">
-                        {severityOptions.map((option) => <option key={option.value} value={option.value}><Localize>{option.label}</Localize> — <Localize>{option.description}</Localize></option>)}
+                        {severityOptions.map((option) => <option key={option.value} value={option.value}><Localize>{option.label}</Localize> â€” <Localize>{option.description}</Localize></option>)}
                       </select>
                     </div>
                     <label className="flex cursor-pointer items-start justify-between gap-4 rounded-2xl border border-white/[0.07] bg-white/[0.025] p-4">
@@ -955,7 +955,7 @@ export function EnrollmentFabric() {
                   <h1 className="mt-3 text-3xl font-semibold text-white"><Localize>{"Your place in the network is being verified."}</Localize></h1>
                   <p className="mx-auto mt-4 max-w-md text-sm leading-7 text-slate-400"><Localize>{"FalilaX is securely matching your controlled-demo service context and evaluating it for activation."}</Localize></p>
                   <div className="mx-auto mt-7 grid max-w-lg gap-3 text-left sm:grid-cols-2">
-                    <div className="rounded-2xl border border-white/[0.08] bg-white/[0.025] p-4"><p className="text-xs uppercase tracking-[0.16em] text-slate-500"><Localize>{"Assignment"}</Localize></p><p className="mt-2 text-sm font-medium text-white"><Localize>{topology?.scope_label || topology?.scope_type || "Controlled demo network"}</Localize></p><p className="mt-1 text-xs text-slate-500"><Localize>{topology?.is_synthetic ? "Synthetic • demo-safe" : "Protected context"}</Localize></p></div>
+                    <div className="rounded-2xl border border-white/[0.08] bg-white/[0.025] p-4"><p className="text-xs uppercase tracking-[0.16em] text-slate-500"><Localize>{"Assignment"}</Localize></p><p className="mt-2 text-sm font-medium text-white"><Localize>{topology?.scope_label || topology?.scope_type || "Controlled demo network"}</Localize></p><p className="mt-1 text-xs text-slate-500"><Localize>{topology?.is_synthetic ? "Synthetic â€¢ demo-safe" : "Protected context"}</Localize></p></div>
                     <div className="rounded-2xl border border-white/[0.08] bg-white/[0.025] p-4"><p className="text-xs uppercase tracking-[0.16em] text-slate-500"><Localize>{"Review status"}</Localize></p><p className="mt-2 flex items-center gap-2 text-sm font-medium text-white"><LoaderCircle className="h-4 w-4 animate-spin text-cyan-300" /><Localize>{activation?.topology_status || topology?.status || "PROPOSED"}</Localize></p><p className="mt-1 text-xs text-slate-500"><Localize>{"Evaluated automatically"}</Localize></p></div>
                   </div>
                   <ErrorNotice message={error} />
@@ -967,9 +967,9 @@ export function EnrollmentFabric() {
                 <div className="py-5 text-center">
                   <div className="mx-auto grid h-20 w-20 place-items-center rounded-[1.75rem] border border-emerald-300/25 bg-emerald-300/[0.08] shadow-[0_0_60px_rgba(52,211,153,0.13)]"><CheckCircle2 className="h-10 w-10 text-emerald-300" /></div>
                   <p className="mt-7 text-xs font-semibold uppercase tracking-[0.2em] text-emerald-300"><Localize>{"Identity activated"}</Localize></p>
-                  <h1 className="mt-3 text-3xl font-semibold text-white"><Localize>{"You’re connected to FalilaX."}</Localize></h1>
+                  <h1 className="mt-3 text-3xl font-semibold text-white"><Localize>{"Youâ€™re connected to FalilaX."}</Localize></h1>
                   <p className="mx-auto mt-4 max-w-md text-sm leading-7 text-slate-400"><Localize>{"Your verified identity, consent, notification choices, and approved service context now form one auditable water-safety connection."}</Localize></p>
-                  <div className="mx-auto mt-7 max-w-md rounded-2xl border border-emerald-300/15 bg-emerald-300/[0.055] p-4 text-left"><div className="flex gap-3"><ShieldCheck className="mt-0.5 h-5 w-5 text-emerald-300" /><div><p className="text-sm font-medium text-emerald-100"><Localize>{"Secure activation complete"}</Localize></p><p className="mt-1 text-xs leading-5 text-emerald-100/60"><Localize>{"Trust score "}</Localize><Localize>{activation?.trust_score != null ? `${Math.round(activation.trust_score * 100)}%` : "verified"}</Localize><Localize>{" • topology "}</Localize><Localize>{activation?.topology_status?.toLowerCase() || "approved"}</Localize></p></div></div></div>
+                  <div className="mx-auto mt-7 max-w-md rounded-2xl border border-emerald-300/15 bg-emerald-300/[0.055] p-4 text-left"><div className="flex gap-3"><ShieldCheck className="mt-0.5 h-5 w-5 text-emerald-300" /><div><p className="text-sm font-medium text-emerald-100"><Localize>{"Secure activation complete"}</Localize></p><p className="mt-1 text-xs leading-5 text-emerald-100/60"><Localize>{"Trust score "}</Localize><Localize>{activation?.trust_score != null ? `${Math.round(activation.trust_score * 100)}%` : "verified"}</Localize><Localize>{" â€¢ topology "}</Localize><Localize>{activation?.topology_status?.toLowerCase() || "approved"}</Localize></p></div></div></div>
                   <div className="mt-7">
                     <PrimaryButton
                       type="button"
@@ -991,3 +991,6 @@ export function EnrollmentFabric() {
 }
 
 export default EnrollmentFabric;
+
+
+
