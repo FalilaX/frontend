@@ -1,4 +1,4 @@
-import { Localize, useLanguage } from "@/app/i18n/language";
+﻿import { Localize, useLanguage } from "@/app/i18n/language";
 import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import {
@@ -293,6 +293,7 @@ export default function Dashboard() {
               <nav className="hidden md:flex flex-wrap gap-x-5 gap-y-2 text-sm">
                 <Link to="/dashboard" className="text-zinc-100 font-medium"><Localize>{"Dashboard"}</Localize></Link>
 <Link to="/analytics" className="text-zinc-400 hover:text-zinc-100 transition-colors"><Localize>{" Analytics "}</Localize></Link>
+<Link to="/enrollment/programs" className="text-zinc-400 hover:text-zinc-100 transition-colors"><Localize>{" Enrollment Programs "}</Localize></Link>
                 <Link to="/map" className="text-zinc-400 hover:text-zinc-100 transition-colors"><Localize>{"Community Map"}</Localize></Link>
                 <Link to="/map" className="text-zinc-400 hover:text-zinc-100 transition-colors"><Localize>{" Source Attribution "}</Localize></Link>                <Link
                   to="/readiness?utilityId={readinessUtilityId}"
@@ -634,6 +635,9 @@ export default function Dashboard() {
     </div>
   );
 }
+
+
+
 
 
 

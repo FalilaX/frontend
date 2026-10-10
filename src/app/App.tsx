@@ -1,4 +1,4 @@
-import { LanguageProvider } from "@/app/i18n/language";
+﻿import { LanguageProvider } from "@/app/i18n/language";
 import {
   BrowserRouter,
   Navigate,
@@ -23,6 +23,7 @@ import { ParticipantRoute } from '@/app/components/participant-route';
 import OperatorSignIn from '@/app/components/operator-sign-in';
 import { OperatorRoute } from '@/app/components/operator-route';
 import Analytics from '@/app/components/analytics';
+import EnrollmentPrograms from '@/app/components/enrollment-programs';
 
 import PrivacyPolicy from '@/app/docs/PrivacyPolicy';
 import TermsOfService from '@/app/docs/TermsOfService';
@@ -127,6 +128,14 @@ export default function App() {
             </OperatorRoute>
           }
         />
+        <Route
+          path="/enrollment/programs"
+          element={
+            <OperatorRoute>
+              <EnrollmentPrograms />
+            </OperatorRoute>
+          }
+        />
 
         <Route
           path="/dashboard"
@@ -222,6 +231,7 @@ export default function App() {
     </BrowserRouter>
   );
 }
+
 
 
 
