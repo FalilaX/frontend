@@ -116,7 +116,7 @@ export function LandingPage() {
             <a href="#operations" className="transition hover:text-white"><Localize>{"Operations"}</Localize></a>
           </nav>
 
-                    <button type="button" onClick={() => navigate("/participant/sign-in")} className="group hidden items-center gap-2 rounded-xl border border-cyan-300/15 bg-cyan-300/[0.05] px-4 py-2.5 text-sm font-semibold text-cyan-100 transition hover:border-cyan-300/35 hover:bg-cyan-300/10 sm:inline-flex"><Localize>{" Participant sign in "}</Localize><ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" /></button>
+                    <button type="button" onClick={() => navigate("/participant/sign-in")} className="group inline-flex items-center gap-2 rounded-xl border border-cyan-300/15 bg-cyan-300/[0.05] px-4 py-2.5 text-sm font-semibold text-cyan-100 transition hover:border-cyan-300/35 hover:bg-cyan-300/10"><Localize>{" Participant sign in "}</Localize><ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" /></button>
 
 <button
             type="button"
@@ -293,4 +293,5 @@ export function LandingPage() {
     </div>
   );
 }
+
 
