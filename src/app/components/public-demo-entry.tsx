@@ -1,4 +1,4 @@
-import { useState } from "react";
+﻿import { useState } from "react";
 import { ArrowRight, Droplets, LoaderCircle, ShieldCheck } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
@@ -11,7 +11,7 @@ import {
 
 const PUBLIC_DEMO_PROGRAM =
   import.meta.env.VITE_PUBLIC_DEMO_PROGRAM_CODE ||
-  "PRIVATE-EMAIL-REHEARSAL";
+  "CONTROLLED-DEMO-2026";
 
 export default function PublicDemoEntry() {
   const navigate = useNavigate();
@@ -118,6 +118,15 @@ export default function PublicDemoEntry() {
             )}
           </button>
 
+          <button
+            type="button"
+            onClick={() => navigate("/participant/sign-in")}
+            className="mx-auto mt-5 block text-sm font-semibold text-cyan-300 transition hover:text-cyan-200 hover:underline"
+          >
+            <Localize>
+              {"Already enrolled? Sign in to your participant workspace."}
+            </Localize>
+          </button>
           <p className="mx-auto mt-5 max-w-md text-xs leading-5 text-slate-500">
             <Localize>
               {" This is a controlled FalilaX demonstration environment. "}
@@ -128,3 +137,5 @@ export default function PublicDemoEntry() {
     </main>
   );
 }
+
+
