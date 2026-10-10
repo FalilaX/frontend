@@ -1,4 +1,4 @@
-﻿import { Localize, useLanguage } from "@/app/i18n/language";
+import { Localize, useLanguage } from "@/app/i18n/language";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
@@ -379,7 +379,7 @@ export function ParticipantMyWater({ onExperienceComplete }: { onExperienceCompl
                 </p>
 
                 <p className="mt-2 text-sm leading-6 text-slate-300">
-                  {intelligence.dominant_parameters.map(readable).join(" Â· ")}
+                  {intelligence.dominant_parameters.map(readable).join(" · ")}
                 </p>
               </div>
             )}
