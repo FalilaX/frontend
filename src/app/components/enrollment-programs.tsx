@@ -1,8 +1,15 @@
-import { useEffect, useState } from "react";
+﻿import { useEffect, useState } from "react";
 import { Localize } from "@/app/i18n/language";
 import { authenticatedFetch } from "@/app/utils/auth-session";
 import { API_BASE_URL } from "@/app/config/api";
-import { ArrowLeft, CheckCircle2, Globe2, Loader2, Shield, Users } from "lucide-react";
+import {
+  ArrowLeft,
+  CheckCircle2,
+  Globe2,
+  Loader2,
+  Shield,
+  Users,
+} from "lucide-react";
 import { Button } from "@/app/components/ui/button";
 import { useNavigate } from "react-router-dom";
 
@@ -16,6 +23,9 @@ type EnrollmentProgram = {
   status: string;
   is_demo: boolean;
   public_enrollment_enabled: boolean;
+  participant_intelligence_enabled: boolean;
+  participant_intelligence_location_id: number | null;
+  participant_intelligence_context_kind: string | null;
 };
 
 type ToggleState = Record<number, boolean>;
@@ -26,7 +36,11 @@ export default function EnrollmentPrograms() {
   const [programs, setPrograms] = useState<EnrollmentProgram[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
   const [publicEnrollment, setPublicEnrollment] = useState<ToggleState>({});
+  const [participantIntelligence, setParticipantIntelligence] =
+    useState<ToggleState>({});
+
   const [saving, setSaving] = useState<number | null>(null);
 
   const loadPrograms = async () => {
@@ -46,10 +60,18 @@ export default function EnrollmentPrograms() {
       setPrograms(result);
 
       const initialPublicState: ToggleState = {};
+      const initialIntelligenceState: ToggleState = {};
+
       result.forEach((program) => {
-        initialPublicState[program.id] = program.public_enrollment_enabled === true;
+        initialPublicState[program.id] =
+          program.public_enrollment_enabled === true;
+
+        initialIntelligenceState[program.id] =
+          program.participant_intelligence_enabled === true;
       });
+
       setPublicEnrollment(initialPublicState);
+      setParticipantIntelligence(initialIntelligenceState);
     } catch (err) {
       console.error(err);
       setError("Unable to load enrollment programs.");
@@ -94,12 +116,97 @@ export default function EnrollmentPrograms() {
         ...current,
         [program.id]: updated.public_enrollment_enabled === true,
       }));
+
+      setPrograms((current) =>
+        current.map((item) =>
+          item.id === program.id
+            ? {
+                ...item,
+                public_enrollment_enabled:
+                  updated.public_enrollment_enabled === true,
+              }
+            : item
+        )
+      );
     } catch (err) {
       console.error(err);
       setError(
         err instanceof Error
           ? err.message
           : "Unable to update public enrollment."
+      );
+    } finally {
+      setSaving(null);
+    }
+  };
+
+  const toggleParticipantIntelligence = async (
+    program: EnrollmentProgram,
+    enabled: boolean
+  ) => {
+    setSaving(program.id);
+    setError(null);
+
+    try {
+      /*
+       * The demonstration deployment uses the configured Montgomery
+       * demonstration location. Once a location has already been stored,
+       * preserve that value. For a first enable, use the existing demo
+       * location ID 2.
+       */
+      const locationId =
+        program.participant_intelligence_location_id ?? 2;
+
+      const response = await authenticatedFetch(
+        `${API_BASE_URL}/api/v1/enrollment/programs/${program.id}/participant-intelligence`,
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            enabled,
+            location_id: enabled ? locationId : null,
+          }),
+        }
+      );
+
+      if (!response.ok) {
+        const body = await response.json().catch(() => null);
+        throw new Error(
+          body?.detail ||
+            `Unable to update participant intelligence: ${response.status}`
+        );
+      }
+
+      const updated = await response.json();
+
+      setParticipantIntelligence((current) => ({
+        ...current,
+        [program.id]: updated.participant_intelligence_enabled === true,
+      }));
+
+      setPrograms((current) =>
+        current.map((item) =>
+          item.id === program.id
+            ? {
+                ...item,
+                participant_intelligence_enabled:
+                  updated.participant_intelligence_enabled === true,
+                participant_intelligence_location_id:
+                  updated.location_id ?? null,
+                participant_intelligence_context_kind:
+                  updated.context_kind ?? null,
+              }
+            : item
+        )
+      );
+    } catch (err) {
+      console.error(err);
+      setError(
+        err instanceof Error
+          ? err.message
+          : "Unable to update participant intelligence."
       );
     } finally {
       setSaving(null);
@@ -115,6 +222,7 @@ export default function EnrollmentPrograms() {
               <p className="text-xs uppercase tracking-[0.2em] text-zinc-500">
                 <Localize>{"FalilaX Administration"}</Localize>
               </p>
+
               <h1 className="mt-1 text-2xl font-semibold">
                 <Localize>{"Enrollment Programs"}</Localize>
               </h1>
@@ -136,7 +244,9 @@ export default function EnrollmentPrograms() {
         <div className="mb-8 max-w-3xl">
           <p className="text-zinc-400 leading-6">
             <Localize>
-              {"Manage trusted participant enrollment programs and demonstration enrollment configuration."}
+              {
+                "Manage trusted participant enrollment programs and demonstration enrollment configuration."
+              }
             </Localize>
           </p>
         </div>
@@ -160,9 +270,12 @@ export default function EnrollmentPrograms() {
                 <Localize>{"No enrollment programs available"}</Localize>
               </h2>
             </div>
+
             <p className="text-sm text-zinc-400">
               <Localize>
-                {"No enrollment programs are currently available to this administrator's organization."}
+                {
+                  "No enrollment programs are currently available to this administrator's organization."
+                }
               </Localize>
             </p>
           </div>
@@ -170,7 +283,16 @@ export default function EnrollmentPrograms() {
           <div className="grid gap-5">
             {programs.map((program) => {
               const isSaving = saving === program.id;
-              const publicEnabled = publicEnrollment[program.id] === true;
+
+              const publicEnabled =
+                publicEnrollment[program.id] === true;
+
+              const intelligenceEnabled =
+                participantIntelligence[program.id] === true;
+
+              const isDemoParticipant =
+                program.pathway === "DEMO_PARTICIPANT" &&
+                program.is_demo;
 
               return (
                 <section
@@ -201,10 +323,12 @@ export default function EnrollmentPrograms() {
                             <Localize>{"Pathway:"}</Localize>{" "}
                             {program.pathway}
                           </span>
+
                           <span>
                             <Localize>{"Status:"}</Localize>{" "}
                             {program.status}
                           </span>
+
                           <span>
                             <Localize>{"Organization:"}</Localize>{" "}
                             {program.organization_id}
@@ -228,18 +352,21 @@ export default function EnrollmentPrograms() {
                       <div className="rounded-xl border border-zinc-800 bg-zinc-950/60 p-5">
                         <div className="flex items-start gap-3">
                           <Globe2 className="w-5 h-5 text-cyan-400 mt-0.5" />
+
                           <div className="flex-1">
                             <h3 className="font-medium">
                               <Localize>{"Public Enrollment"}</Localize>
                             </h3>
+
                             <p className="mt-1 text-sm text-zinc-500">
                               <Localize>
-                                {"Allow eligible demonstration participants to begin enrollment without an administrator-issued invitation."}
+                                {
+                                  "Allow eligible demonstration participants to begin enrollment without an administrator-issued invitation."
+                                }
                               </Localize>
                             </p>
 
-                            {program.pathway === "DEMO_PARTICIPANT" &&
-                            program.is_demo ? (
+                            {isDemoParticipant ? (
                               <div className="mt-4 flex items-center justify-between gap-4">
                                 <span
                                   className={`text-sm ${
@@ -255,7 +382,10 @@ export default function EnrollmentPrograms() {
 
                                 <button
                                   type="button"
-                                  disabled={isSaving || program.status !== "ACTIVE"}
+                                  disabled={
+                                    isSaving ||
+                                    program.status !== "ACTIVE"
+                                  }
                                   onClick={() =>
                                     togglePublicEnrollment(
                                       program,
@@ -267,10 +397,16 @@ export default function EnrollmentPrograms() {
                                       ? "bg-cyan-500"
                                       : "bg-zinc-700"
                                   } ${
-                                    isSaving || program.status !== "ACTIVE"
+                                    isSaving ||
+                                    program.status !== "ACTIVE"
                                       ? "opacity-50 cursor-not-allowed"
                                       : "cursor-pointer"
                                   }`}
+                                  aria-label={
+                                    publicEnabled
+                                      ? "Disable public enrollment"
+                                      : "Enable public enrollment"
+                                  }
                                 >
                                   <span
                                     className={`absolute top-1 h-5 w-5 rounded-full bg-white transition ${
@@ -284,7 +420,9 @@ export default function EnrollmentPrograms() {
                             ) : (
                               <p className="mt-4 text-xs text-zinc-600">
                                 <Localize>
-                                  {"Public enrollment configuration is available only for demonstration participant programs."}
+                                  {
+                                    "Public enrollment configuration is available only for demonstration participant programs."
+                                  }
                                 </Localize>
                               </p>
                             )}
@@ -294,22 +432,109 @@ export default function EnrollmentPrograms() {
 
                       <div className="rounded-xl border border-zinc-800 bg-zinc-950/60 p-5">
                         <div className="flex items-start gap-3">
-                          <Users className="w-5 h-5 text-amber-400 mt-0.5" />
-                          <div>
+                          <Users className="w-5 h-5 text-cyan-400 mt-0.5" />
+
+                          <div className="flex-1">
                             <h3 className="font-medium">
-                              <Localize>{"Participant Intelligence"}</Localize>
+                              <Localize>
+                                {"Participant Intelligence"}
+                              </Localize>
                             </h3>
+
                             <p className="mt-1 text-sm text-zinc-500">
                               <Localize>
-                                {"Connect enrolled participants to the configured demonstration intelligence context."}
+                                {
+                                  "Connect enrolled participants to the configured demonstration intelligence context."
+                                }
                               </Localize>
                             </p>
 
-                            <div className="mt-4 text-xs text-zinc-600">
-                              <Localize>
-                                {"Configure the demonstration location before enabling this capability."}
-                              </Localize>
-                            </div>
+                            {isDemoParticipant ? (
+                              <>
+                                <div className="mt-4 flex items-center justify-between gap-4">
+                                  <div>
+                                    <span
+                                      className={`text-sm ${
+                                        intelligenceEnabled
+                                          ? "text-green-300"
+                                          : "text-zinc-500"
+                                      }`}
+                                    >
+                                      {intelligenceEnabled
+                                        ? "Enabled"
+                                        : "Disabled"}
+                                    </span>
+
+                                    {intelligenceEnabled &&
+                                      program.participant_intelligence_location_id !==
+                                        null && (
+                                        <div className="mt-1 text-xs text-zinc-600">
+                                          Demonstration location #
+                                          {
+                                            program.participant_intelligence_location_id
+                                          }
+                                          {program.participant_intelligence_context_kind
+                                            ? ` · ${program.participant_intelligence_context_kind}`
+                                            : ""}
+                                        </div>
+                                      )}
+                                  </div>
+
+                                  <button
+                                    type="button"
+                                    disabled={
+                                      isSaving ||
+                                      program.status !== "ACTIVE"
+                                    }
+                                    onClick={() =>
+                                      toggleParticipantIntelligence(
+                                        program,
+                                        !intelligenceEnabled
+                                      )
+                                    }
+                                    className={`relative h-7 w-12 rounded-full transition ${
+                                      intelligenceEnabled
+                                        ? "bg-cyan-500"
+                                        : "bg-zinc-700"
+                                    } ${
+                                      isSaving ||
+                                      program.status !== "ACTIVE"
+                                        ? "opacity-50 cursor-not-allowed"
+                                        : "cursor-pointer"
+                                    }`}
+                                    aria-label={
+                                      intelligenceEnabled
+                                        ? "Disable participant intelligence"
+                                        : "Enable participant intelligence"
+                                    }
+                                  >
+                                    <span
+                                      className={`absolute top-1 h-5 w-5 rounded-full bg-white transition ${
+                                        intelligenceEnabled
+                                          ? "left-6"
+                                          : "left-1"
+                                      }`}
+                                    />
+                                  </button>
+                                </div>
+
+                                {!intelligenceEnabled && (
+                                  <div className="mt-3 text-xs text-zinc-600">
+                                    Demonstration intelligence will use the
+                                    configured Montgomery demonstration
+                                    location when enabled.
+                                  </div>
+                                )}
+                              </>
+                            ) : (
+                              <div className="mt-4 text-xs text-zinc-600">
+                                <Localize>
+                                  {
+                                    "Participant intelligence configuration is available only for demonstration participant programs."
+                                  }
+                                </Localize>
+                              </div>
+                            )}
                           </div>
                         </div>
                       </div>
@@ -324,7 +549,3 @@ export default function EnrollmentPrograms() {
     </div>
   );
 }
-
-
-
-
