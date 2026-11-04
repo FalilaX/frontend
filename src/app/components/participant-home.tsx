@@ -28,6 +28,9 @@ export function ParticipantHome() {
   const [showRehearsal, setShowRehearsal] = useState(false);
   const [showContact, setShowContact] = useState(false);
   const [showPreferences, setShowPreferences] = useState(false);
+  const [concernType, setConcernType] = useState("Water quality concern");
+  const [concernDetails, setConcernDetails] = useState("");
+  const [sessionMinutes, setSessionMinutes] = useState<number | null>(null);
   const [view, setView] = useState<"overview" | "water" | "notifications" | "help">("overview");
 
   useEffect(() => {
@@ -50,6 +53,16 @@ export function ParticipantHome() {
       controller.abort();
     };
   }, [attempt]);
+
+  useEffect(() => {
+    const update = () => {
+      const session = getParticipantSession();
+      setSessionMinutes(session ? Math.max(0, Math.ceil((session.expiresAt - Date.now()) / 60_000)) : null);
+    };
+    update();
+    const timer = window.setInterval(update, 30_000);
+    return () => window.clearInterval(timer);
+  }, []);
 
   function switchView(next: "overview" | "water" | "notifications" | "help") {
     setView(next);
@@ -82,7 +95,7 @@ export function ParticipantHome() {
         </div>
       </header>
 
-      <div className="mx-auto grid max-w-7xl gap-6 px-4 py-7 sm:px-8 lg:grid-cols-[204px_minmax(0,1fr)] lg:gap-8 lg:py-10">
+      <div className="mx-auto grid max-w-7xl gap-6 px-4 py-7 pb-28 sm:px-8 lg:grid-cols-[204px_minmax(0,1fr)] lg:gap-8 lg:py-10 lg:pb-10">
         <aside className="hidden lg:block">
           <nav aria-label="Participant navigation" className="sticky top-24 space-y-1 rounded-3xl border border-white/[0.07] bg-[#0A1F2E] p-3 text-sm">
             {([
@@ -100,7 +113,7 @@ export function ParticipantHome() {
         </aside>
 
         <main id="overview" className="min-w-0 space-y-5">
-          <nav aria-label="Participant mobile navigation" className="grid grid-cols-4 gap-1 rounded-2xl border border-white/10 bg-[#0A1F2E] p-1 lg:hidden">
+          <nav aria-label="Participant mobile navigation" className="fixed inset-x-3 bottom-3 z-30 grid grid-cols-4 gap-1 rounded-2xl border border-cyan-300/20 bg-[#0A1F2E]/95 p-1 shadow-2xl backdrop-blur-xl lg:hidden">
             {(["overview", "water", "notifications", "help"] as const).map((id) => (
               <button key={id} type="button" onClick={() => switchView(id)} aria-current={view === id ? "page" : undefined}
                 className={`${focus} rounded-xl px-1 py-2.5 text-center text-xs ${view === id ? "bg-cyan-300/10 font-semibold text-cyan-200" : "text-slate-300"}`}>
@@ -116,6 +129,8 @@ export function ParticipantHome() {
             </div>
             <span className="inline-flex items-center gap-2 rounded-full border border-emerald-300/15 bg-emerald-300/[0.05] px-3 py-1.5 text-xs text-emerald-200"><ShieldCheck className="h-3.5 w-3.5"/><Localize>{"Profile verified"}</Localize></span>
           </section>
+
+          {sessionMinutes !== null && sessionMinutes <= 5 && <div role="status" className="rounded-xl border border-amber-300/25 bg-amber-300/10 px-4 py-3 text-sm text-amber-100"><Localize>{`Your secure session ends in approximately ${sessionMinutes} minute${sessionMinutes === 1 ? "" : "s"}. Please save unfinished work. You may need to sign in again.`}</Localize></div>}
 
           {(view === "overview" || view === "water") && <div id="my-water" className="scroll-mt-24"><ParticipantMyWater key={view} detailed={view === "water"} /></div>}
 
@@ -154,6 +169,24 @@ export function ParticipantHome() {
               <div className="rounded-2xl border border-white/10 p-4"><Mail className="h-5 w-5 text-cyan-200"/><h3 className="mt-3 font-medium"><Localize>{"FalilaX account & technical help"}</Localize></h3><p className="mt-2 text-sm leading-6 text-slate-400"><Localize>{"For questions about signing in, enrollment or the app."}</Localize></p><a href="mailto:info@falilax.io?subject=FalilaX%20participant%20support" className={`${focus} mt-3 inline-block text-sm font-medium text-cyan-200 underline`}>info@falilax.io</a></div>
               <div className="rounded-2xl border border-white/10 p-4"><Waves className="h-5 w-5 text-cyan-200"/><h3 className="mt-3 font-medium"><Localize>{"Water quality or service concern"}</Localize></h3><p className="mt-2 text-sm leading-6 text-slate-400"><Localize>{"Contact your actual water utility using its verified phone number or official website. Demonstration associations are not live utility contact routes."}</Localize></p></div>
             </div>
+            <form className="mt-5 space-y-3 rounded-2xl border border-white/10 bg-[#071A29] p-4" onSubmit={event => {
+              event.preventDefault();
+              const subject = encodeURIComponent(`FalilaX participant concern: ${concernType}`);
+              const body = encodeURIComponent(`Concern category: ${concernType}\n\n${concernDetails.trim()}\n\nPlease do not include verification codes or other sensitive information.`);
+              window.location.href = `mailto:info@falilax.io?subject=${subject}&body=${body}`;
+            }}>
+              <h3 className="text-sm font-semibold"><Localize>{"Prepare a message to FalilaX support"}</Localize></h3>
+              <p className="text-xs leading-5 text-slate-400"><Localize>{"This opens your email app. It does not submit or track a report in FalilaX. Water utility incidents should be reported to your verified utility contact."}</Localize></p>
+              <label className="block text-xs text-slate-300"><Localize>{"Topic"}</Localize>
+                <select value={concernType} onChange={e => setConcernType(e.target.value)} className={`${focus} mt-2 block w-full rounded-xl border border-white/20 bg-[#102B3B] px-3 py-3 text-sm text-white`}>
+                  <option>Water quality concern</option><option>FalilaX account support</option><option>Notification question</option><option>Participant feedback</option>
+                </select>
+              </label>
+              <label className="block text-xs text-slate-300"><Localize>{"Your message (optional)"}</Localize>
+                <textarea value={concernDetails} onChange={e => setConcernDetails(e.target.value.slice(0, 1200))} rows={3} maxLength={1200} className={`${focus} mt-2 block w-full rounded-xl border border-white/20 bg-[#102B3B] px-3 py-3 text-sm text-white`} placeholder="Describe your question without sensitive personal details"/>
+              </label>
+              <button type="submit" className={`${focus} rounded-xl border border-cyan-300/30 bg-cyan-300/10 px-4 py-3 text-sm font-semibold text-cyan-100`}><Localize>{"Open email draft"}</Localize></button>
+            </form>
             <p className="mt-4 flex gap-2 text-xs leading-5 text-amber-100/80"><CircleHelp className="mt-0.5 h-4 w-4 shrink-0"/><Localize>{"For an urgent water-related emergency, follow your local utility's official emergency guidance. No report is submitted from this panel."}</Localize></p>
           </section>}
 

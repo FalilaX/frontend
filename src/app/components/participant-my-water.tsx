@@ -42,6 +42,12 @@ export function ParticipantMyWater({ onExperienceComplete, detailed = false }: {
   const [unavailable, setUnavailable] = useState(false);
   const [error, setError] = useState(false);
   const [attempt, setAttempt] = useState(0);
+  const [clock, setClock] = useState(() => Date.now());
+
+  useEffect(() => {
+    const timer = window.setInterval(() => setClock(Date.now()), 60_000);
+    return () => window.clearInterval(timer);
+  }, []);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -207,7 +213,13 @@ export function ParticipantMyWater({ onExperienceComplete, detailed = false }: {
   }
 
   const demonstration = intelligence.context_kind === "DEMONSTRATION";
-  const generated = new Date(intelligence.generated_at).toLocaleString(locale);
+  const assessedAt = Date.parse(intelligence.generated_at);
+  const assessedAtValid = Number.isFinite(assessedAt) && assessedAt <= clock + 5 * 60_000;
+  const assessmentAgeHours = assessedAtValid ? (clock - assessedAt) / 3_600_000 : Infinity;
+  // This is assessment freshness, not measurement freshness. The API does not expose
+  // a measured_at timestamp, so never imply that sensor measurements are current.
+  const assessmentStale = !assessedAtValid || assessmentAgeHours >= 24;
+  const generated = assessedAtValid ? new Date(assessedAt).toLocaleString(locale) : "Timestamp unavailable";
   const riskLevels = intelligence.parameters.map(p => p.risk_level.toUpperCase());
   const attention = intelligence.elevated_parameters.length > 0
     || riskLevels.some(r => ["HIGH", "CRITICAL", "ELEVATED", "ACTION", "ALERT"].includes(r))
@@ -217,31 +229,52 @@ export function ParticipantMyWater({ onExperienceComplete, detailed = false }: {
     || ["LOW", "WATCH", "NOTICE"].includes(intelligence.status.toUpperCase()));
   const baseline = !attention && !lowSignals && riskLevels.length > 0
     && riskLevels.every(r => r === "NORMAL");
-  const statusTitle = attention ? "Water signals need attention" : lowSignals ? "Low-level changes detected" : baseline ? "No elevated signals detected" : "Water assessment available";
-  const statusHelp = attention ? "Review the flagged signals and recommended guidance below." : lowSignals ? "Some monitored signals have changed, but none is classified as elevated." : baseline ? "The parameters assessed are classified as normal. This is not a drinking-water safety certification." : "Review the available assessment before drawing conclusions.";
+  const statusTitle = assessmentStale ? "Assessment update needed" : attention ? "Water signals need attention" : lowSignals ? "Low-level changes detected" : baseline ? "No elevated signals detected" : "Water assessment available";
+  const statusHelp = assessmentStale
+    ? "This assessment is more than 24 hours old or its timestamp cannot be verified. The current water condition is unknown."
+    : attention ? "One or more monitored signals are elevated in this assessment. Review the details."
+    : lowSignals ? "Some monitored signals have changed; none is classified as elevated in this assessment."
+    : baseline ? "The assessed parameters are classified as normal. This is not a drinking-water safety certification."
+    : "Review the available assessment before drawing conclusions.";
+  const nextStep = assessmentStale
+    ? "Refresh this assessment. Until updated evidence is available, use official utility notices for safety decisions."
+    : attention ? "Review the flagged parameters and follow verified utility or public-health guidance. FalilaX has not issued an official advisory here."
+    : lowSignals ? "Review the flagged parameters and check for official notices. No specific household action is established by these signals alone."
+    : baseline ? "No action is indicated by this assessment alone. Continue to follow official water utility notices."
+    : "Review the assessment details and official utility notices before taking action.";
   const signals = intelligence.dominant_parameters.slice(0, 4);
+  const visualAttention = attention || assessmentStale;
 
   return (
     <section aria-labelledby="my-water-title" className="overflow-hidden rounded-[1.75rem] border border-cyan-300/20 bg-[radial-gradient(circle_at_90%_8%,rgba(34,211,238,0.1),transparent_40%),#0A2B3B] shadow-[0_20px_70px_rgba(0,0,0,0.18)]">
       <div className="p-6 sm:p-8">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div className="inline-flex items-center gap-2 rounded-full border border-cyan-200/20 bg-cyan-300/[0.08] px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.15em] text-cyan-200"><Activity className="h-4 w-4"/><Localize>{"Water Pulse™"}</Localize></div>
-          <span className={`rounded-full border px-3 py-1.5 text-xs font-semibold ${attention ? "border-amber-300/30 bg-amber-300/10 text-amber-100" : lowSignals ? "border-cyan-300/30 bg-cyan-300/10 text-cyan-100" : "border-teal-300/20 bg-teal-300/10 text-teal-100"}`}><Localize>{attention ? "Attention" : lowSignals ? "Monitoring" : baseline ? "Normal assessed signals" : "Assessment"}</Localize></span>
+          <span className={`rounded-full border px-3 py-1.5 text-xs font-semibold ${visualAttention ? "border-amber-300/30 bg-amber-300/10 text-amber-100" : lowSignals ? "border-cyan-300/30 bg-cyan-300/10 text-cyan-100" : "border-teal-300/20 bg-teal-300/10 text-teal-100"}`}><Localize>{assessmentStale ? "Update needed" : attention ? "Attention" : lowSignals ? "Monitoring" : baseline ? "Normal assessed signals" : "Assessment"}</Localize></span>
         </div>
         <div className="mt-6 grid gap-5 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center">
           <div>
-            <p className={`text-xs font-semibold uppercase tracking-[0.16em] ${attention ? "text-amber-200" : lowSignals ? "text-cyan-200" : "text-emerald-200"}`}><Localize>{demonstration ? "DEMONSTRATION WATER STATUS" : "YOUR WATER ASSESSMENT"}</Localize></p>
+            <p className={`text-xs font-semibold uppercase tracking-[0.16em] ${visualAttention ? "text-amber-200" : lowSignals ? "text-cyan-200" : "text-emerald-200"}`}><Localize>{demonstration ? "DEMONSTRATION WATER STATUS" : "YOUR WATER ASSESSMENT"}</Localize></p>
             <h2 id="my-water-title" className="mt-3 max-w-3xl text-3xl font-bold leading-tight tracking-tight text-white sm:text-5xl"><Localize>{statusTitle}</Localize></h2>
             <p className="mt-3 text-base font-medium text-slate-200"><Localize>{statusHelp}</Localize></p>
             <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-300"><Localize>{intelligence.summary}</Localize></p>
           </div>
-          <div aria-hidden="true" className={`flex h-20 w-20 items-center justify-center rounded-full border sm:h-28 sm:w-28 ${attention ? "border-amber-300/30 bg-amber-300/10 text-amber-200" : lowSignals ? "border-cyan-300/25 bg-cyan-300/10 text-cyan-200" : "border-teal-300/30 bg-teal-300/10 text-teal-200"}`}>
-            {attention ? <CircleAlert className="h-11 w-11"/> : baseline ? <ShieldCheck className="h-11 w-11"/> : <Droplets className="h-11 w-11"/>}
+          <div aria-hidden="true" className={`flex h-20 w-20 items-center justify-center rounded-full border sm:h-28 sm:w-28 ${visualAttention ? "border-amber-300/30 bg-amber-300/10 text-amber-200" : lowSignals ? "border-cyan-300/25 bg-cyan-300/10 text-cyan-200" : "border-teal-300/30 bg-teal-300/10 text-teal-200"}`}>
+            {visualAttention ? <CircleAlert className="h-11 w-11"/> : baseline ? <ShieldCheck className="h-11 w-11"/> : <Droplets className="h-11 w-11"/>}
           </div>
+        </div>
+        <div className={`mt-6 rounded-2xl border px-4 py-4 sm:px-5 ${visualAttention ? "border-amber-300/20 bg-amber-300/[0.07]" : "border-cyan-300/15 bg-[#061D2B]/70"}`}>
+          <p className="flex items-center gap-2 text-sm font-semibold text-white"><Info className="h-4 w-4 text-cyan-200"/><Localize>{"What should I do?"}</Localize></p>
+          <p className="mt-2 text-sm leading-6 text-slate-200"><Localize>{nextStep}</Localize></p>
+        </div>
+        <div className="mt-4 grid gap-2 text-xs text-slate-300 sm:grid-cols-2">
+          <p><span className="text-slate-400"><Localize>{"Last assessment:"}</Localize></span> {generated}</p>
+          <p><span className="text-slate-400"><Localize>{"Measurement freshness:"}</Localize></span> <Localize>{"Not provided by this assessment"}</Localize></p>
+          {assessmentStale && <p className="font-semibold text-amber-200 sm:col-span-2" role="status"><Localize>{"This assessment is not recent. Do not rely on it for current water conditions."}</Localize></p>}
         </div>
         {signals.length > 0 && <div className="mt-6 flex flex-wrap items-center gap-2"><span className="mr-1 text-xs uppercase tracking-wider text-slate-400"><Localize>{"Signals"}</Localize></span>{signals.map(p => <span key={p} className="rounded-full border border-white/15 bg-white/[0.04] px-3 py-1.5 text-xs font-medium text-slate-100">{readable(p)}</span>)}{intelligence.dominant_parameters.length > signals.length && <span className="text-xs text-slate-400">+{intelligence.dominant_parameters.length - signals.length}</span>}</div>}
         <div className="mt-7 flex flex-wrap items-center justify-between gap-3 border-t border-white/10 pt-5">
-          <div className="flex items-center gap-2 text-xs text-slate-400"><ShieldCheck className="h-4 w-4 text-cyan-200"/><Localize>{demonstration ? "Demonstration intelligence" : "Recorded intelligence"}</Localize><span aria-hidden="true">·</span>{generated}</div>
+          <div className="flex items-center gap-2 text-xs text-slate-400"><ShieldCheck className="h-4 w-4 text-cyan-200"/><Localize>{demonstration ? "Demonstration intelligence" : "Recorded intelligence"}</Localize><span aria-hidden="true">·</span><Localize>{"Assessment generated"}</Localize> {generated}</div>
           <button type="button" onClick={() => setAttempt(x => x + 1)} className="inline-flex items-center gap-2 rounded-xl border border-cyan-300/25 px-3 py-2 text-xs font-medium text-cyan-200 hover:bg-white/5 focus-visible:outline focus-visible:outline-2 focus-visible:outline-cyan-300"><RefreshCw className="h-4 w-4"/><Localize>{"Refresh"}</Localize></button>
         </div>
       </div>
