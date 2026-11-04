@@ -28,6 +28,7 @@ export function ParticipantHome() {
   const [showRehearsal, setShowRehearsal] = useState(false);
   const [showContact, setShowContact] = useState(false);
   const [showPreferences, setShowPreferences] = useState(false);
+  const [view, setView] = useState<"overview" | "water" | "notifications" | "help">("overview");
 
   useEffect(() => {
     const controller = new AbortController();
@@ -49,6 +50,11 @@ export function ParticipantHome() {
       controller.abort();
     };
   }, [attempt]);
+
+  function switchView(next: "overview" | "water" | "notifications" | "help") {
+    setView(next);
+    window.scrollTo({ top: 0, behavior: "auto" });
+  }
 
   function signOut() {
     clearParticipantSession();
@@ -79,26 +85,42 @@ export function ParticipantHome() {
       <div className="mx-auto grid max-w-7xl gap-6 px-4 py-7 sm:px-8 lg:grid-cols-[204px_minmax(0,1fr)] lg:gap-8 lg:py-10">
         <aside className="hidden lg:block">
           <nav aria-label="Participant navigation" className="sticky top-24 space-y-1 rounded-3xl border border-white/[0.07] bg-[#0A1F2E] p-3 text-sm">
-            <a href="#overview" className={`${focus} flex items-center gap-3 rounded-xl bg-cyan-300/10 px-3 py-3 font-medium text-cyan-200`}><Activity className="h-4 w-4"/><Localize>{"Overview"}</Localize></a>
-            <a href="#my-water" className={`${focus} flex items-center gap-3 rounded-xl px-3 py-3 text-slate-300 hover:bg-white/5`}><Droplets className="h-4 w-4"/><Localize>{"My Water"}</Localize></a>
-            <a href="#notifications" className={`${focus} flex items-center gap-3 rounded-xl px-3 py-3 text-slate-300 hover:bg-white/5`}><Bell className="h-4 w-4"/><Localize>{"Notifications"}</Localize></a>
-            <a href="#water-connect" className={`${focus} flex items-center gap-3 rounded-xl px-3 py-3 text-slate-300 hover:bg-white/5`}><MessageCircle className="h-4 w-4"/><Localize>{"Help & contact"}</Localize></a>
+            {([
+              ["overview", "Overview", Activity],
+              ["water", "My Water", Droplets],
+              ["notifications", "Notifications", Bell],
+              ["help", "Help & contact", MessageCircle],
+            ] as const).map(([id, label, Icon]) => (
+              <button key={id} type="button" onClick={() => switchView(id)} aria-current={view === id ? "page" : undefined}
+                className={`${focus} flex w-full items-center gap-3 rounded-xl px-3 py-3 text-left transition ${view === id ? "bg-cyan-300/10 font-medium text-cyan-200" : "text-slate-300 hover:bg-white/5"}`}>
+                <Icon className="h-4 w-4"/><Localize>{label}</Localize>
+              </button>
+            ))}
           </nav>
         </aside>
 
         <main id="overview" className="min-w-0 space-y-5">
+          <nav aria-label="Participant mobile navigation" className="grid grid-cols-4 gap-1 rounded-2xl border border-white/10 bg-[#0A1F2E] p-1 lg:hidden">
+            {(["overview", "water", "notifications", "help"] as const).map((id) => (
+              <button key={id} type="button" onClick={() => switchView(id)} aria-current={view === id ? "page" : undefined}
+                className={`${focus} rounded-xl px-1 py-2.5 text-center text-xs ${view === id ? "bg-cyan-300/10 font-semibold text-cyan-200" : "text-slate-300"}`}>
+                <Localize>{id === "overview" ? "Overview" : id === "water" ? "My Water" : id === "notifications" ? "Alerts" : "Help"}</Localize>
+              </button>
+            ))}
+          </nav>
           <section className="flex flex-wrap items-end justify-between gap-4 px-1 pb-1">
             <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-cyan-300"><Localize>{"YOUR WATER AT A GLANCE"}</Localize></p>
-              <h1 className="mt-2 text-3xl font-semibold tracking-tight text-white sm:text-4xl"><Localize>{"Welcome back"}</Localize>{profile.full_name ? `, ${profile.full_name.split(" ")[0]}` : ""}</h1>
-              <p className="mt-2 text-sm text-slate-400"><Localize>{"Understand your water signals, notifications, and next steps."}</Localize></p>
+              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-cyan-300"><Localize>{view === "overview" ? "YOUR WATER AT A GLANCE" : view === "water" ? "WATER INTELLIGENCE" : view === "notifications" ? "YOUR NOTIFICATIONS" : "WATER CONNECT"}</Localize></p>
+              <h1 className="mt-2 text-3xl font-semibold tracking-tight text-white sm:text-4xl"><Localize>{view === "overview" ? "Welcome back" : view === "water" ? "My Water" : view === "notifications" ? "Notifications" : "Help & contact"}</Localize>{view === "overview" && profile.full_name ? `, ${profile.full_name.split(" ")[0]}` : ""}</h1>
+              <p className="mt-2 text-sm text-slate-400"><Localize>{view === "overview" ? "Your water status first. Details when you need them." : view === "water" ? "Understand the measurements and evidence behind your assessment." : view === "notifications" ? "Review activity and manage your alert choices." : "Find the right contact for your question or concern."}</Localize></p>
             </div>
             <span className="inline-flex items-center gap-2 rounded-full border border-emerald-300/15 bg-emerald-300/[0.05] px-3 py-1.5 text-xs text-emerald-200"><ShieldCheck className="h-3.5 w-3.5"/><Localize>{"Profile verified"}</Localize></span>
           </section>
 
-          <div id="my-water" className="scroll-mt-24"><ParticipantMyWater /></div>
+          {(view === "overview" || view === "water") && <div id="my-water" className="scroll-mt-24"><ParticipantMyWater key={view} detailed={view === "water"} /></div>}
 
-          <div className="grid gap-5 md:grid-cols-2">
+          <div className={`grid gap-5 ${view === "overview" ? "md:grid-cols-2" : ""}`}>
+            {(view === "overview" || view === "notifications") && (
             <section id="notifications" className={`${surface} scroll-mt-24 p-5 sm:p-6`}>
               <div className="flex items-center gap-3"><span className="rounded-xl bg-cyan-300/10 p-2.5 text-cyan-200"><Bell className="h-5 w-5"/></span><h2 className="text-lg font-semibold"><Localize>{"Notifications"}</Localize></h2></div>
               <p className="mt-3 text-sm leading-6 text-slate-400"><Localize>{"Your saved alert choices and recorded notification activity."}</Localize></p>
@@ -115,15 +137,18 @@ export function ParticipantHome() {
               <p className="mt-4 text-xs leading-5 text-slate-500"><Localize>{"Saved preferences do not confirm an alert was delivered."}</Localize></p>
             </section>
 
+            )}
+            {(view === "overview" || view === "help") && (
             <section id="water-connect" className={`${surface} scroll-mt-24 p-5 sm:p-6`}>
               <div className="flex items-center gap-3"><span className="rounded-xl bg-teal-300/10 p-2.5 text-teal-200"><MessageCircle className="h-5 w-5"/></span><h2 className="text-lg font-semibold"><Localize>{"Water Connect"}</Localize></h2></div>
               <p className="mt-3 text-sm leading-6 text-slate-400"><Localize>{"Questions about FalilaX? Need to report a water concern? Start with the right contact."}</Localize></p>
               <button type="button" onClick={() => setShowContact(x => !x)} aria-expanded={showContact} className={`${focus} mt-6 inline-flex w-full items-center justify-between rounded-xl border border-cyan-300/25 px-4 py-3 text-sm font-medium text-cyan-200 hover:bg-cyan-300/5`}><Localize>{"Find help and contact options"}</Localize><ChevronRight className="h-4 w-4"/></button>
               <p className="mt-4 text-xs leading-5 text-slate-500"><Localize>{"This workspace does not operate an emergency response service."}</Localize></p>
             </section>
+            )}
           </div>
 
-          {showContact && <section className={`${surface} p-5 sm:p-6`} aria-label="Water Connect contact options">
+          {(view === "help" || (view === "overview" && showContact)) && <section className={`${surface} p-5 sm:p-6`} aria-label="Water Connect contact options">
             <h2 className="text-lg font-semibold"><Localize>{"Who should I contact?"}</Localize></h2>
             <div className="mt-4 grid gap-4 md:grid-cols-2">
               <div className="rounded-2xl border border-white/10 p-4"><Mail className="h-5 w-5 text-cyan-200"/><h3 className="mt-3 font-medium"><Localize>{"FalilaX account & technical help"}</Localize></h3><p className="mt-2 text-sm leading-6 text-slate-400"><Localize>{"For questions about signing in, enrollment or the app."}</Localize></p><a href="mailto:info@falilax.io?subject=FalilaX%20participant%20support" className={`${focus} mt-3 inline-block text-sm font-medium text-cyan-200 underline`}>info@falilax.io</a></div>
@@ -132,7 +157,7 @@ export function ParticipantHome() {
             <p className="mt-4 flex gap-2 text-xs leading-5 text-amber-100/80"><CircleHelp className="mt-0.5 h-4 w-4 shrink-0"/><Localize>{"For an urgent water-related emergency, follow your local utility's official emergency guidance. No report is submitted from this panel."}</Localize></p>
           </section>}
 
-          {showPreferences && <section className={`${surface} p-5 sm:p-6`} aria-label="Notification settings"><h2 className="text-lg font-semibold"><Localize>{"Notification settings"}</Localize></h2>
+          {(view === "notifications" || (view === "overview" && showPreferences)) && <section className={`${surface} p-5 sm:p-6`} aria-label="Notification settings"><h2 className="text-lg font-semibold"><Localize>{"Notification settings"}</Localize></h2>
             {preference && <dl className="mt-4 grid gap-3 text-sm sm:grid-cols-2">
               <div><dt className="text-slate-400"><Localize>{"Quiet hours"}</Localize></dt><dd className="mt-1"><Localize>{preference.quiet_hours_enabled ? `${preference.quiet_hours_start || ""}–${preference.quiet_hours_end || ""}` : "Not enabled"}</Localize></dd></div>
               <div><dt className="text-slate-400"><Localize>{"Emergency override"}</Localize></dt><dd className="mt-1"><Localize>{preference.emergency_override_enabled ? "Enabled" : "Not enabled"}</Localize></dd></div>
@@ -143,9 +168,9 @@ export function ParticipantHome() {
             {!editing ? <button type="button" onClick={() => { setSavedMessage(""); setEditing(true); }} className={`${focus} mt-5 rounded-xl border border-cyan-300/25 px-4 py-3 text-sm font-medium text-cyan-200`}><Localize>{"Manage notification choices"}</Localize></button> : <ParticipantPreferencesEditor onCancel={() => setEditing(false)} onSaved={() => { setEditing(false); setSavedMessage("Notification choices saved."); setAttempt(x => x + 1); }} />}
           </section>}
 
-          {showHistory && <ParticipantNotificationHistory />}
+          {(view === "notifications" || (view === "overview" && showHistory)) && <ParticipantNotificationHistory />}
 
-          <section className={`${surface} p-5 sm:p-6`}>
+          {(view === "overview" || view === "water") && <section className={`${surface} p-5 sm:p-6`}>
             <button type="button" aria-expanded={showService} onClick={() => setShowService(x => !x)} className={`${focus} flex w-full items-center justify-between gap-4 text-left`}><span className="flex items-center gap-3"><ShieldCheck className="h-5 w-5 text-cyan-200"/><span className="font-semibold"><Localize>{"My service connection"}</Localize></span></span><ChevronDown className={`h-4 w-4 text-slate-400 transition ${showService ? "rotate-180" : ""}`}/></button>
             <p className="mt-2 text-sm text-slate-400"><Localize>{"Your approved enrollment associations, available when you need them."}</Localize></p>
             {showService && <div className="mt-5 border-t border-white/10 pt-5">
@@ -155,11 +180,11 @@ export function ParticipantHome() {
               {context?.assignments_truncated && <p className="text-xs text-slate-400"><Localize>{"Showing up to 100 recent associations."}</Localize></p>}
               <p className="mt-3 text-xs leading-5 text-slate-400"><Localize>{"Demonstration associations are synthetic and do not establish drinking-water safety or active alert routing."}</Localize></p>
             </div>}
-          </section>
+          </section>}
 
-          <section className={`${surface} p-5 sm:p-6`}><button type="button" aria-expanded={showRehearsal} onClick={() => setShowRehearsal(x => !x)} className={`${focus} flex w-full items-center justify-between gap-4 text-left`}><span className="flex items-center gap-3"><Mail className="h-5 w-5 text-cyan-200"/><span className="font-semibold"><Localize>{"Email demonstration"}</Localize></span></span><ChevronDown className={`h-4 w-4 text-slate-400 transition ${showRehearsal ? "rotate-180" : ""}`}/></button><p className="mt-2 text-sm text-slate-400"><Localize>{"Practice receiving a demonstration email, without sending a live water alert."}</Localize></p>{showRehearsal && <ParticipantEmailRehearsal />}</section>
+          {(view === "overview" || view === "notifications") && <section className={`${surface} p-5 sm:p-6`}><button type="button" aria-expanded={showRehearsal} onClick={() => setShowRehearsal(x => !x)} className={`${focus} flex w-full items-center justify-between gap-4 text-left`}><span className="flex items-center gap-3"><Mail className="h-5 w-5 text-cyan-200"/><span className="font-semibold"><Localize>{"Email demonstration"}</Localize></span></span><ChevronDown className={`h-4 w-4 text-slate-400 transition ${showRehearsal ? "rotate-180" : ""}`}/></button><p className="mt-2 text-sm text-slate-400"><Localize>{"Practice receiving a demonstration email, without sending a live water alert."}</Localize></p>{showRehearsal && <ParticipantEmailRehearsal />}</section>}
 
-          <div className="flex justify-center"><button type="button" onClick={() => navigate("/participant/experience-feedback")} className={`${focus} text-sm text-cyan-200 underline underline-offset-4`}><Localize>{"Share your experience"}</Localize></button></div>
+          <div className="flex justify-center"><a href="mailto:info@falilax.io?subject=FalilaX%20participant%20experience" className={`${focus} text-sm text-cyan-200 underline underline-offset-4`}><Localize>{"Share your experience by email"}</Localize></a></div>
           <footer className="pb-4 pt-2 text-center text-xs leading-5 text-slate-500"><Localize>{"FalilaX · Water intelligence and participant information. Demonstrations are not real-time drinking-water safety certifications."}</Localize></footer>
         </main>
       </div>

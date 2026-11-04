@@ -8,6 +8,8 @@ export interface ParticipantBrowserSession {
   subscriberId: number;
   organizationId: number;
   scopes: string[];
+  /** Enrollment-only identifier, not issued by returning email sign-in. */
+  sessionPublicId?: string;
 }
 
 function storage(): Storage | null {

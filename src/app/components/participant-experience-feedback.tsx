@@ -30,6 +30,12 @@ export function ParticipantExperienceFeedback() {
       return () => controller.abort();
     }
 
+    if (!session.sessionPublicId) {
+      setUnavailable(true);
+      setLoading(false);
+      return () => controller.abort();
+    }
+
     void getParticipantQuestionnaire(session, controller.signal)
       .then(result => {
         if (disposed) return;
@@ -126,7 +132,7 @@ export function ParticipantExperienceFeedback() {
           </h1>
           <p className="mt-3 text-sm leading-6 text-slate-400">
             <Localize>
-              {"There is no feedback questionnaire available for this experience at the moment."}
+              {"The enrollment-linked questionnaire is not available from returning-participant sign-in. Your login remains active. You can share feedback by emailing info@falilax.io."}
             </Localize>
           </p>
           <button
