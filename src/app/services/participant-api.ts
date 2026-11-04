@@ -25,7 +25,14 @@ export async function getParticipantProfile(
     signal, credentials: "omit", cache: "no-store", redirect: "error",
     referrerPolicy: "no-referrer",
   });
-  if (!response.ok) throw new ParticipantAccessError([401, 403].includes(response.status));
+  if (!response.ok) {
+    console.warn("[FalilaX Participant Auth] Profile verification failed", {
+      status: response.status,
+      requestId: response.headers.get("X-Request-ID"),
+    });
+
+    throw new ParticipantAccessError(response.status === 401);
+  }
   const profile = await response.json() as ParticipantProfile;
   if (!profile || !Number.isInteger(profile.subscriber_id)
       || !Number.isInteger(profile.organization_id)

@@ -208,305 +208,38 @@ export function ParticipantMyWater({ onExperienceComplete }: { onExperienceCompl
 
   const demonstration = intelligence.context_kind === "DEMONSTRATION";
   const generated = new Date(intelligence.generated_at).toLocaleString(locale);
+  const attention = intelligence.elevated_parameters.length > 0 || intelligence.parameters.some(p => ["HIGH", "CRITICAL"].includes(p.risk_level.toUpperCase()));
+  const signals = intelligence.dominant_parameters.slice(0, 4);
 
   return (
-    <section
-      aria-labelledby="my-water-title"
-      className="mt-6 overflow-hidden rounded-[2rem] border border-cyan-300/15 bg-[#071b2a]/95 shadow-[0_30px_100px_rgba(0,0,0,0.22)]"
-    >
-      <div className="p-7 sm:p-9">
-        <div className="flex flex-wrap items-start justify-between gap-5">
+    <section aria-labelledby="my-water-title" className="overflow-hidden rounded-[1.75rem] border border-cyan-300/20 bg-[radial-gradient(circle_at_90%_8%,rgba(34,211,238,0.1),transparent_40%),#0A2B3B] shadow-[0_20px_70px_rgba(0,0,0,0.18)]">
+      <div className="p-6 sm:p-8">
+        <div className="flex flex-wrap items-start justify-between gap-4">
+          <div className="inline-flex items-center gap-2 rounded-full border border-cyan-200/20 bg-cyan-300/[0.08] px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.15em] text-cyan-200"><Activity className="h-4 w-4"/><Localize>{"Water Pulse™"}</Localize></div>
+          <span className={`rounded-full border px-3 py-1.5 text-xs font-medium ${attention ? "border-amber-300/30 bg-amber-300/10 text-amber-100" : "border-teal-300/20 bg-teal-300/10 text-teal-100"}`}><Localize>{readable(intelligence.status)}</Localize></span>
+        </div>
+        <div className="mt-6 grid gap-5 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center">
           <div>
-            <div className="flex items-center gap-3">
-              <div className="grid h-11 w-11 place-items-center rounded-2xl border border-cyan-300/20 bg-cyan-300/[0.07]">
-                <Droplets className="h-6 w-6 text-cyan-300" />
-              </div>
-
-              <div>
-                <p className="text-xs font-semibold uppercase tracking-[0.22em] text-cyan-300">
-                  <Localize>{"My Water"}</Localize>
-                </p>
-
-                <p className="mt-1 text-xs text-slate-500">
-                  <Localize>
-                    {
-                      demonstration
-                        ? "Demonstration intelligence"
-                        : "Recorded intelligence"
-                    }
-                  </Localize>
-                </p>
-              </div>
-            </div>
-
-            <h2
-              id="my-water-title"
-              className="mt-6 max-w-3xl text-3xl font-semibold leading-tight text-white sm:text-4xl"
-            >
-              <Localize>{intelligence.headline}</Localize>
-            </h2>
-
-            <p className="mt-4 max-w-3xl text-sm leading-7 text-slate-300 sm:text-base">
-              <Localize>{intelligence.summary}</Localize>
-            </p>
+            <h2 id="my-water-title" className="max-w-3xl text-2xl font-semibold leading-tight tracking-tight text-white sm:text-4xl"><Localize>{intelligence.headline}</Localize></h2>
+            <p className="mt-3 max-w-2xl text-sm leading-7 text-slate-200/85 sm:text-base"><Localize>{intelligence.summary}</Localize></p>
           </div>
-
-          <div className="min-w-[170px] rounded-2xl border border-cyan-300/20 bg-cyan-300/[0.06] px-5 py-4 text-cyan-50">
-            <p className="text-xs uppercase tracking-[0.16em] opacity-70">
-              <Localize>{"Current status"}</Localize>
-            </p>
-
-            <p className="mt-2 text-lg font-semibold">
-              <Localize>{readable(intelligence.status)}</Localize>
-            </p>
-          </div>
+          <div aria-hidden="true" className="flex h-20 w-20 items-center justify-center rounded-full border border-cyan-300/20 bg-cyan-300/[0.07] text-cyan-200 sm:h-24 sm:w-24"><Droplets className="h-9 w-9"/></div>
         </div>
-
-        <article className="mt-8 rounded-3xl border border-cyan-300/15 bg-cyan-300/[0.035] p-6">
-          <div className="flex flex-wrap items-center justify-between gap-4">
-            <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-cyan-300">
-                <Localize>{"Water Pulse"}</Localize>
-              </p>
-              <h3 className="mt-2 text-xl font-semibold text-white">
-                <Localize>{"Multi-parameter water signal"}</Localize>
-              </h3>
-              <p className="mt-2 text-sm leading-6 text-slate-400">
-                <Localize>
-                  {"A compact view of the parameters contributing to the current FalilaX assessment."}
-                </Localize>
-              </p>
-            </div>
-
-            <div className="flex h-16 w-16 items-center justify-center rounded-full border border-cyan-300/30 bg-cyan-300/[0.06]">
-              <Activity className="h-7 w-7 text-cyan-300" />
-            </div>
-          </div>
-
-          <div className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-            {intelligence.parameters.map(parameter => (
-              <div
-                key={`pulse-${parameter.parameter_code}`}
-                className="rounded-2xl border border-white/[0.08] bg-black/10 px-4 py-3"
-              >
-                <div className="flex items-center justify-between gap-3">
-                  <span className="text-sm font-medium text-white">
-                    {readable(parameter.parameter_code)}
-                  </span>
-                  <span className="text-[11px] uppercase tracking-[0.12em] text-slate-500">
-                    {readable(parameter.risk_level)}
-                  </span>
-                </div>
-
-                <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-white/[0.08]">
-                  <div
-                    className={`h-full rounded-full ${
-                      parameter.risk_level === "HIGH" ||
-                      parameter.risk_level === "CRITICAL"
-                        ? "w-[85%] bg-amber-300"
-                        : parameter.risk_level === "MODERATE"
-                          ? "w-[55%] bg-cyan-300"
-                          : "w-[25%] bg-cyan-200/60"
-                    }`}
-                  />
-                </div>
-              </div>
-            ))}
-          </div>
-
-          {intelligence.parameters.length === 0 && (
-            <p className="mt-5 text-sm text-slate-400">
-              <Localize>
-                {"No parameter signals are currently available for the pulse view."}
-              </Localize>
-            </p>
-          )}
-        </article>
-
-        <div className="mt-8 grid gap-5 lg:grid-cols-2">
-          <article className="rounded-3xl border border-white/[0.08] bg-white/[0.025] p-6">
-            <div className="flex items-center gap-3">
-              <Sparkles className="h-5 w-5 text-cyan-300" />
-
-              <h3 className="text-lg font-semibold text-white">
-                <Localize>{"What FalilaX detected"}</Localize>
-              </h3>
-            </div>
-
-            {intelligence.elevated_parameters.length > 0 ? (
-              <>
-                <p className="mt-3 text-sm leading-6 text-slate-400">
-                  <Localize>
-                    {
-                      "These parameters are contributing to the current multi-parameter assessment."
-                    }
-                  </Localize>
-                </p>
-
-                <div className="mt-5 flex flex-wrap gap-2">
-                  {intelligence.elevated_parameters.map(parameter => (
-                    <span
-                      key={parameter}
-                      className="rounded-full border border-amber-300/20 bg-amber-300/[0.06] px-3 py-1.5 text-xs font-medium text-amber-100"
-                    >
-                      {readable(parameter)}
-                    </span>
-                  ))}
-                </div>
-              </>
-            ) : intelligence.dominant_parameters.length > 0 ? (
-              <p className="mt-3 text-sm leading-6 text-slate-400">
-                <Localize>
-                  {
-                    "FalilaX detected low-level signals in the water parameters shown below. No parameter is currently classified as elevated in this assessment."
-                  }
-                </Localize>
-              </p>
-            ) : (
-              <p className="mt-3 text-sm leading-6 text-slate-400">
-                <Localize>
-                  {
-                    "FalilaX did not identify an elevated parameter in the participant-safe intelligence currently returned."
-                  }
-                </Localize>
-              </p>
-            )}
-
-            {intelligence.dominant_parameters.length > 0 && (
-              <div className="mt-6 border-t border-white/10 pt-5">
-                <p className="text-xs uppercase tracking-[0.16em] text-slate-500">
-                  <Localize>{"Detected signals"}</Localize>
-                </p>
-
-                <p className="mt-2 text-sm leading-6 text-slate-300">
-                  {intelligence.dominant_parameters.map(readable).join(" · ")}
-                </p>
-              </div>
-            )}
-          </article>
-
-          <article className="rounded-3xl border border-white/[0.08] bg-white/[0.025] p-6">
-            <div className="flex items-center gap-3">
-              <Info className="h-5 w-5 text-sky-300" />
-
-              <h3 className="text-lg font-semibold text-white">
-                <Localize>{"What this may mean"}</Localize>
-              </h3>
-            </div>
-
-            {intelligence.possible_explanations.length > 0 ? (
-              <ul className="mt-5 space-y-3">
-                {intelligence.possible_explanations.map(
-                  (explanation, index) => (
-                    <li
-                      key={`${index}-${explanation}`}
-                      className="flex gap-3 text-sm leading-6 text-slate-300"
-                    >
-                      <span
-                        aria-hidden="true"
-                        className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-cyan-300"
-                      />
-
-                      <Localize>{explanation}</Localize>
-                    </li>
-                  ),
-                )}
-              </ul>
-            ) : (
-              <p className="mt-3 text-sm leading-6 text-slate-400">
-                <Localize>
-                  {
-                    "FalilaX did not identify a participant-safe combined explanation from the current signals."
-                  }
-                </Localize>
-              </p>
-            )}
-          </article>
-        </div>
-
-        {intelligence.parameters.length > 0 && (
-          <article className="mt-5 rounded-3xl border border-white/[0.08] bg-white/[0.025] p-6">
-            <div className="flex items-center gap-3">
-              <FlaskConical className="h-5 w-5 text-cyan-300" />
-
-              <h3 className="text-lg font-semibold text-white">
-                <Localize>{"Parameters in this assessment"}</Localize>
-              </h3>
-            </div>
-
-            <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-              {intelligence.parameters.map(parameter => (
-                <div
-                  key={parameter.parameter_code}
-                  className="rounded-2xl border border-white/[0.08] bg-black/10 p-4"
-                >
-                  <p className="text-sm font-medium text-white">
-                    {readable(parameter.parameter_code)}
-                  </p>
-
-                  <p className="mt-2 text-xs text-slate-400">
-                    <Localize>{"Risk level: "}</Localize>
-
-                    <span className="text-slate-200">
-                      <Localize>
-                        {readable(parameter.risk_level)}
-                      </Localize>
-                    </span>
-                  </p>
-                </div>
-              ))}
-            </div>
-          </article>
-        )}
-
-        <div className="mt-6 flex flex-wrap items-center justify-between gap-4 border-t border-white/10 pt-5">
-          <div className="flex items-center gap-2 text-xs text-slate-500">
-            <ShieldCheck className="h-4 w-4 text-cyan-300" />
-
-            <Localize>{"Generated "}</Localize>
-            {generated}
-            <Localize>
-              {" using your authorized participant context."}
-            </Localize>
-          </div>
-
-          <button
-            type="button"
-            onClick={() => setAttempt(value => value + 1)}
-            className="inline-flex items-center gap-2 rounded-xl border border-white/10 px-3 py-2 text-xs text-slate-300 transition hover:border-cyan-300/30 hover:text-cyan-100"
-          >
-            <RefreshCw className="h-3.5 w-3.5" />
-            <Localize>{"Refresh My Water"}</Localize>
-          </button>
+        {signals.length > 0 && <div className="mt-6 flex flex-wrap items-center gap-2"><span className="mr-1 text-xs uppercase tracking-wider text-slate-400"><Localize>{"Signals"}</Localize></span>{signals.map(p => <span key={p} className="rounded-full border border-white/15 bg-white/[0.04] px-3 py-1.5 text-xs font-medium text-slate-100">{readable(p)}</span>)}{intelligence.dominant_parameters.length > signals.length && <span className="text-xs text-slate-400">+{intelligence.dominant_parameters.length - signals.length}</span>}</div>}
+        <div className="mt-7 flex flex-wrap items-center justify-between gap-3 border-t border-white/10 pt-5">
+          <div className="flex items-center gap-2 text-xs text-slate-400"><ShieldCheck className="h-4 w-4 text-cyan-200"/><Localize>{demonstration ? "Demonstration intelligence" : "Recorded intelligence"}</Localize><span aria-hidden="true">·</span>{generated}</div>
+          <button type="button" onClick={() => setAttempt(x => x + 1)} className="inline-flex items-center gap-2 rounded-xl border border-cyan-300/25 px-3 py-2 text-xs font-medium text-cyan-200 hover:bg-white/5 focus-visible:outline focus-visible:outline-2 focus-visible:outline-cyan-300"><RefreshCw className="h-4 w-4"/><Localize>{"Refresh"}</Localize></button>
         </div>
       </div>
-
-      {(demonstration || intelligence.disclaimer) && (
-        <div className="border-t border-amber-300/15 bg-amber-300/[0.045] px-7 py-5 sm:px-9">
-          <div className="flex items-start gap-3">
-            <CircleAlert className="mt-0.5 h-5 w-5 shrink-0 text-amber-200" />
-
-            <div>
-              <p className="text-sm font-medium text-amber-100">
-                <Localize>
-                  {
-                    demonstration
-                      ? "Demonstration context"
-                      : "Important information"
-                  }
-                </Localize>
-              </p>
-
-              <p className="mt-1 text-xs leading-6 text-amber-100/70">
-                <Localize>
-                  {intelligence.disclaimer ||
-                    "This demonstration does not establish the current safety or quality of your actual drinking water."}
-                </Localize>
-              </p>
-            </div>
-          </div>
+      {(demonstration || intelligence.disclaimer) && <div className="flex gap-3 border-t border-amber-200/15 bg-amber-300/[0.055] px-6 py-4 text-xs leading-5 text-amber-100/85 sm:px-8"><CircleAlert className="h-4 w-4 shrink-0"/><p><Localize>{intelligence.disclaimer || "Demonstration intelligence does not establish the actual safety or quality of drinking water."}</Localize></p></div>}
+      <details className="group border-t border-white/10 bg-[#071E2D]/70">
+        <summary className="cursor-pointer list-none px-6 py-5 text-sm font-medium text-cyan-200 outline-none hover:bg-white/[0.03] focus-visible:outline focus-visible:outline-2 focus-visible:outline-cyan-300 sm:px-8"><span className="inline-flex items-center gap-2"><Info className="h-4 w-4"/><Localize>{"Understand this assessment"}</Localize><span className="text-slate-400">·</span><Localize>{"View details"}</Localize></span></summary>
+        <div className="grid gap-4 px-6 pb-7 sm:px-8 lg:grid-cols-2">
+          <article className="rounded-2xl border border-white/10 bg-white/[0.025] p-5"><h3 className="flex items-center gap-2 font-semibold"><Sparkles className="h-4 w-4 text-cyan-300"/><Localize>{"What FalilaX detected"}</Localize></h3><p className="mt-3 text-sm leading-6 text-slate-300"><Localize>{intelligence.elevated_parameters.length ? "Some parameters are classified as elevated in this assessment." : intelligence.dominant_parameters.length ? "Low-level signals were identified; no parameter is classified as elevated in this assessment." : "No elevated parameter was identified in the available assessment."}</Localize></p>{intelligence.elevated_parameters.length > 0 && <div className="mt-4 flex flex-wrap gap-2">{intelligence.elevated_parameters.map(p => <span key={p} className="rounded-full border border-amber-300/25 px-3 py-1 text-xs text-amber-200">{readable(p)}</span>)}</div>}</article>
+          <article className="rounded-2xl border border-white/10 bg-white/[0.025] p-5"><h3 className="flex items-center gap-2 font-semibold"><Info className="h-4 w-4 text-cyan-300"/><Localize>{"What this may mean"}</Localize></h3>{intelligence.possible_explanations.length > 0 ? <ul className="mt-3 space-y-2 text-sm leading-6 text-slate-300">{intelligence.possible_explanations.map((p,i) => <li key={`${i}-${p}`}><Localize>{p}</Localize></li>)}</ul> : <p className="mt-3 text-sm leading-6 text-slate-300"><Localize>{"FalilaX did not identify a participant-safe combined explanation from the current signals."}</Localize></p>}</article>
+          <article className="rounded-2xl border border-white/10 bg-white/[0.025] p-5 lg:col-span-2"><h3 className="flex items-center gap-2 font-semibold"><FlaskConical className="h-4 w-4 text-cyan-300"/><Localize>{"Parameters in this assessment"}</Localize></h3><p className="mt-2 text-xs leading-5 text-slate-400"><Localize>{"These labels describe FalilaX assessment classifications, not laboratory concentrations or certification of drinking-water safety."}</Localize></p><div className="mt-4 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">{intelligence.parameters.map(p => <div key={p.parameter_code} className="flex items-center justify-between gap-3 rounded-xl border border-white/10 bg-[#071925] px-4 py-3"><span className="text-sm text-white">{readable(p.parameter_code)}</span><span className={`text-xs ${["HIGH","CRITICAL"].includes(p.risk_level.toUpperCase()) ? "text-amber-200" : "text-slate-300"}`}>{readable(p.risk_level)}</span></div>)}</div>{intelligence.parameters.length === 0 && <p className="mt-4 text-sm text-slate-400"><Localize>{"No parameter classification is available."}</Localize></p>}</article>
         </div>
-      )}
+      </details>
     </section>
   );
 }

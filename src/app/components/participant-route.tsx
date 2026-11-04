@@ -63,11 +63,20 @@ export function ParticipantRoute({ children }: { children: ReactNode }) {
         setMessage(expired ? "Your participant session has ended."
           : "We could not verify your connection. Please try again.");
       } finally {
-        if (active === controller) clearTimeout(deadline);
+        if (active === controller) {
+        clearTimeout(deadline);
+        active = null;
+      }
       }
     };
     void validate();
-    const refresh = () => { void validate(); };
+    const refresh = () => {
+    // Do not interrupt an authentication check already in progress.
+    if (active || document.visibilityState !== "visible") {
+      return;
+    }
+    void validate();
+  };
     const timer = setInterval(refresh, 60000);
     window.addEventListener("focus", refresh);
     return () => {
