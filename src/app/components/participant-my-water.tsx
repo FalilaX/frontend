@@ -32,7 +32,7 @@ function readable(value: string): string {
     .replace(/\b\w/g, character => character.toUpperCase());
 }
 
-export function ParticipantMyWater({ onExperienceComplete, detailed = false }: { onExperienceComplete?: () => void; detailed?: boolean }) {
+export function ParticipantMyWater({ onExperienceComplete, onHelp, detailed = false }: { onExperienceComplete?: () => void; onHelp?: () => void; detailed?: boolean }) {
   const { locale } = useLanguage();
   const navigate = useNavigate();
 
@@ -267,6 +267,15 @@ export function ParticipantMyWater({ onExperienceComplete, detailed = false }: {
           <p className="flex items-center gap-2 text-sm font-semibold text-white"><Info className="h-4 w-4 text-cyan-200"/><Localize>{"What should I do?"}</Localize></p>
           <p className="mt-2 text-sm leading-6 text-slate-200"><Localize>{nextStep}</Localize></p>
         </div>
+        <section aria-labelledby="water-outlook-title" className="mt-4 rounded-2xl border border-teal-300/15 bg-[#071D2B]/75 px-4 py-4 sm:px-5">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <p className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.14em] text-teal-200"><Activity className="h-4 w-4"/><Localize>{"Water Outlook™"}</Localize></p>
+            <span className="rounded-full border border-white/15 px-2.5 py-1 text-[11px] text-slate-300"><Localize>{"Evidence limited"}</Localize></span>
+          </div>
+          <h3 id="water-outlook-title" className="mt-3 text-lg font-semibold text-white"><Localize>{"Trend not yet established"}</Localize></h3>
+          <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-300"><Localize>{"The current assessment cannot show whether conditions are improving, stable, or worsening. Comparable, time-stamped measurements are needed before FalilaX can describe a trend."}</Localize></p>
+          {onHelp && <button type="button" onClick={onHelp} className="mt-3 rounded-lg py-1 text-left text-sm font-medium text-cyan-200 underline underline-offset-4 focus-visible:outline focus-visible:outline-2 focus-visible:outline-cyan-300"><Localize>{"Have a question? We're here to help."}</Localize></button>}
+        </section>
         <div className="mt-4 grid gap-2 text-xs text-slate-300 sm:grid-cols-2">
           <p><span className="text-slate-400"><Localize>{"Last assessment:"}</Localize></span> {generated}</p>
           <p><span className="text-slate-400"><Localize>{"Measurement freshness:"}</Localize></span> <Localize>{"Not provided by this assessment"}</Localize></p>
@@ -274,7 +283,7 @@ export function ParticipantMyWater({ onExperienceComplete, detailed = false }: {
         </div>
         {signals.length > 0 && <div className="mt-6 flex flex-wrap items-center gap-2"><span className="mr-1 text-xs uppercase tracking-wider text-slate-400"><Localize>{"Signals"}</Localize></span>{signals.map(p => <span key={p} className="rounded-full border border-white/15 bg-white/[0.04] px-3 py-1.5 text-xs font-medium text-slate-100">{readable(p)}</span>)}{intelligence.dominant_parameters.length > signals.length && <span className="text-xs text-slate-400">+{intelligence.dominant_parameters.length - signals.length}</span>}</div>}
         <div className="mt-7 flex flex-wrap items-center justify-between gap-3 border-t border-white/10 pt-5">
-          <div className="flex items-center gap-2 text-xs text-slate-400"><ShieldCheck className="h-4 w-4 text-cyan-200"/><Localize>{demonstration ? "Demonstration intelligence" : "Recorded intelligence"}</Localize><span aria-hidden="true">·</span><Localize>{"Assessment generated"}</Localize> {generated}</div>
+          <div className="flex items-center gap-2 text-xs text-slate-400"><ShieldCheck className="h-4 w-4 text-cyan-200"/><Localize>{demonstration ? "Demonstration intelligence" : "Recorded intelligence"}</Localize></div>
           <button type="button" onClick={() => setAttempt(x => x + 1)} className="inline-flex items-center gap-2 rounded-xl border border-cyan-300/25 px-3 py-2 text-xs font-medium text-cyan-200 hover:bg-white/5 focus-visible:outline focus-visible:outline-2 focus-visible:outline-cyan-300"><RefreshCw className="h-4 w-4"/><Localize>{"Refresh"}</Localize></button>
         </div>
       </div>

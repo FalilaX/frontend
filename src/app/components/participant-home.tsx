@@ -125,14 +125,14 @@ export function ParticipantHome() {
             <div>
               <p className="text-xs font-semibold uppercase tracking-[0.18em] text-cyan-300"><Localize>{view === "overview" ? "YOUR WATER AT A GLANCE" : view === "water" ? "WATER INTELLIGENCE" : view === "notifications" ? "YOUR NOTIFICATIONS" : "WATER CONNECT"}</Localize></p>
               <h1 className="mt-2 text-3xl font-semibold tracking-tight text-white sm:text-4xl"><Localize>{view === "overview" ? "Welcome back" : view === "water" ? "My Water" : view === "notifications" ? "Notifications" : "Help & contact"}</Localize>{view === "overview" && profile.full_name ? `, ${profile.full_name.split(" ")[0]}` : ""}</h1>
-              <p className="mt-2 text-sm text-slate-400"><Localize>{view === "overview" ? "Your water status first. Details when you need them." : view === "water" ? "Understand the measurements and evidence behind your assessment." : view === "notifications" ? "Review activity and manage your alert choices." : "Find the right contact for your question or concern."}</Localize></p>
+              <p className="mt-2 text-sm text-slate-400"><Localize>{view === "overview" ? "Your water information, explained simply. Explore at your own pace." : view === "water" ? "Understand the measurements and evidence behind your assessment." : view === "notifications" ? "Review activity and manage your alert choices." : "Find the right contact for your question or concern."}</Localize></p>
             </div>
             <span className="inline-flex items-center gap-2 rounded-full border border-emerald-300/15 bg-emerald-300/[0.05] px-3 py-1.5 text-xs text-emerald-200"><ShieldCheck className="h-3.5 w-3.5"/><Localize>{"Profile verified"}</Localize></span>
           </section>
 
           {sessionMinutes !== null && sessionMinutes <= 5 && <div role="status" className="rounded-xl border border-amber-300/25 bg-amber-300/10 px-4 py-3 text-sm text-amber-100"><Localize>{`Your secure session ends in approximately ${sessionMinutes} minute${sessionMinutes === 1 ? "" : "s"}. Please save unfinished work. You may need to sign in again.`}</Localize></div>}
 
-          {(view === "overview" || view === "water") && <div id="my-water" className="scroll-mt-24"><ParticipantMyWater key={view} detailed={view === "water"} /></div>}
+          {(view === "overview" || view === "water") && <div id="my-water" className="scroll-mt-24"><ParticipantMyWater key={view} detailed={view === "water"} onHelp={() => switchView("help")} /></div>}
 
           <div className={`grid gap-5 ${view === "overview" ? "md:grid-cols-2" : ""}`}>
             {(view === "overview" || view === "notifications") && (
