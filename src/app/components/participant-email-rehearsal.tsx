@@ -45,7 +45,8 @@ export function ParticipantEmailRehearsal() {
     void run("status");
     return () => { alive.current = false; active.current?.abort(); active.current = null; };
   }, []);
-  if (state?.available === false || (!state && !message)) return null;
+  if (state?.available === false) return <p role="status" className="mt-4 rounded-xl border border-white/10 p-4 text-sm text-slate-300"><Localize>{"Email demonstration is not available for this participant or program."}</Localize></p>;
+  if (!state && !message) return <p role="status" className="mt-4 text-sm text-slate-300"><Localize>{"Checking email demonstration availability…"}</Localize></p>;
   const row = state?.rehearsal;
   const terminal = !!row && ["CLAIMED", "ACCEPTED", "UNKNOWN", "SKIPPED"].includes(row.status);
   return <section aria-labelledby="rehearsal-title" className="mt-6 rounded-3xl border border-cyan-300/15 bg-[#071b2a] p-6 text-slate-200">

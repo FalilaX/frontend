@@ -7,7 +7,7 @@ import { useEffect, useState } from "react";
 import { getParticipantContext } from "@/app/services/participant-api";
 import type { ParticipantContext } from "@/app/services/participant-api";
 import { clearParticipantSession, getParticipantSession } from "@/app/utils/participant-session";
-import { Activity, Bell, ChevronDown, ChevronRight, CircleHelp, Droplets, History, LogOut, Mail, MessageCircle, Settings2, ShieldCheck, Waves } from "lucide-react";
+import { Activity, Bell, ChevronDown, CircleHelp, Droplets, History, LogOut, Mail, MessageCircle, Settings2, ShieldCheck, Waves } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import logoImage from "@/assets/falilax-logo.png";
 import { useParticipantProfile } from "@/app/components/participant-route";
@@ -64,6 +64,12 @@ export function ParticipantHome() {
     return () => window.clearInterval(timer);
   }, []);
 
+  function revealPanel(panelId: string) {
+    window.setTimeout(() => {
+      document.getElementById(panelId)?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }, 50);
+  }
+
   function switchView(next: "overview" | "water" | "notifications" | "help") {
     setView(next);
     window.scrollTo({ top: 0, behavior: "auto" });
@@ -95,7 +101,7 @@ export function ParticipantHome() {
         </div>
       </header>
 
-      <div className="mx-auto grid max-w-7xl gap-6 px-4 py-7 pb-28 sm:px-8 lg:grid-cols-[204px_minmax(0,1fr)] lg:gap-8 lg:py-10 lg:pb-10">
+      <div className="mx-auto grid max-w-7xl gap-6 px-4 py-6 pb-10 sm:px-8 lg:grid-cols-[204px_minmax(0,1fr)] lg:gap-8 lg:py-10 lg:pb-10">
         <aside className="hidden lg:block">
           <nav aria-label="Participant navigation" className="sticky top-24 space-y-1 rounded-3xl border border-white/[0.07] bg-[#0A1F2E] p-3 text-sm">
             {([
@@ -113,7 +119,7 @@ export function ParticipantHome() {
         </aside>
 
         <main id="overview" className="min-w-0 space-y-5">
-          <nav aria-label="Participant mobile navigation" className="fixed inset-x-3 bottom-3 z-30 grid grid-cols-4 gap-1 rounded-2xl border border-cyan-300/20 bg-[#0A1F2E]/95 p-1 shadow-2xl backdrop-blur-xl lg:hidden">
+          <nav aria-label="Participant mobile navigation" className="grid grid-cols-4 gap-1 rounded-2xl border border-cyan-300/20 bg-[#0A1F2E] p-1.5 shadow-lg lg:hidden">
             {(["overview", "water", "notifications", "help"] as const).map((id) => (
               <button key={id} type="button" onClick={() => switchView(id)} aria-current={view === id ? "page" : undefined}
                 className={`${focus} rounded-xl px-1 py-2.5 text-center text-xs ${view === id ? "bg-cyan-300/10 font-semibold text-cyan-200" : "text-slate-300"}`}>
@@ -146,8 +152,8 @@ export function ParticipantHome() {
                 {preference && <p className="mt-1 text-xs text-slate-400"><Localize>{`Minimum severity: ${readable(preference.minimum_severity)}`}</Localize></p>}
               </div>}
               <div className="mt-4 grid grid-cols-2 gap-2">
-                <button type="button" onClick={() => setShowHistory(x => !x)} aria-expanded={showHistory} className={`${focus} inline-flex items-center justify-center gap-1.5 rounded-xl border border-cyan-300/25 px-3 py-3 text-sm font-medium text-cyan-200 hover:bg-cyan-300/5`}><History className="h-4 w-4"/><Localize>{"History"}</Localize><ChevronDown className={`h-4 w-4 transition ${showHistory ? "rotate-180" : ""}`}/></button>
-                <button type="button" onClick={() => setShowPreferences(x => !x)} aria-expanded={showPreferences} className={`${focus} inline-flex items-center justify-center gap-1.5 rounded-xl border border-white/15 px-3 py-3 text-sm text-slate-200 hover:bg-white/5`}><Settings2 className="h-4 w-4"/><Localize>{"Settings"}</Localize><ChevronRight className="h-4 w-4"/></button>
+                <button type="button" onClick={() => { if (!showHistory) revealPanel("participant-history-panel"); setShowHistory(x => !x); }} aria-expanded={showHistory} aria-controls="participant-history-panel" className={`${focus} inline-flex items-center justify-center gap-1.5 rounded-xl border border-cyan-300/25 px-3 py-3 text-sm font-medium text-cyan-200 hover:bg-cyan-300/5`}><History className="h-4 w-4"/><Localize>{"History"}</Localize><ChevronDown className={`h-4 w-4 text-cyan-200 transition-transform ${showHistory ? "rotate-180" : ""}`}/></button>
+                <button type="button" onClick={() => { if (!showPreferences) revealPanel("participant-settings-panel"); setShowPreferences(x => !x); }} aria-expanded={showPreferences} aria-controls="participant-settings-panel" className={`${focus} inline-flex items-center justify-center gap-1.5 rounded-xl border border-white/15 px-3 py-3 text-sm text-slate-200 hover:bg-white/5`}><Settings2 className="h-4 w-4"/><Localize>{"Settings"}</Localize><ChevronDown className={`h-4 w-4 text-cyan-200 transition-transform ${showPreferences ? "rotate-180" : ""}`}/></button>
               </div>
               <p className="mt-4 text-xs leading-5 text-slate-500"><Localize>{"Saved preferences do not confirm an alert was delivered."}</Localize></p>
             </section>
@@ -157,13 +163,13 @@ export function ParticipantHome() {
             <section id="water-connect" className={`${surface} scroll-mt-24 p-5 sm:p-6`}>
               <div className="flex items-center gap-3"><span className="rounded-xl bg-teal-300/10 p-2.5 text-teal-200"><MessageCircle className="h-5 w-5"/></span><h2 className="text-lg font-semibold"><Localize>{"Water Connect"}</Localize></h2></div>
               <p className="mt-3 text-sm leading-6 text-slate-400"><Localize>{"Questions about FalilaX? Need to report a water concern? Start with the right contact."}</Localize></p>
-              <button type="button" onClick={() => setShowContact(x => !x)} aria-expanded={showContact} className={`${focus} mt-6 inline-flex w-full items-center justify-between rounded-xl border border-cyan-300/25 px-4 py-3 text-sm font-medium text-cyan-200 hover:bg-cyan-300/5`}><Localize>{"Find help and contact options"}</Localize><ChevronRight className="h-4 w-4"/></button>
+              <button type="button" onClick={() => { if (!showContact) revealPanel("participant-contact-panel"); setShowContact(x => !x); }} aria-expanded={showContact} aria-controls="participant-contact-panel" className={`${focus} mt-6 inline-flex w-full items-center justify-between rounded-xl border border-cyan-300/25 px-4 py-3 text-sm font-medium text-cyan-200 hover:bg-cyan-300/5`}><Localize>{"Find help and contact options"}</Localize><ChevronDown className={`h-4 w-4 text-cyan-200 transition-transform ${showContact ? "rotate-180" : ""}`}/></button>
               <p className="mt-4 text-xs leading-5 text-slate-500"><Localize>{"This workspace does not operate an emergency response service."}</Localize></p>
             </section>
             )}
           </div>
 
-          {(view === "help" || (view === "overview" && showContact)) && <section className={`${surface} p-5 sm:p-6`} aria-label="Water Connect contact options">
+          {showContact && (view === "overview" || view === "help") && <section id="participant-contact-panel" className={`${surface} scroll-mt-24 p-5 sm:p-6`} aria-label="Water Connect contact options">
             <h2 className="text-lg font-semibold"><Localize>{"Who should I contact?"}</Localize></h2>
             <div className="mt-4 grid gap-4 md:grid-cols-2">
               <div className="rounded-2xl border border-white/10 p-4"><Mail className="h-5 w-5 text-cyan-200"/><h3 className="mt-3 font-medium"><Localize>{"FalilaX account & technical help"}</Localize></h3><p className="mt-2 text-sm leading-6 text-slate-400"><Localize>{"For questions about signing in, enrollment or the app."}</Localize></p><a href="mailto:info@falilax.io?subject=FalilaX%20participant%20support" className={`${focus} mt-3 inline-block text-sm font-medium text-cyan-200 underline`}>info@falilax.io</a></div>
@@ -190,7 +196,7 @@ export function ParticipantHome() {
             <p className="mt-4 flex gap-2 text-xs leading-5 text-amber-100/80"><CircleHelp className="mt-0.5 h-4 w-4 shrink-0"/><Localize>{"For an urgent water-related emergency, follow your local utility's official emergency guidance. No report is submitted from this panel."}</Localize></p>
           </section>}
 
-          {(view === "notifications" || (view === "overview" && showPreferences)) && <section className={`${surface} p-5 sm:p-6`} aria-label="Notification settings"><h2 className="text-lg font-semibold"><Localize>{"Notification settings"}</Localize></h2>
+          {showPreferences && (view === "overview" || view === "notifications") && <section id="participant-settings-panel" className={`${surface} scroll-mt-24 p-5 sm:p-6`} aria-label="Notification settings"><h2 className="text-lg font-semibold"><Localize>{"Notification settings"}</Localize></h2>
             {preference && <dl className="mt-4 grid gap-3 text-sm sm:grid-cols-2">
               <div><dt className="text-slate-400"><Localize>{"Quiet hours"}</Localize></dt><dd className="mt-1"><Localize>{preference.quiet_hours_enabled ? `${preference.quiet_hours_start || ""}–${preference.quiet_hours_end || ""}` : "Not enabled"}</Localize></dd></div>
               <div><dt className="text-slate-400"><Localize>{"Emergency override"}</Localize></dt><dd className="mt-1"><Localize>{preference.emergency_override_enabled ? "Enabled" : "Not enabled"}</Localize></dd></div>
@@ -201,12 +207,12 @@ export function ParticipantHome() {
             {!editing ? <button type="button" onClick={() => { setSavedMessage(""); setEditing(true); }} className={`${focus} mt-5 rounded-xl border border-cyan-300/25 px-4 py-3 text-sm font-medium text-cyan-200`}><Localize>{"Manage notification choices"}</Localize></button> : <ParticipantPreferencesEditor onCancel={() => setEditing(false)} onSaved={() => { setEditing(false); setSavedMessage("Notification choices saved."); setAttempt(x => x + 1); }} />}
           </section>}
 
-          {(view === "notifications" || (view === "overview" && showHistory)) && <ParticipantNotificationHistory />}
+          {showHistory && (view === "overview" || view === "notifications") && <div id="participant-history-panel" className="scroll-mt-24"><ParticipantNotificationHistory /></div>}
 
           {(view === "overview" || view === "water") && <section className={`${surface} p-5 sm:p-6`}>
-            <button type="button" aria-expanded={showService} onClick={() => setShowService(x => !x)} className={`${focus} flex w-full items-center justify-between gap-4 text-left`}><span className="flex items-center gap-3"><ShieldCheck className="h-5 w-5 text-cyan-200"/><span className="font-semibold"><Localize>{"My service connection"}</Localize></span></span><ChevronDown className={`h-4 w-4 text-slate-400 transition ${showService ? "rotate-180" : ""}`}/></button>
+            <button type="button" aria-expanded={showService} aria-controls="participant-service-panel" onClick={() => setShowService(x => !x)} className={`${focus} flex w-full items-center justify-between gap-4 text-left`}><span className="flex items-center gap-3"><ShieldCheck className="h-5 w-5 text-cyan-200"/><span className="font-semibold"><Localize>{"My service connection"}</Localize></span></span><ChevronDown className={`h-4 w-4 text-cyan-200 transition-transform ${showService ? "rotate-180" : ""}`}/></button>
             <p className="mt-2 text-sm text-slate-400"><Localize>{"Your approved enrollment associations, available when you need them."}</Localize></p>
-            {showService && <div className="mt-5 border-t border-white/10 pt-5">
+            {showService && <div id="participant-service-panel" className="mt-5 border-t border-white/10 pt-5">
               {!context && <p className="text-sm text-slate-400"><Localize>{contextError ? "Service context unavailable. Retry from Notifications." : "Loading service context…"}</Localize></p>}
               {context?.assignments.map(a => <div key={a.assignment_id} className="mb-3 rounded-xl border border-white/10 bg-[#071A29] p-4"><p className="text-xs text-cyan-200"><Localize>{a.context_kind === "DEMONSTRATION" ? "Demonstration association" : "Recorded association"}</Localize></p><p className="mt-1 text-sm capitalize"><Localize>{readable(a.scope_type)}</Localize> · <Localize>{"Reference"}</Localize> {a.scope_id}</p><p className="mt-1 text-xs capitalize text-slate-400"><Localize>{readable(a.relationship_type)}</Localize></p></div>)}
               {context && context.assignments.length === 0 && <p className="text-sm text-slate-400"><Localize>{"No association is recorded."}</Localize></p>}
@@ -215,7 +221,7 @@ export function ParticipantHome() {
             </div>}
           </section>}
 
-          {(view === "overview" || view === "notifications") && <section className={`${surface} p-5 sm:p-6`}><button type="button" aria-expanded={showRehearsal} onClick={() => setShowRehearsal(x => !x)} className={`${focus} flex w-full items-center justify-between gap-4 text-left`}><span className="flex items-center gap-3"><Mail className="h-5 w-5 text-cyan-200"/><span className="font-semibold"><Localize>{"Email demonstration"}</Localize></span></span><ChevronDown className={`h-4 w-4 text-slate-400 transition ${showRehearsal ? "rotate-180" : ""}`}/></button><p className="mt-2 text-sm text-slate-400"><Localize>{"Practice receiving a demonstration email, without sending a live water alert."}</Localize></p>{showRehearsal && <ParticipantEmailRehearsal />}</section>}
+          {(view === "overview" || view === "notifications") && <section className={`${surface} p-5 sm:p-6`}><button type="button" aria-expanded={showRehearsal} aria-controls="participant-rehearsal-panel" onClick={() => setShowRehearsal(x => !x)} className={`${focus} flex w-full items-center justify-between gap-4 text-left`}><span className="flex items-center gap-3"><Mail className="h-5 w-5 text-cyan-200"/><span className="font-semibold"><Localize>{"Email demonstration"}</Localize></span></span><ChevronDown className={`h-4 w-4 text-cyan-200 transition-transform ${showRehearsal ? "rotate-180" : ""}`}/></button><p className="mt-2 text-sm text-slate-400"><Localize>{"Practice receiving a demonstration email, without sending a live water alert."}</Localize></p>{showRehearsal && <div id="participant-rehearsal-panel" className="mt-4 border-t border-white/10 pt-1"><ParticipantEmailRehearsal /></div>}</section>}
 
           <div className="flex justify-center"><a href="mailto:info@falilax.io?subject=FalilaX%20participant%20experience" className={`${focus} text-sm text-cyan-200 underline underline-offset-4`}><Localize>{"Share your experience by email"}</Localize></a></div>
           <footer className="pb-4 pt-2 text-center text-xs leading-5 text-slate-500"><Localize>{"FalilaX · Water intelligence and participant information. Demonstrations are not real-time drinking-water safety certifications."}</Localize></footer>
