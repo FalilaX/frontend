@@ -238,12 +238,29 @@ const openIncident = async (incidentId) => {
    * Do not reconstruct Intelligence X-Ray evidence in the frontend.
    */
 
-  const canonicalSummary =
-    digitalTwinResult?.summary ??
-    digitalTwinResult?.intelligence_summary?.summary ??
-    digitalTwinResult?.intelligence_summary ??
-    digitalTwinResult?.incident?.summary ??
-    {};
+const canonicalSummary = (() => {
+  const candidates = [
+    digitalTwinResult?.summary,
+    digitalTwinResult?.report?.summary,
+    digitalTwinResult?.incident?.summary,
+    digitalTwinResult?.intelligence_summary?.summary,
+    digitalTwinResult?.intelligence_summary,
+  ];
+
+  return (
+    candidates.find(
+      (candidate) =>
+        candidate &&
+        typeof candidate === "object" &&
+        (
+          candidate.event != null ||
+          candidate.severity != null ||
+          candidate.status != null ||
+          candidate.node_id != null
+        )
+    ) ?? {}
+  );
+})();
 
   const canonicalDetectionConfidence =
     digitalTwinResult?.detection?.confidence ??
@@ -855,6 +872,8 @@ function LocalizedZoomControl({ locale }) {
   }, [map, locale]);
   return null;
 }
+
+
 
 
 
