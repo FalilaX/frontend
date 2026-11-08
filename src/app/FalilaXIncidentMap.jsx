@@ -242,6 +242,7 @@ const openIncident = async (incidentId) => {
     digitalTwinResult?.summary ??
     digitalTwinResult?.intelligence_summary?.summary ??
     digitalTwinResult?.intelligence_summary ??
+    digitalTwinResult?.incident?.summary ??
     {};
 
   const canonicalDetectionConfidence =
@@ -253,7 +254,16 @@ const openIncident = async (incidentId) => {
 
   const canonicalMeasurements = Array.isArray(digitalTwinResult?.measurements)
     ? digitalTwinResult.measurements
-    : [];
+    : digitalTwinResult?.measurements &&
+        typeof digitalTwinResult.measurements === "object"
+      ? Object.entries(digitalTwinResult.measurements).map(
+          ([parameter, value]) => ({
+              parameter,
+              parameter_code: parameter,
+              value,
+          })
+        )
+      : [];
 
   const measurementByParameter = canonicalMeasurements.reduce(
     (acc, measurement) => {
@@ -845,6 +855,7 @@ function LocalizedZoomControl({ locale }) {
   }, [map, locale]);
   return null;
 }
+
 
 
 
