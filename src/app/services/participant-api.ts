@@ -144,6 +144,9 @@ export async function getParticipantQuestionnaire(
   session: ParticipantBrowserSession,
   signal?: AbortSignal,
 ): Promise<ParticipantQuestionnaire | null> {
+  // Returning sign-in does not issue an enrollment session ID.
+  // Do not request /sessions/undefined or treat that as an expired login.
+  if (!session.sessionPublicId) return null;
   const response = await fetch(
     buildApiUrl(
       `/api/v1/questionnaires/public/sessions/${encodeURIComponent(
@@ -189,6 +192,9 @@ export async function submitParticipantQuestionnaire(
   answers: ParticipantQuestionnaireAnswer[],
   signal?: AbortSignal,
 ): Promise<ParticipantQuestionnaireSubmission> {
+  if (!session.sessionPublicId) {
+    throw new Error("This questionnaire requires an enrollment-linked session. Your participant login remains active.");
+  }
   const response = await fetch(
     buildApiUrl(
       `/api/v1/questionnaires/public/sessions/${encodeURIComponent(

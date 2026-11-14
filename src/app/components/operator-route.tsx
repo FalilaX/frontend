@@ -1,4 +1,4 @@
-import { AccountLanguageProvider } from "@/app/i18n/account-language";
+﻿import { AccountLanguageProvider } from "@/app/i18n/account-language";
 import { Localize } from "@/app/i18n/language";
 import type { ReactNode } from "react";
 import { useEffect, useState } from "react";
@@ -21,6 +21,8 @@ const OPERATIONAL_ROLES = new Set([
   "viewer",
 ]);
 
+const AUTH_VERIFICATION_TIMEOUT_MS = 8000;
+
 type GuardState = "checking" | "allowed" | "denied";
 
 export function OperatorRoute({ children }: { children: ReactNode }) {
@@ -30,67 +32,112 @@ export function OperatorRoute({ children }: { children: ReactNode }) {
   const [state, setState] = useState<GuardState>("checking");
 
   useEffect(() => {
-    const changed = () => { setUserId(null); setState("checking"); setAttempt(value => value + 1); };
+    const changed = () => {
+      setUserId(null);
+      setState("checking");
+      setAttempt((value) => value + 1);
+    };
+
     window.addEventListener(AUTH_SESSION_CHANGED_EVENT, changed);
-    return () => window.removeEventListener(AUTH_SESSION_CHANGED_EVENT, changed);
+
+    return () =>
+      window.removeEventListener(AUTH_SESSION_CHANGED_EVENT, changed);
   }, []);
 
   useEffect(() => {
     const token = getAccessToken();
+
     if (!token) {
       setState("denied");
       return;
     }
 
     const controller = new AbortController();
+
+    const timeoutId = window.setTimeout(() => {
+      controller.abort();
+    }, AUTH_VERIFICATION_TIMEOUT_MS);
+
     async function validate() {
       try {
         const response = await authenticatedFetch(
           buildApiUrl(API_ENDPOINTS.AUTH_ME),
-          { signal: controller.signal },
+          {
+            signal: controller.signal,
+          },
         );
-        const payload = await response.json().catch(() => ({})) as {
+
+        const payload = (await response.json().catch(() => ({}))) as {
           id?: number;
           role?: string;
           is_active?: boolean;
         };
-        if (controller.signal.aborted || getAccessToken() !== token) return;
-        const role = payload.role?.trim().toLowerCase();
+
         if (
-          !response.ok
-          || !Number.isSafeInteger(payload.id) || (payload.id ?? 0) <= 0
-          || payload.is_active === false
-          || !role
-          || !OPERATIONAL_ROLES.has(role)
+          controller.signal.aborted ||
+          getAccessToken() !== token
+        ) {
+          return;
+        }
+
+        const role = payload.role?.trim().toLowerCase();
+
+        if (
+          !response.ok ||
+          !Number.isSafeInteger(payload.id) ||
+          (payload.id ?? 0) <= 0 ||
+          payload.is_active === false ||
+          !role ||
+          !OPERATIONAL_ROLES.has(role)
         ) {
           clearAccessToken();
           setState("denied");
           return;
         }
-        setUserId(payload.id!);
+
+        setUserId(payload.id);
         setState("allowed");
       } catch (error) {
-        if ((error as { name?: string }).name !== "AbortError") {
-          setState("denied");
+        if ((error as { name?: string }).name === "AbortError") {
+          console.error(
+            "FalilaX operator authentication verification timed out.",
+          );
+        } else {
+          console.error(
+            "FalilaX operator authentication verification failed.",
+            error,
+          );
         }
+
+        clearAccessToken();
+        setState("denied");
+      } finally {
+        window.clearTimeout(timeoutId);
       }
     }
 
     void validate();
-    return () => controller.abort();
+
+    return () => {
+      window.clearTimeout(timeoutId);
+      controller.abort();
+    };
   }, [attempt]);
 
   if (state === "checking") {
     return (
       <div className="fx-app-shell grid min-h-screen place-items-center text-slate-300">
         <div className="flex items-center gap-3 text-sm">
-          <LoaderCircle className="h-5 w-5 animate-spin text-cyan-300" /><Localize>{" Verifying operator access… "}</Localize></div>
+          <LoaderCircle className="h-5 w-5 animate-spin text-cyan-300" />
+          <Localize>{" Verifying operator access… "}</Localize>
+        </div>
       </div>
     );
   }
 
   if (state === "denied") {
     const next = `${location.pathname}${location.search}${location.hash}`;
+
     return (
       <Navigate
         to={`/operator/sign-in?next=${encodeURIComponent(next)}`}
@@ -100,5 +147,10 @@ export function OperatorRoute({ children }: { children: ReactNode }) {
   }
 
   if (userId === null) return null;
-  return <AccountLanguageProvider account={{ kind: "operator", userId }}>{children}</AccountLanguageProvider>;
+
+  return (
+    <AccountLanguageProvider account={{ kind: "operator", userId }}>
+      {children}
+    </AccountLanguageProvider>
+  );
 }

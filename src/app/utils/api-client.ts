@@ -112,13 +112,40 @@ export async function fetchAPIWithRetry<T>(
   );
 }
 
+export async function runDeterministicScenario(params: {
+  scenario: string;
+  sample_id?: number;
+  location_label?: string;
+  origin_scope_type?: string;
+  origin_scope_id?: number;
+  notification_asset_id?: number;
+}) {
+  const url = buildApiUrlWithQuery(
+    API_ENDPOINTS.SIMULATION_RUN,
+    undefined,
+    {
+      sample_id: params.sample_id ?? 1,
+      scenario: params.scenario,
+      location_label:
+        params.location_label ?? "FalilaX E2E Demonstration",
+      origin_scope_type:
+        params.origin_scope_type ?? "asset",
+      origin_scope_id: params.origin_scope_id ?? 1,
+      notification_asset_id: params.notification_asset_id ?? 1,
+    }
+  );
+
+  return fetchAPI<any>(url, {
+    method: "POST",
+  });
+}
 export async function runUnsafeTurbiditySimulation() {
   const url = buildApiUrlWithQuery(
     API_ENDPOINTS.SIMULATION_RUN,
     undefined,
     {
       sample_id: 1,
-      scenario: "unsafe_turbidity",
+      scenario: "turbidity_event",
       location_label: "FalilaX Deterministic Safety Test",
       origin_scope_type: "asset",
       origin_scope_id: 1,

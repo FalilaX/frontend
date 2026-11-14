@@ -1,4 +1,4 @@
-const ACCESS_TOKEN_STORAGE_KEY = "falilax_notification_session_token";
+﻿const ACCESS_TOKEN_STORAGE_KEY = "falilax_notification_session_token";
 
 export const AUTH_SESSION_CHANGED_EVENT = "falilax:auth-session-changed";
 
@@ -26,11 +26,14 @@ export function storeAccessToken(token: string): void {
   window.dispatchEvent(new Event(AUTH_SESSION_CHANGED_EVENT));
 }
 
-export function clearAccessToken(): void {
+export function clearAccessToken(notify = true): void {
   if (!canUseSessionStorage()) return;
 
   window.sessionStorage.removeItem(ACCESS_TOKEN_STORAGE_KEY);
-  window.dispatchEvent(new Event(AUTH_SESSION_CHANGED_EVENT));
+
+  if (notify) {
+    window.dispatchEvent(new Event(AUTH_SESSION_CHANGED_EVENT));
+  }
 }
 
 export async function authenticatedFetch(
@@ -52,7 +55,7 @@ export async function authenticatedFetch(
   });
 
   if (response.status === 401 && token) {
-    clearAccessToken();
+    clearAccessToken(false);
   }
 
   return response;

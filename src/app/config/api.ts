@@ -69,7 +69,7 @@ export const API_ENDPOINTS = {
   SOURCE_ATTRIBUTION: "/api/v1/source-attribution/{site_id}",
   WATER_USE_GUIDANCE: "/api/v1/guidance/water-use",
   SYSTEM_STATUS: "/api/v1/system/status",
-  SYSTEM_HEALTH: "/api/v1/system/health",
+  SYSTEM_HEALTH: "/health",
   LOCATIONS: "/api/v1/locations",
   LOCATION_DETAIL: "/api/v1/locations/{location_id}",
 } as const;

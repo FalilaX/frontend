@@ -1,4 +1,4 @@
-﻿import { Localize } from "@/app/i18n/language";
+import { Localize } from "@/app/i18n/language";
 import { useOperationalText } from "@/app/i18n/operational-text";
 import { useEffect, useRef, useState } from "react";
 import FalilaXIntelligenceXRay from "@/app/components/FalilaXIntelligenceXRay";
@@ -238,29 +238,17 @@ const openIncident = async (incidentId) => {
    * Do not reconstruct Intelligence X-Ray evidence in the frontend.
    */
 
-const canonicalSummary = (() => {
-  const candidates = [
-    digitalTwinResult?.summary,
-    digitalTwinResult?.report?.summary,
-    digitalTwinResult?.incident?.summary,
-    digitalTwinResult?.intelligence_summary?.summary,
-    digitalTwinResult?.intelligence_summary,
-  ];
+const canonicalReport =
+  digitalTwinResult?.report &&
+  typeof digitalTwinResult.report === "object"
+    ? digitalTwinResult.report
+    : digitalTwinResult;
 
-  return (
-    candidates.find(
-      (candidate) =>
-        candidate &&
-        typeof candidate === "object" &&
-        (
-          candidate.event != null ||
-          candidate.severity != null ||
-          candidate.status != null ||
-          candidate.node_id != null
-        )
-    ) ?? {}
-  );
-})();
+const canonicalSummary =
+  canonicalReport?.summary &&
+  typeof canonicalReport.summary === "object"
+    ? canonicalReport.summary
+    : {};
 
   const canonicalDetectionConfidence =
     digitalTwinResult?.detection?.confidence ??
@@ -872,21 +860,3 @@ function LocalizedZoomControl({ locale }) {
   }, [map, locale]);
   return null;
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

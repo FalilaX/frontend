@@ -542,7 +542,7 @@ const formatGenerationCounts = (
 
   return entries
     .map(([generation, count]) => `Gen ${generation}: ${count}`)
-    .join(" · ");
+    .join(" Â· ");
 };
 
 const escapeReportHtml = (value: unknown): string =>
@@ -992,9 +992,9 @@ const buildIncidentEvidenceReportHtml = (
       (record) => `
         <tr>
           <td><strong>${escapeReportHtml(formatStatus(record.action_type))}</strong><br />
-          Generation ${record.plan_generation} · Attempt ${record.attempt_number}<br />
+          Generation ${record.plan_generation} Â· Attempt ${record.attempt_number}<br />
           ${escapeReportHtml(isSynthetic ? "Rehearsal record" : formatStatus(record.outcome))}<br />
-          ${escapeReportHtml(formatStatus(record.outcome))} · ${escapeReportHtml(formatDate(record.started_at))}<br />
+          ${escapeReportHtml(formatStatus(record.outcome))} Â· ${escapeReportHtml(formatDate(record.started_at))}<br />
           ${escapeReportHtml(reportValue(record.executor))}<br />
           ${escapeReportHtml(reportValue(record.adapter_name))}</td>
           <td>${escapeReportHtml(reportExecutionEvidence(record))}</td>
@@ -1025,7 +1025,7 @@ const buildIncidentEvidenceReportHtml = (
       (event) => `
         <tr>
           <td>${escapeReportHtml(formatDate(event.occurred_at))}<br /><strong>${escapeReportHtml(formatStatus(event.event_type))}</strong><br />${escapeReportHtml(reportValue(event.actor))}</td>
-          <td>${escapeReportHtml(formatStatus(event.from_status || "-"))} → ${escapeReportHtml(formatStatus(event.to_status || "-"))}</td>
+          <td>${escapeReportHtml(formatStatus(event.from_status || "-"))} â†’ ${escapeReportHtml(formatStatus(event.to_status || "-"))}</td>
           <td>${escapeReportHtml(event.message)}</td>
         </tr>
       `,
@@ -1039,7 +1039,7 @@ const buildIncidentEvidenceReportHtml = (
   const syntheticBanner = isSynthetic
     ? `
       <div class="synthetic-banner">
-        DEVELOPMENT / SYNTHETIC INCIDENT — NOT FOR REGULATORY SUBMISSION
+        DEVELOPMENT / SYNTHETIC INCIDENT â€” NOT FOR REGULATORY SUBMISSION
       </div>
     `
     : "";
@@ -1047,7 +1047,7 @@ const buildIncidentEvidenceReportHtml = (
   const profileBanner = !profileComplete
     ? `
       <div class="profile-banner">
-        DRAFT — ORGANIZATION PROFILE INCOMPLETE. CONFIGURE UTILITY / ORGANIZATION
+        DRAFT â€” ORGANIZATION PROFILE INCOMPLETE. CONFIGURE UTILITY / ORGANIZATION
         AND SYSTEM / FACILITY BEFORE ISSUING A FINAL REPORT.
       </div>
     `
@@ -1086,7 +1086,7 @@ const buildIncidentEvidenceReportHtml = (
         </div>
         <div class="outcome-card ${currentFailed > 0 ? "bad" : "good"}">
           <span>Execution exceptions</span>
-          <strong>${currentFailed} failed · ${currentBlocked} blocked</strong>
+          <strong>${currentFailed} failed Â· ${currentBlocked} blocked</strong>
           <small>${currentExecuted} current executions recorded</small>
         </div>
         <div class="outcome-card">
@@ -1208,7 +1208,7 @@ const buildIncidentEvidenceReportHtml = (
       <h2>Operational Outcome</h2>
       <div class="outcome-grid">
         <div class="outcome-card good"><span>Current plan</span><strong>${completedActions} / ${actions.length || 0} completed</strong><small>Generation ${currentGeneration}</small></div>
-        <div class="outcome-card ${currentFailed > 0 || currentBlocked > 0 ? "bad" : "good"}"><span>Exceptions</span><strong>${currentFailed} failed · ${currentBlocked} blocked</strong><small>${currentExecuted} current executions</small></div>
+        <div class="outcome-card ${currentFailed > 0 || currentBlocked > 0 ? "bad" : "good"}"><span>Exceptions</span><strong>${currentFailed} failed Â· ${currentBlocked} blocked</strong><small>${currentExecuted} current executions</small></div>
         <div class="outcome-card"><span>Source asset</span><strong>${escapeReportHtml(sourceAssetName)}</strong><small>${escapeReportHtml(sourceAssetType)}</small></div>
         <div class="outcome-card ${hydraulicReady ? "good" : "warn"}"><span>Hydraulic readiness</span><strong>${hydraulicReady ? "Ready" : "Not verified / not ready"}</strong><small>${escapeReportHtml(formatStatus(hydraulicStatus))} evidence</small></div>
       </div>
@@ -1334,9 +1334,9 @@ const buildIncidentEvidenceReportHtml = (
       </div>
       <div class="disposition">
         <strong>Report disposition:</strong>
-        <span>☐ Accepted</span>
-        <span>☐ Follow-up required</span>
-        <span>☐ Reopened</span>
+        <span>â˜ Accepted</span>
+        <span>â˜ Follow-up required</span>
+        <span>â˜ Reopened</span>
       </div>
     </section>
 
@@ -1481,7 +1481,7 @@ const buildIncidentEvidenceReportHtml = (
           <div class="report-kind">${reportTypeLabel} OPERATIONAL RECORD</div>
         </div>
       </div>
-      <div class="utility-cover">${escapeReportHtml(utilityName)} · ${escapeReportHtml(systemName)}</div>
+      <div class="utility-cover">${escapeReportHtml(utilityName)} Â· ${escapeReportHtml(systemName)}</div>
       <h1>${escapeReportHtml(reportTitle)}</h1>
       <div class="subtitle">${escapeReportHtml(incident.title)}</div>
       <div class="report-number">${escapeReportHtml(humanReportNumber)}</div>
@@ -1508,7 +1508,7 @@ const buildIncidentEvidenceReportHtml = (
       <strong>Report No.:</strong> <span class="mono">${escapeReportHtml(humanReportNumber)}</span>
       <br /><strong>Record stage:</strong> ${escapeReportHtml(reportStage)}
       ${!profileComplete ? `<br /><strong>Finalization requirement:</strong> Utility / Organization and System / Facility must be configured before this record can be issued as FINAL.` : ""}
-      ${isSynthetic ? `<br /><strong>Classification:</strong> DEVELOPMENT / SYNTHETIC INCIDENT — NOT FOR REGULATORY SUBMISSION` : ""}
+      ${isSynthetic ? `<br /><strong>Classification:</strong> DEVELOPMENT / SYNTHETIC INCIDENT â€” NOT FOR REGULATORY SUBMISSION` : ""}
     </div>
   </main>
 </body>
@@ -1749,7 +1749,7 @@ export function IncidentInvestigation() {
     ? `${numberText(Math.round(value * 100), 2)}%` : t("Not available");
   const generationText = (counts: Record<string, number> | null | undefined) => {
     const entries = Object.entries(counts ?? {}).sort(([a], [b]) => Number(a) - Number(b));
-    return entries.length ? entries.map(([generation, count]) => `${t("Generation")} ${generation}: ${numberText(count, 0)}`).join(" · ") : t("None");
+    return entries.length ? entries.map(([generation, count]) => `${t("Generation")} ${generation}: ${numberText(count, 0)}`).join(" Â· ") : t("None");
   };
   const navigate = useNavigate();
   const { incidentId: routeIncidentId } = useParams<{
@@ -2747,8 +2747,8 @@ export function IncidentInvestigation() {
                 <div>
                   <h2 className="font-semibold"><Localize>{"Incident Queue"}</Localize></h2>
                   <p className="text-xs text-zinc-500">
-                    {filteredIncidents.length}<Localize>{" matching "}</Localize>{selectedOutsideFilter ? t(" · 1 selected outside filter") : ""}
-                    {" · "}
+                    {filteredIncidents.length}<Localize>{" matching "}</Localize>{selectedOutsideFilter ? t(" Â· 1 selected outside filter") : ""}
+                    {" Â· "}
                     {incidents.length}<Localize>{" total "}</Localize></p>
                 </div>
 
@@ -2824,7 +2824,7 @@ export function IncidentInvestigation() {
                         <div className="mb-3 flex flex-wrap gap-2">
                           {active &&
                             selectedOutsideFilter?.id === incident.id && (
-                              <span className="rounded border border-orange-800 bg-orange-950/30 px-2 py-0.5 text-[11px] text-orange-300"><Localize>{" Selected · outside "}</Localize>{labelText(formatStatus(statusFilter))}<Localize>{" filter "}</Localize></span>
+                              <span className="rounded border border-orange-800 bg-orange-950/30 px-2 py-0.5 text-[11px] text-orange-300"><Localize>{" Selected Â· outside "}</Localize>{labelText(formatStatus(statusFilter))}<Localize>{" filter "}</Localize></span>
                             )}
                           <span
                             className={`rounded border px-2 py-0.5 text-[11px] ${severityClasses(
@@ -2969,7 +2969,7 @@ export function IncidentInvestigation() {
                               <CheckCircle2 className="h-4 w-4 text-green-400" />
                             ) : skipped ? (
                               <div className="flex h-4 w-4 items-center justify-center rounded-full border border-zinc-600 text-[10px] text-zinc-500">
-                                —
+                                â€”
                               </div>
                             ) : (
                               <div className="h-4 w-4 rounded-full border border-zinc-700" />
@@ -3245,7 +3245,7 @@ export function IncidentInvestigation() {
                                                 key={evidenceIndex}
                                                 className="text-xs text-zinc-400"
                                               >
-                                                • <GeneratedText value={item} />
+                                                â€¢ <GeneratedText value={item} />
                                               </p>
                                             ))}
                                         </div>
@@ -3297,7 +3297,7 @@ export function IncidentInvestigation() {
                                         }}
                                       />
                                     </div>
-                                    <p className="mt-1 text-[10px] text-zinc-600"><Localize>{" Score "}</Localize>{numberText(item.score, 3)} ·{" "}
+                                    <p className="mt-1 text-[10px] text-zinc-600"><Localize>{" Score "}</Localize>{numberText(item.score, 3)} Â·{" "}
                                       {item.evidence_count}{" "}{t(item.evidence_count === 1 ? "evidence item" : "evidence items")}{" "}
                                     </p>
                                   </div>
@@ -3360,7 +3360,7 @@ export function IncidentInvestigation() {
                                       key={index}
                                       className="text-xs text-zinc-500"
                                     >
-                                      • <GeneratedText value={limitation} />
+                                      â€¢ <GeneratedText value={limitation} />
                                     </p>
                                   ))}
                               </div>
@@ -3744,7 +3744,7 @@ export function IncidentInvestigation() {
                     </div>
 
                     <div className="flex flex-wrap gap-2">
-                      <span className="rounded-md border border-cyan-800 bg-cyan-950/30 px-2.5 py-1 text-xs text-cyan-300"><Localize>{" Current plan · Generation "}</Localize>{currentPlanGeneration}
+                      <span className="rounded-md border border-cyan-800 bg-cyan-950/30 px-2.5 py-1 text-xs text-cyan-300"><Localize>{" Current plan Â· Generation "}</Localize>{currentPlanGeneration}
                       </span>
                       <span className="rounded-md border border-zinc-700 bg-zinc-950 px-2.5 py-1 text-xs text-zinc-400">
                         {lifetimeExecutionSummary?.count ?? 0}{" "}{t((lifetimeExecutionSummary?.count ?? 0) === 1 ? "lifetime record" : "lifetime records")}{" "}
@@ -3769,7 +3769,7 @@ export function IncidentInvestigation() {
                           <p className="mt-1 text-xs text-zinc-500"><Localize>{" Actions executed in Generation "}</Localize>{currentPlanGeneration}
                           </p>
                           <p className="mt-2 text-[11px] text-zinc-600">
-                            {(currentGenerationSummary?.failed_count ?? 0)}<Localize>{" failed "}</Localize>{" · "}
+                            {(currentGenerationSummary?.failed_count ?? 0)}<Localize>{" failed "}</Localize>{" Â· "}
                             {(currentGenerationSummary?.blocked_count ?? 0)}<Localize>{" blocked "}</Localize></p>
                         </div>
 
@@ -3845,7 +3845,7 @@ export function IncidentInvestigation() {
                       <div>
                         <div className="mb-3 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
                           <div>
-                            <h4 className="font-medium"><Localize>{" Current Plan — Generation "}</Localize>{currentPlanGeneration}
+                            <h4 className="font-medium"><Localize>{" Current Plan â€” Generation "}</Localize>{currentPlanGeneration}
                             </h4>
                             <p className="text-xs text-zinc-500"><Localize>{" Execution attempts associated only with the current durable action plan. "}</Localize></p>
                           </div>
@@ -3983,7 +3983,7 @@ export function IncidentInvestigation() {
                                       <p className="font-medium text-violet-200"><Localize>{" Generation "}</Localize>{group.generation}
                                       </p>
                                       <p className="text-xs text-zinc-500">
-                                        {successful}<Localize>{" executed · "}</Localize>{failed}<Localize>{" failed ·"}</Localize>{" "}
+                                        {successful}<Localize>{" executed Â· "}</Localize>{failed}<Localize>{" failed Â·"}</Localize>{" "}
                                         {blocked}<Localize>{" blocked "}</Localize></p>
                                     </div>
                                     <span className="rounded border border-zinc-700 bg-zinc-900 px-2 py-1 text-[11px] text-zinc-400">
@@ -4015,9 +4015,9 @@ export function IncidentInvestigation() {
                                             </div>
                                             <p className="mt-1 text-xs text-zinc-500">
                                               {execution.executor || t("Unknown operator")}
-                                              {" · "}
+                                              {" Â· "}
                                               {dateText(execution.finished_at)}
-                                              {t(" · Attempt ")}
+                                              {t(" Â· Attempt ")}
                                               {execution.attempt_number}
                                             </p>
                                           </div>
@@ -4271,9 +4271,9 @@ export function IncidentInvestigation() {
                                   {report.report_number}
                                 </p>
                                 <p className="mt-1 text-[11px] text-zinc-500">
-                                  {dateText(report.generated_at)} · {report.generated_by}
+                                  {dateText(report.generated_at)} Â· {report.generated_by}
                                   {report.content_hash
-                                    ? ` · SHA-256 ${report.content_hash.slice(0, 12)}…`
+                                    ? ` Â· SHA-256 ${report.content_hash.slice(0, 12)}â€¦`
                                     : ""}
                                 </p>
                               </div>
@@ -4667,7 +4667,7 @@ export function IncidentInvestigation() {
                               </p>
                               <p className="mt-1 text-xs text-zinc-500">
                                 {dateText(event.occurred_at)}
-                                {event.actor ? ` · ${event.actor}` : ""}
+                                {event.actor ? ` Â· ${event.actor}` : ""}
                               </p>
                               <p className="mt-1 text-xs text-zinc-400">
                                 <GeneratedText value={event.message} />
