@@ -87,6 +87,7 @@ export function LandingPage() {
   const navigate = useNavigate();
   const enterPlatform = () => navigate("/dashboard/utility");
   const enterParticipant = () => navigate("/participant/sign-in");
+  const joinDemo = () => navigate("/join/water-demo");
 
   return (
     <div className="relative min-h-screen overflow-hidden bg-[#03101c] text-white">
@@ -109,6 +110,10 @@ export function LandingPage() {
             <a href="#operations" className="hover:text-cyan-200"><Localize>{"Operations"}</Localize></a>
           </nav>
           <div className="flex flex-wrap items-center gap-2">
+            <button type="button" onClick={joinDemo}
+              className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-blue-600 to-cyan-500 px-3 py-2.5 text-xs font-bold text-white transition hover:brightness-110 sm:px-4 sm:text-sm">
+              <Localize>{"Join Water Demo"}</Localize><ArrowRight className="h-4 w-4" />
+            </button>
             <button type="button" onClick={enterParticipant}
               className="inline-flex items-center gap-2 rounded-xl border border-cyan-300/20 bg-cyan-300/[0.05] px-3 py-2.5 text-xs font-semibold text-cyan-100 transition hover:bg-cyan-300/10 sm:px-4 sm:text-sm">
               <Localize>{"Participant sign in"}</Localize><ArrowRight className="h-4 w-4" />
@@ -268,8 +273,11 @@ export function LandingPage() {
                 <span className="flex items-center gap-2 text-xs font-bold uppercase tracking-[0.15em] text-emerald-300"><Eye className="h-4 w-4" /><Localize>{"Individual water status"}</Localize></span>
                 <h3 className="mt-4 text-2xl font-semibold"><Localize>{"Your water. Worth checking."}</Localize></h3>
                 <p className="mt-3 max-w-lg text-sm leading-7 text-slate-300"><Localize>{"Like checking the weather, return whenever you want to understand your water-status information—even when no alert is active."}</Localize></p>
-                <button type="button" onClick={enterParticipant} className="mt-6 inline-flex items-center gap-3 rounded-xl border border-emerald-300/30 bg-emerald-300/[0.09] px-5 py-3 text-sm font-bold text-emerald-100 transition hover:bg-emerald-300/[0.15]"><Localize>{"Participant sign in"}</Localize><ArrowRight className="h-4 w-4" /></button>
-                <p className="mt-3 text-xs text-slate-500"><Localize>{"Access requires an authorized demonstration participant account."}</Localize></p>
+                <div className="mt-6 flex flex-wrap gap-3">
+                  <button type="button" onClick={joinDemo} className="inline-flex items-center gap-3 rounded-xl bg-gradient-to-r from-blue-600 to-cyan-500 px-5 py-3 text-sm font-bold text-white transition hover:brightness-110"><Localize>{"Join Water Demo"}</Localize><ArrowRight className="h-4 w-4" /></button>
+                  <button type="button" onClick={enterParticipant} className="inline-flex items-center gap-3 rounded-xl border border-emerald-300/30 bg-emerald-300/[0.09] px-5 py-3 text-sm font-bold text-emerald-100 transition hover:bg-emerald-300/[0.15]"><Localize>{"Participant sign in"}</Localize><ArrowRight className="h-4 w-4" /></button>
+                </div>
+                <p className="mt-3 text-xs text-slate-500"><Localize>{"New participants can join the controlled demo. Returning participants can sign in."}</Localize></p>
               </div>
             </article>
           </div>

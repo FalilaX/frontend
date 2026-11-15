@@ -11,7 +11,7 @@ import {
 
 const PUBLIC_DEMO_PROGRAM =
   import.meta.env.VITE_PUBLIC_DEMO_PROGRAM_CODE ||
-  "CONTROLLED-DEMO-2026";
+  "PRIVATE-EMAIL-REHEARSAL";
 
 export default function PublicDemoEntry() {
   const navigate = useNavigate();
