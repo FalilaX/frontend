@@ -1,4 +1,4 @@
-﻿import { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import {
   Activity,
   Bell,
@@ -100,6 +100,13 @@ function rate(value: number | null | undefined) {
   return value == null ? "—" : `${value}%`;
 }
 
+function readable(value: string) {
+  return value
+    .replace(/^Notification(Channel|CandidateStatus)\./, "")
+    .replace(/_/g, " ")
+    .replace(/\b\w/g, (character) => character.toUpperCase());
+}
+
 function dateTime(value: string | null | undefined) {
   if (!value) return "No activity recorded";
 
@@ -116,7 +123,7 @@ function Breakdown({
 }) {
   if (!items.length) {
     return (
-      <p className="text-sm text-zinc-500">
+      <p className="text-sm text-slate-400">
         No participant data recorded yet.
       </p>
     );
@@ -127,13 +134,13 @@ function Breakdown({
       {items.map((item) => (
         <div
           key={`${item.value}-${item.count}`}
-          className="flex items-center justify-between gap-4 border-b border-zinc-800 pb-3 last:border-0 last:pb-0"
+          className="flex items-center justify-between gap-4 border-b border-cyan-300/15 pb-3 last:border-0 last:pb-0"
         >
-          <span className="truncate text-sm text-zinc-300">
+          <span className="truncate text-sm text-slate-200">
             {item.value}
           </span>
 
-          <span className="rounded-full border border-zinc-700 bg-zinc-950 px-3 py-1 text-xs text-zinc-300">
+          <span className="rounded-full border border-cyan-300/25 bg-[#03101c] px-3 py-1 text-xs text-slate-200">
             {fmt(item.count)}
           </span>
         </div>
@@ -152,17 +159,17 @@ function Metric({
   detail?: string;
 }) {
   return (
-    <div className="rounded-2xl border border-zinc-800 bg-zinc-900 p-6">
-      <p className="text-xs font-medium uppercase tracking-[0.16em] text-zinc-500">
+    <div className="rounded-2xl border border-cyan-300/15 bg-[#082234]/85 p-6 shadow-[0_16px_45px_rgba(0,0,0,0.12)]">
+      <p className="text-xs font-medium uppercase tracking-[0.16em] text-slate-400">
         {label}
       </p>
 
-      <p className="mt-3 text-3xl font-semibold tracking-tight text-zinc-100">
+      <p className="mt-3 text-3xl font-semibold tracking-tight text-slate-100">
         {value}
       </p>
 
       {detail && (
-        <p className="mt-2 text-xs text-zinc-500">
+        <p className="mt-2 text-xs text-slate-400">
           {detail}
         </p>
       )}
@@ -219,10 +226,10 @@ export default function Analytics() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-zinc-950 px-6 py-10 text-zinc-100">
+      <div className="min-h-screen bg-[#03101c] px-6 py-10 text-slate-100">
         <div className="mx-auto max-w-7xl">
-          <div className="rounded-2xl border border-zinc-800 bg-zinc-900 p-8">
-            <p className="animate-pulse text-sm text-zinc-500">
+          <div className="rounded-2xl border border-cyan-300/15 bg-[#082234] p-8">
+            <p className="animate-pulse text-sm text-slate-400">
               Loading FalilaX analytics...
             </p>
           </div>
@@ -233,7 +240,7 @@ export default function Analytics() {
 
   if (error || !data) {
     return (
-      <div className="min-h-screen bg-zinc-950 px-6 py-10 text-zinc-100">
+      <div className="min-h-screen bg-[#03101c] px-6 py-10 text-slate-100">
         <div className="mx-auto max-w-7xl">
           <div className="rounded-2xl border border-red-900/60 bg-red-950/20 p-8">
             <h1 className="text-xl font-semibold">
@@ -247,7 +254,7 @@ export default function Analytics() {
             <button
               type="button"
               onClick={() => void loadAnalytics(true)}
-              className="mt-6 rounded-xl border border-zinc-700 bg-zinc-900 px-4 py-2 text-sm hover:bg-zinc-800"
+              className="mt-6 rounded-xl border border-cyan-300/25 bg-[#082234] px-4 py-2 text-sm hover:bg-cyan-300/10"
             >
               Retry
             </button>
@@ -261,9 +268,9 @@ export default function Analytics() {
     data;
 
   return (
-    <div className="min-h-screen bg-zinc-950 text-zinc-100">
-      <header className="border-b border-zinc-800 bg-zinc-950">
-        <div className="mx-auto flex max-w-7xl items-center justify-between gap-6 px-6 py-6">
+    <div className="relative min-h-screen bg-[#03101c] text-slate-100">
+      <header className="border-b border-cyan-300/10 bg-[#04111d]/90 backdrop-blur-xl">
+        <div className="mx-auto flex max-w-[1360px] flex-wrap items-center justify-between gap-4 px-5 py-6 sm:px-8 lg:px-10">
           <div className="flex items-center gap-4">
             <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-cyan-500/30 bg-cyan-500/10">
               <Layers3 className="h-5 w-5 text-cyan-300" />
@@ -278,7 +285,7 @@ export default function Analytics() {
                 Participant Analytics
               </h1>
 
-              <p className="mt-1 text-sm text-zinc-500">
+              <p className="mt-1 text-sm text-slate-400">
                 Controlled demonstration analytics
               </p>
             </div>
@@ -288,7 +295,7 @@ export default function Analytics() {
             type="button"
             onClick={() => void loadAnalytics(true)}
             disabled={refreshing}
-            className="flex items-center gap-2 rounded-xl border border-zinc-700 bg-zinc-900 px-4 py-2 text-sm text-zinc-300 transition hover:bg-zinc-800 disabled:opacity-50"
+            className="flex items-center gap-2 rounded-xl border border-cyan-300/25 bg-[#082234] px-4 py-2 text-sm text-slate-200 transition hover:bg-cyan-300/10 disabled:opacity-50"
           >
             <RefreshCw
               className={`h-4 w-4 ${refreshing ? "animate-spin" : ""}`}
@@ -298,10 +305,10 @@ export default function Analytics() {
         </div>
       </header>
 
-      <main className="mx-auto max-w-7xl px-6 py-8">
+      <main className="mx-auto max-w-[1360px] px-5 py-8 sm:px-8 lg:px-10">
         {/* SCOPE */}
 
-        <section className="mb-10 rounded-2xl border border-cyan-900/40 bg-cyan-950/10 p-6">
+        <section className="mb-10 rounded-2xl border border-cyan-300/20 bg-gradient-to-br from-[#0c3147] to-[#071a29] p-6">
           <div className="flex flex-wrap items-start justify-between gap-6">
             <div>
               <p className="text-xs font-medium uppercase tracking-[0.2em] text-cyan-300">
@@ -312,24 +319,26 @@ export default function Analytics() {
                 FalilaX Controlled Demonstration
               </h2>
 
-              <p className="mt-2 max-w-3xl text-sm leading-6 text-zinc-400">
-                Participant intelligence for the controlled demonstration
-                program. This view measures participation, enrollment
-                progression, participant composition, notification activity,
-                and engagement.
+              <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-300">
+                Participant intelligence for the active public demonstration program. This view reports enrollment sessions, unique participants, funnel progression, notification records, and recorded experience activity.
               </p>
             </div>
 
-            <div className="rounded-xl border border-zinc-800 bg-zinc-950 px-4 py-3">
-              <p className="text-xs uppercase tracking-[0.14em] text-zinc-600">
+            <div className="rounded-xl border border-cyan-300/15 bg-[#03101c] px-4 py-3">
+              <p className="text-xs uppercase tracking-[0.14em] text-slate-400">
                 Program
               </p>
 
-              <p className="mt-1 font-mono text-sm text-zinc-300">
-                CONTROLLED-DEMO-2026
+              <p className="mt-1 font-mono text-sm text-slate-200">
+                PRIVATE-EMAIL-REHEARSAL
               </p>
             </div>
           </div>
+        </section>
+
+        <section className="mb-8 rounded-xl border border-cyan-300/15 bg-[#092033]/80 px-5 py-4 text-sm leading-6 text-slate-300">
+          <p className="font-semibold text-cyan-200">How to read these numbers</p>
+          <p className="mt-1">Enrollment stages describe session progression. Unique participants count people, so stage counts can exceed unique-participant totals. Notification status “Sent” indicates a system record, not independently verified inbox delivery. Unavailable historical metrics remain explicitly marked as unavailable.</p>
         </section>
 
         {/* 01 POPULATION */}
@@ -344,7 +353,7 @@ export default function Analytics() {
                   01 · Population
                 </h2>
 
-                <p className="mt-1 text-sm text-zinc-500">
+                <p className="mt-1 text-sm text-slate-400">
                   The participant population entering the FalilaX system.
                 </p>
               </div>
@@ -355,16 +364,19 @@ export default function Analytics() {
             <Metric
               label="Enrollment sessions"
               value={fmt(population.joined)}
+              detail="Session starts; repeat attempts may be included"
             />
 
             <Metric
               label="Identity completed"
               value={fmt(population.identity_completed)}
+              detail="Completed enrollment identity steps"
             />
 
             <Metric
               label="Unique participants"
               value={fmt(population.unique_participants)}
+              detail="Distinct participant records"
             />
 
             <Metric
@@ -375,22 +387,22 @@ export default function Analytics() {
           </div>
 
           <div className="mt-4 grid gap-4 md:grid-cols-2">
-            <div className="rounded-2xl border border-zinc-800 bg-zinc-900 p-5">
-              <p className="text-xs uppercase tracking-[0.14em] text-zinc-600">
+            <div className="rounded-2xl border border-cyan-300/15 bg-[#082234]/85 p-5">
+              <p className="text-xs uppercase tracking-[0.14em] text-slate-400">
                 First participant activity
               </p>
 
-              <p className="mt-2 text-sm text-zinc-300">
+              <p className="mt-2 text-sm text-slate-200">
                 {dateTime(population.first_joined_at)}
               </p>
             </div>
 
-            <div className="rounded-2xl border border-zinc-800 bg-zinc-900 p-5">
-              <p className="text-xs uppercase tracking-[0.14em] text-zinc-600">
+            <div className="rounded-2xl border border-cyan-300/15 bg-[#082234]/85 p-5">
+              <p className="text-xs uppercase tracking-[0.14em] text-slate-400">
                 Latest participant activity
               </p>
 
-              <p className="mt-2 text-sm text-zinc-300">
+              <p className="mt-2 text-sm text-slate-200">
                 {dateTime(population.last_activity_at)}
               </p>
             </div>
@@ -409,15 +421,14 @@ export default function Analytics() {
                   02 · Enrollment Funnel
                 </h2>
 
-                <p className="mt-1 text-sm text-zinc-500">
-                  Progression through the trusted participant enrollment
-                  pathway.
+                <p className="mt-1 text-sm text-slate-400">
+                  Enrollment session progression through the participant pathway; these totals are not distinct-person counts.
                 </p>
               </div>
             </div>
           </div>
 
-          <div className="overflow-hidden rounded-2xl border border-zinc-800 bg-zinc-900">
+          <div className="overflow-hidden rounded-2xl border border-cyan-300/15 bg-[#082234]">
             {funnel.stages.map((stage, index) => {
               const unavailable =
                 stage.availability === "NOT_YET_COMPLETE";
@@ -432,15 +443,15 @@ export default function Analytics() {
                   key={stage.stage}
                   className={`flex items-center gap-5 px-6 py-5 ${
                     index < funnel.stages.length - 1
-                      ? "border-b border-zinc-800"
+                      ? "border-b border-cyan-300/15"
                       : ""
                   }`}
                 >
-                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-zinc-700 bg-zinc-950">
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-cyan-300/25 bg-[#03101c]">
                     {stage.count !== null && stage.count > 0 ? (
                       <CheckCircle2 className="h-4 w-4 text-cyan-300" />
                     ) : (
-                      <span className="text-xs text-zinc-600">
+                      <span className="text-xs text-slate-400">
                         {index + 1}
                       </span>
                     )}
@@ -452,11 +463,11 @@ export default function Analytics() {
                     </p>
 
                     {unavailable ? (
-                      <p className="mt-1 text-xs text-zinc-500">
+                      <p className="mt-1 text-xs text-slate-400">
                         Historical coverage not yet complete
                       </p>
                     ) : (
-                      <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-zinc-800">
+                      <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-[#12364a]">
                         <div
                           className="h-full rounded-full bg-cyan-400"
                           style={{ width: `${width}%` }}
@@ -470,7 +481,7 @@ export default function Analytics() {
                       {stage.count === null ? "—" : fmt(stage.count)}
                     </p>
 
-                    <p className="text-xs text-zinc-500">
+                    <p className="text-xs text-slate-400">
                       {unavailable
                         ? "not available"
                         : rate(stage.completion_rate)}
@@ -479,6 +490,21 @@ export default function Analytics() {
                 </div>
               );
             })}
+          </div>
+        </section>
+
+        <section className="mb-10 rounded-2xl border border-cyan-300/15 bg-[#092033]/80 p-5 sm:p-6">
+          <h3 className="text-base font-semibold text-white">Enrollment insights</h3>
+          <p className="mt-2 text-sm text-slate-300">These percentages compare recorded enrollment stages with session starts; they do not measure distinct-person conversion.</p>
+          <div className="mt-4 grid gap-3 sm:grid-cols-2">
+            <div className="rounded-xl border border-cyan-300/10 bg-[#061827] p-4">
+              <p className="text-xs text-slate-400">Identity completion per session start</p>
+              <p className="mt-2 text-2xl font-semibold text-cyan-200">{population.joined > 0 ? `${((population.identity_completed / population.joined) * 100).toFixed(1)}%` : "—"}</p>
+            </div>
+            <div className="rounded-xl border border-cyan-300/10 bg-[#061827] p-4">
+              <p className="text-xs text-slate-400">Recorded funnel stages</p>
+              <p className="mt-2 text-2xl font-semibold text-cyan-200">{fmt(funnel.stages.length)}</p>
+            </div>
           </div>
         </section>
 
@@ -494,7 +520,7 @@ export default function Analytics() {
                   03 · Participant Breakdown
                 </h2>
 
-                <p className="mt-1 text-sm text-zinc-500">
+                <p className="mt-1 text-sm text-slate-400">
                   Composition of the enrolled participant population.
                 </p>
               </div>
@@ -502,7 +528,7 @@ export default function Analytics() {
           </div>
 
           <div className="grid gap-6 lg:grid-cols-3">
-            <div className="rounded-2xl border border-zinc-800 bg-zinc-900 p-6">
+            <div className="rounded-2xl border border-cyan-300/15 bg-[#082234]/85 p-6 shadow-[0_16px_45px_rgba(0,0,0,0.12)]">
               <h3 className="mb-5 font-semibold">
                 Subscriber type
               </h3>
@@ -510,7 +536,7 @@ export default function Analytics() {
               <Breakdown items={breakdown.by_subscriber_type} />
             </div>
 
-            <div className="rounded-2xl border border-zinc-800 bg-zinc-900 p-6">
+            <div className="rounded-2xl border border-cyan-300/15 bg-[#082234]/85 p-6 shadow-[0_16px_45px_rgba(0,0,0,0.12)]">
               <h3 className="mb-5 font-semibold">
                 Language
               </h3>
@@ -518,7 +544,7 @@ export default function Analytics() {
               <Breakdown items={breakdown.by_language} />
             </div>
 
-            <div className="rounded-2xl border border-zinc-800 bg-zinc-900 p-6">
+            <div className="rounded-2xl border border-cyan-300/15 bg-[#082234]/85 p-6 shadow-[0_16px_45px_rgba(0,0,0,0.12)]">
               <h3 className="mb-5 font-semibold">
                 Time zone
               </h3>
@@ -540,7 +566,7 @@ export default function Analytics() {
                   04 · Notification Intelligence
                 </h2>
 
-                <p className="mt-1 text-sm text-zinc-500">
+                <p className="mt-1 text-sm text-slate-400">
                   Notification routing, status, acknowledgement, and
                   escalation activity.
                 </p>
@@ -550,8 +576,9 @@ export default function Analytics() {
 
           <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
             <Metric
-              label="Notifications"
+              label="Notification records"
               value={fmt(notifications.total_notifications)}
+              detail="Recorded statuses are not delivery receipts"
             />
 
             <Metric
@@ -572,7 +599,7 @@ export default function Analytics() {
           </div>
 
           <div className="mt-6 grid gap-6 lg:grid-cols-2">
-            <div className="rounded-2xl border border-zinc-800 bg-zinc-900 p-6">
+            <div className="rounded-2xl border border-cyan-300/15 bg-[#082234]/85 p-6 shadow-[0_16px_45px_rgba(0,0,0,0.12)]">
               <h3 className="mb-5 font-semibold">
                 By channel
               </h3>
@@ -581,11 +608,11 @@ export default function Analytics() {
                 <div className="space-y-3">
                   {notifications.by_channel.map((item) => (
                     <div
-                      key={item.channel}
-                      className="flex items-center justify-between border-b border-zinc-800 pb-3 last:border-0"
+                      key={readable(item.channel)}
+                      className="flex items-center justify-between border-b border-cyan-300/15 pb-3 last:border-0"
                     >
-                      <span className="text-sm text-zinc-400">
-                        {item.channel}
+                      <span className="text-sm text-slate-300">
+                        {readable(item.channel)}
                       </span>
 
                       <span className="font-medium">
@@ -595,13 +622,13 @@ export default function Analytics() {
                   ))}
                 </div>
               ) : (
-                <p className="text-sm text-zinc-500">
+                <p className="text-sm text-slate-400">
                   No notification activity recorded.
                 </p>
               )}
             </div>
 
-            <div className="rounded-2xl border border-zinc-800 bg-zinc-900 p-6">
+            <div className="rounded-2xl border border-cyan-300/15 bg-[#082234]/85 p-6 shadow-[0_16px_45px_rgba(0,0,0,0.12)]">
               <h3 className="mb-5 font-semibold">
                 By status
               </h3>
@@ -610,11 +637,11 @@ export default function Analytics() {
                 <div className="space-y-3">
                   {notifications.by_status.map((item) => (
                     <div
-                      key={item.status}
-                      className="flex items-center justify-between border-b border-zinc-800 pb-3 last:border-0"
+                      key={readable(item.status)}
+                      className="flex items-center justify-between border-b border-cyan-300/15 pb-3 last:border-0"
                     >
-                      <span className="text-sm text-zinc-400">
-                        {item.status}
+                      <span className="text-sm text-slate-300">
+                        {readable(item.status)}
                       </span>
 
                       <span className="font-medium">
@@ -624,7 +651,7 @@ export default function Analytics() {
                   ))}
                 </div>
               ) : (
-                <p className="text-sm text-zinc-500">
+                <p className="text-sm text-slate-400">
                   No notification activity recorded.
                 </p>
               )}
@@ -644,7 +671,7 @@ export default function Analytics() {
                   05 · Participant Engagement
                 </h2>
 
-                <p className="mt-1 text-sm text-zinc-500">
+                <p className="mt-1 text-sm text-slate-400">
                   Actual participant activity recorded by the FalilaX
                   experience ledger.
                 </p>
@@ -656,16 +683,18 @@ export default function Analytics() {
             <Metric
               label="Experience events"
               value={fmt(engagement.total_events)}
+              detail="Recorded interactions, not necessarily unique visits"
             />
 
             <Metric
               label="Active participants"
               value={fmt(engagement.unique_active_participants)}
+              detail="People appearing in the experience-event ledger"
             />
           </div>
 
           <div className="mt-6 grid gap-6 lg:grid-cols-2">
-            <div className="rounded-2xl border border-zinc-800 bg-zinc-900 p-6">
+            <div className="rounded-2xl border border-cyan-300/15 bg-[#082234]/85 p-6 shadow-[0_16px_45px_rgba(0,0,0,0.12)]">
               <h3 className="mb-5 font-semibold">
                 Event activity
               </h3>
@@ -674,11 +703,11 @@ export default function Analytics() {
                 <div className="space-y-3">
                   {engagement.events_by_type.map((item) => (
                     <div
-                      key={item.event_type}
-                      className="flex items-center justify-between border-b border-zinc-800 pb-3 last:border-0"
+                      key={readable(item.event_type)}
+                      className="flex items-center justify-between border-b border-cyan-300/15 pb-3 last:border-0"
                     >
-                      <span className="text-sm text-zinc-400">
-                        {item.event_type}
+                      <span className="text-sm text-slate-300">
+                        {readable(item.event_type)}
                       </span>
 
                       <span className="font-medium">
@@ -688,34 +717,34 @@ export default function Analytics() {
                   ))}
                 </div>
               ) : (
-                <p className="text-sm text-zinc-500">
+                <p className="text-sm text-slate-400">
                   No participant experience events recorded yet.
                 </p>
               )}
             </div>
 
-            <div className="rounded-2xl border border-zinc-800 bg-zinc-900 p-6">
+            <div className="rounded-2xl border border-cyan-300/15 bg-[#082234]/85 p-6 shadow-[0_16px_45px_rgba(0,0,0,0.12)]">
               <h3 className="mb-5 font-semibold">
                 Activity window
               </h3>
 
               <div className="space-y-5">
                 <div>
-                  <p className="text-xs uppercase tracking-[0.14em] text-zinc-600">
+                  <p className="text-xs uppercase tracking-[0.14em] text-slate-400">
                     First activity
                   </p>
 
-                  <p className="mt-2 text-sm text-zinc-300">
+                  <p className="mt-2 text-sm text-slate-200">
                     {dateTime(engagement.first_activity_at)}
                   </p>
                 </div>
 
                 <div>
-                  <p className="text-xs uppercase tracking-[0.14em] text-zinc-600">
+                  <p className="text-xs uppercase tracking-[0.14em] text-slate-400">
                     Latest activity
                   </p>
 
-                  <p className="mt-2 text-sm text-zinc-300">
+                  <p className="mt-2 text-sm text-slate-200">
                     {dateTime(engagement.last_activity_at)}
                   </p>
                 </div>
@@ -726,16 +755,14 @@ export default function Analytics() {
 
         {/* DATA PROVENANCE */}
 
-        <section className="border-t border-zinc-800 pt-6">
-          <div className="flex items-start gap-3 text-xs leading-5 text-zinc-600">
+        <section className="border-t border-cyan-300/15 pt-6">
+          <div className="flex items-start gap-3 text-xs leading-5 text-slate-400">
             <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0" />
 
             <p>
               This analytics view is derived from FalilaX enrollment
               sessions, participant records, notification records, and
-              the participant experience ledger. Questionnaire responses
-              are intentionally excluded from the participant dashboard
-              and remain part of the post-demonstration review workflow.
+              the participant experience ledger. This view is scoped to organization 1, program 1 (PRIVATE-EMAIL-REHEARSAL) and reflects demonstration context. It does not certify email delivery, water safety, or population-scale performance. Questionnaire responses remain in the separate post-demonstration review workflow.
             </p>
           </div>
         </section>
