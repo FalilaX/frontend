@@ -20,6 +20,7 @@ import type {
   ParticipantWaterIntelligence,
 } from "@/app/services/participant-water-intelligence-api";
 import { ParticipantAccessError } from "@/app/services/participant-api";
+import { recordParticipantWaterView } from "@/app/services/participant-engagement-api";
 import {
   clearParticipantSession,
   getParticipantSession,
@@ -77,6 +78,12 @@ export function ParticipantMyWater({ onExperienceComplete, onHelp, detailed = fa
         }
 
         setIntelligence(result);
+        // Only report a successfully loaded, authenticated participant view.
+        // Telemetry errors never prevent consumers seeing their water status.
+        void recordParticipantWaterView(
+          session,
+          detailed ? "WATER_STATUS_VIEWED" : "WATER_PULSE_VIEWED",
+        ).catch(() => {});
         onExperienceComplete?.();
       })
       .catch(caught => {
