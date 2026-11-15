@@ -80,6 +80,14 @@ type AnalyticsData = {
   };
 };
 
+type WaterPulseUsage = {
+  period_days: number;
+  view_events: number;
+  unique_viewers: number;
+  returning_viewers: number;
+  daily_views: Array<{ date: string; count: number }>;
+};
+
 const ORGANIZATION_ID = 1;
 const PROGRAM_ID = 1;
 
@@ -182,6 +190,7 @@ export default function Analytics() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [waterUsage, setWaterUsage] = useState<WaterPulseUsage | null>(null);
 
   const loadAnalytics = async (isRefresh = false) => {
     if (isRefresh) {
@@ -208,6 +217,21 @@ export default function Analytics() {
 
       const result = (await response.json()) as AnalyticsData;
       setData(result);
+      // Optional usage data must never block the established analytics page.
+      try {
+        const usageResponse = await authenticatedFetch(
+          `${API_BASE_URL}/api/v1/participant-analytics/usage` +
+            `?organization_id=${ORGANIZATION_ID}&program_id=${PROGRAM_ID}`,
+        );
+        if (usageResponse.ok) {
+          const usage = await usageResponse.json() as { water_pulse?: WaterPulseUsage };
+          setWaterUsage(usage.water_pulse ?? null);
+        } else {
+          setWaterUsage(null);
+        }
+      } catch {
+        setWaterUsage(null);
+      }
     } catch (err) {
       setError(
         err instanceof Error
@@ -751,6 +775,24 @@ export default function Analytics() {
               </div>
             </div>
           </div>
+        </section>
+
+        {/* WATER PULSE ENGAGEMENT: authenticated event evidence only */}
+        <section className="mb-12 rounded-2xl border border-cyan-300/20 bg-[#082234]/85 p-6">
+          <div className="mb-4">
+            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-cyan-300">Consumer Water Pulse engagement</p>
+            <h2 className="mt-2 text-xl font-semibold text-white">Water status checks and returning viewers</h2>
+            <p className="mt-2 text-sm text-slate-300">Authenticated views over the last 30 days. Repeated visits mean activity on two or more different UTC days; they do not establish drinking-water safety.</p>
+          </div>
+          {waterUsage ? (
+            <div className="grid gap-4 sm:grid-cols-3">
+              <Metric label="Water view events" value={fmt(waterUsage.view_events)} detail="Successful water-status views recorded" />
+              <Metric label="Distinct viewers" value={fmt(waterUsage.unique_viewers)} detail="Authenticated consumer accounts" />
+              <Metric label="Returning viewers" value={fmt(waterUsage.returning_viewers)} detail="Views on 2 or more UTC dates" />
+            </div>
+          ) : (
+            <p className="rounded-xl border border-cyan-300/15 p-4 text-sm text-slate-400">Water Pulse engagement evidence is not available yet. Existing enrollment metrics remain valid.</p>
+          )}
         </section>
 
         {/* DATA PROVENANCE */}
